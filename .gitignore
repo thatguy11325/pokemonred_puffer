@@ -163,3 +163,4 @@ cython_debug/
 *.gb
 # local session files
 session_*
+experiments
