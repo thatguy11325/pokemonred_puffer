@@ -65,7 +65,8 @@ def make_policy(env, env_module, args):
     if args.train.device == "cuda":
         mode = "reduce-overhead"
     policy = policy.to(args.train.device, non_blocking=True)
-    policy = torch.compile(policy, mode=mode)
+    policy.get_value = torch.compile(policy.get_value, mode=mode)
+    policy.get_action_and_value = torch.compile(policy.get_action_and_value, mode=mode)
     return policy
 
 
