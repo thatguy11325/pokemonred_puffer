@@ -32,7 +32,9 @@ class Policy(pufferlib.models.Policy):
         self.downsample = downsample
 
         self.network = torch.nn.Sequential(
-            ResNet(BasicBlock, [3, 4, 6, 3], input_channels=2, num_classes=1000),
+            # A resnet 18
+            # a resnet 34 would be [3, 4, 6, 3]
+            ResNet(BasicBlock, [2, 2, 2, 2], input_channels=2, num_classes=1000),
             torch.nn.ReLU(),
             torch.nn.LazyLinear(output_size),
             torch.nn.ReLU()

@@ -64,8 +64,9 @@ def make_policy(env, env_module, args):
     mode = "default"
     if args.train.device == "cuda":
         mode = "reduce-overhead"
+    policy = policy.to(args.train.device, non_blocking=True)
     policy = torch.compile(policy, mode=mode)
-    return policy.to(args.train.device)
+    return policy
 
 
 def init_wandb(args, env_module):
