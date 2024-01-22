@@ -179,7 +179,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--headless", action="store_true")
     parser.add_argument("--rom-path", default="red.gb")
-    parser.add_argument("--state-path", default="Bulbasaur.state")
+    parser.add_argument("--state-path", default="pyboy_states/Bulbasaur.state")
     parser.add_argument("--save-video", action="store_true")
     parser.add_argument("--fast-video", action="store_true")
     parser.add_argument("--frame-stacks", type=int, default=1)

@@ -16,6 +16,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
+from pokemonred_puffer.eval import make_pokemon_red_overlay
+
 
 @pufferlib.dataclass
 class Performance:
@@ -220,6 +222,7 @@ def evaluate(data):
                 **{f"losses/{k}": v for k, v in data.losses.items()},
                 **{f"performance/{k}": v for k, v in data.performance.items()},
                 **{f"stats/{k}": v for k, v in data.stats.items()},
+                **{f"max_stats/{k}": v for k, v in data.max_stats.items()},
                 **{
                     f"skillrank/{policy}": elo
                     for policy, elo in data.policy_pool.ranker.ratings.items()
@@ -306,7 +309,7 @@ def evaluate(data):
 
     data.global_step += padded_steps_collected
     data.reward = torch.mean(data.rewards).float().item()
-    data.SPS = (padded_steps_collected / eval_profiler.elapsed).int().item()
+    data.SPS = int(padded_steps_collected / eval_profiler.elapsed)
 
     perf = data.performance
     perf.total_uptime = int(time.time() - data.start_time)
@@ -321,21 +324,18 @@ def evaluate(data):
     perf.eval_pytorch_memory = eval_profiler.end_torch_mem
 
     data.stats = {}
+    data.max_stats = {}
     for k, v in infos["learner"].items():
         if "Task_eval_fn" in k:
             # Temporary hack for NMMO competition
             continue
         if "pokemon_exploration_map" in k:
-            import cv2
-            from pokemon_red_eval import make_pokemon_red_overlay
-
-            bg = cv2.imread("kanto_map_dsv.png")
-            overlay = make_pokemon_red_overlay(bg, sum(v))
+            overlay = make_pokemon_red_overlay(sum(v))
             if data.wandb is not None:
-                data.stats["Media/exploration_map"] = data.wandb.Image(overlay)
-            # @Leanke: Add your infos['learner']['x'] etc
+                data.stats["Media/aggregate_exploration_map"] = data.wandb.Image(overlay)
         try:  # TODO: Better checks on log data types
             data.stats[k] = np.mean(v)
+            data.max_stats[k] = np.max(v)
         except:
             continue
 

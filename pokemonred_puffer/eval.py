@@ -1,6 +1,7 @@
 import contextlib
-from pathlib import Path
+import os
 import uuid
+from pathlib import Path
 
 import cv2
 import matplotlib.colors as mcolors
@@ -8,8 +9,11 @@ import mediapy as media
 import numpy as np
 import torch
 
+KANTO_MAP_PATH = os.path.join(os.path.dirname(__file__), "kanto_map_dsv.png")
+BACKGROUND = np.array(cv2.imread(KANTO_MAP_PATH))
 
-def make_pokemon_red_overlay(bg, counts):
+
+def make_pokemon_red_overlay(counts):
     nonzero = np.where(counts > 0, 1, 0)
     scaled = np.clip(counts, 0, 1000) / 1000.0
 
@@ -29,10 +33,13 @@ def make_pokemon_red_overlay(bg, counts):
     mask = np.stack([mask, mask, mask], axis=-1).astype(bool)
 
     # Combine with background
-    render = bg.copy().astype(np.int32)
+    render = BACKGROUND.copy().astype(np.int32)
     render[mask] = 0.2 * render[mask] + 0.8 * overlay[mask]
     render = np.clip(render, 0, 255).astype(np.uint8)
     return render
+
+
+make_pokemon_red_overlay = torch.compile(make_pokemon_red_overlay)
 
 
 def rollout(
@@ -51,8 +58,6 @@ def rollout(
         agent = torch.load(model_path, map_location=device)
 
     terminal = truncated = True
-
-    bg = cv2.imread("kanto_map_dsv.png")
 
     while True:
         if terminal or truncated:
@@ -76,7 +81,7 @@ def rollout(
 
         counts_map = env.env.counts_map
         if np.sum(counts_map) > 0 and step % 500 == 0:
-            overlay = make_pokemon_red_overlay(bg, counts_map)
+            overlay = make_pokemon_red_overlay(BACKGROUND, counts_map)
             cv2.imshow("Pokemon Red", overlay[1000:][::4, ::4])
             cv2.waitKey(1)
 
@@ -109,7 +114,7 @@ def full_frame_writer():
     base_dir.mkdir(parents=True, exist_ok=True)
     full_name = Path(f"heatmap_video_{exp_name}").with_suffix(".mp4")
     full_frame_writer = media.VideoWriter(base_dir / full_name, (7104, 6976), fps=60)
-    
+
     yield full_frame_writer.__enter__()
 
     with open("experiments/test_log.txt", "a") as f:
