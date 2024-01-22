@@ -357,7 +357,7 @@ class RedGymEnv(Env):
         self.last_health = self.read_hp_fraction()
         self.update_map_progress()
 
-        self.append_agent_stats(action)
+        info = self.agent_stats(action)
 
         step_limit_reached = self.check_if_done()
 
@@ -383,7 +383,7 @@ class RedGymEnv(Env):
 
         self.step_count += 1
 
-        return obs, new_reward, False, step_limit_reached, {}
+        return obs, new_reward, False, step_limit_reached, info
 
     def find_neighboring_sign(self, sign_id, player_direction, player_x, player_y) -> bool:
         sign_y = self.pyboy.get_memory_value(0xD4B1 + (2 * sign_id))
@@ -486,11 +486,10 @@ class RedGymEnv(Env):
         if self.save_video and self.fast_video:
             self.add_video_frame()
 
-    def append_agent_stats(self, action):
+    def agent_stats(self, action):
         x_pos, y_pos, map_n = self.get_game_coords()
         levels = [self.read_m(a) for a in [0xD18C, 0xD1B8, 0xD1E4, 0xD210, 0xD23C, 0xD268]]
-        self.agent_stats.append(
-            {
+        return {
                 "step": self.step_count,
                 "x": x_pos,
                 "y": y_pos,
@@ -517,7 +516,7 @@ class RedGymEnv(Env):
                 "moves_obtained": int(sum(self.moves_obtained)),
                 "opponent_level": self.max_opponent_level,
             }
-        )
+        
 
     def start_video(self):
         if self.full_frame_writer is not None:
