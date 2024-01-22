@@ -18,8 +18,8 @@ from pokemonred_puffer.policies import Recurrent, Policy
 
 
 # TODO: Replace with Pydantic or Spock parser
-def load_from_config(env):
-    with open("config.yaml") as f:
+def load_from_config(yaml_path, env):
+    with open(yaml_path) as f:
         config = yaml.safe_load(f)
 
     assert env in config, f'"{env}" not found in config.yaml. '
@@ -149,6 +149,7 @@ def train(args, env_module, make_env):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Parse environment argument", add_help=False)
+    parser.add_argument("--yaml", default="config.yaml", help="Configuration file to use")
     parser.add_argument(
         "--config", type=str, default="pokemon_red", help="Configuration in config.yaml to use"
     )
@@ -194,7 +195,7 @@ if __name__ == "__main__":
     clean_parser = argparse.ArgumentParser(parents=[parser])
     args = parser.parse_known_args()[0].__dict__
     parsed_args = parser.parse_args()
-    pkg, config = load_from_config(args["config"])
+    pkg, config = load_from_config(args["yaml"], args["config"])
 
     # TODO: Adapt to Puffer's config style
     sess_path = Path(f"session_{parsed_args.sess_id}")

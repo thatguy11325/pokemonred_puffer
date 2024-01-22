@@ -209,8 +209,9 @@ class RedGymEnv(Env):
     def init_map_mem(self):
         # Maybe I should preallocate a giant matrix for all map ids
         # All map ids have the same size, right?
-        self.seen_coords = {}
-        self.seen_map_ids = {}
+        # self.seen_coords = {}
+        self.seen_global_coords = np.zeros(GLOBAL_MAP_SHAPE)
+        self.seen_map_ids = np.zeros(256)
 
     def init_npc_mem(self):
         self.seen_npcs = {}
@@ -219,12 +220,11 @@ class RedGymEnv(Env):
         self.seen_hidden_objs = {}
 
     def reset_forget_explore(self):
-        self.seen_coords.update(
-            (k, v * self.reset_forgetting_factor["coords"]) for k, v in self.seen_coords.items()
-        )
-        self.seen_map_ids.update(
-            (k, v * self.reset_forgetting_factor["map_ids"]) for k, v in self.seen_map_ids.items()
-        )
+        # self.seen_coords.update(
+        #     (k, v * self.reset_forgetting_factor["coords"]) for k, v in self.seen_coords.items()
+        # )
+        self.seen_global_coords *= self.reset_forgetting_factor["coords"]
+        self.seen_map_ids *= self.reset_forgetting_factor["map_ids"]
         self.seen_npcs.update(
             (k, v * self.reset_forgetting_factor["npc"]) for k, v in self.seen_npcs.items()
         )
@@ -234,14 +234,16 @@ class RedGymEnv(Env):
         )
 
     def step_forget_explore(self):
-        self.seen_coords.update(
-            (k, min(0.05, v * self.step_forgetting_factor["coords"]))
-            for k, v in self.seen_coords.items()
-        )
-        self.seen_map_ids.update(
-            (k, min(0.5, v * self.step_forgetting_factor["map_ids"]))
-            for k, v in self.seen_map_ids.items()
-        )
+        # self.seen_coords.update(
+        #     (k, min(0.05, v * self.step_forgetting_factor["coords"]))
+        #     for k, v in self.seen_coords.items()
+        # )
+        # self.seen_map_ids.update(
+        #     (k, min(0.5, v * self.step_forgetting_factor["map_ids"]))
+        #     for k, v in self.seen_map_ids.items()
+        # )
+        self.seen_global_coords *= self.step_forgetting_factor["coords"]
+        self.seen_map_ids *= self.step_forgetting_factor["map_ids"]
         self.seen_npcs.update(
             (k, min(0.5, v * self.step_forgetting_factor["npc"])) for k, v in self.seen_npcs.items()
         )
@@ -273,7 +275,7 @@ class RedGymEnv(Env):
         # 68 -> player y, 72 -> player x
         # guess we want to attempt to map the pixels to player units or vice versa
         # Experimentally determined magic numbers below. Beware
-
+        """
         for y in range(-72 // 16, 72 // 16):
             for x in range(-80 // 16, 80 // 16):
                 # y-y1 = m (x-x1)
@@ -296,7 +298,15 @@ class RedGymEnv(Env):
                             0,
                         )
                     )
-                )
+        """
+        gr, gc = local_to_global(player_y, player_x, map_n)
+        visited_mask = (
+            255
+            * np.repeat(
+                np.repeat(self.seen_global_coords[gr - 5 : gr + 5, gc - 4 : gc + 6], 16, 0), 16, -1
+            )
+        ).astype(np.uint8)
+        visited_mask = np.expand_dims(visited_mask, -1)
 
         game_pixels_render = np.stack([game_pixels_render, visited_mask], axis=-1)
 
@@ -362,7 +372,6 @@ class RedGymEnv(Env):
         step_limit_reached = self.check_if_done()
 
         obs = self._get_obs()
-
 
         # create a map of all event flags set, with names where possible
         # if step_limit_reached:
@@ -502,8 +511,8 @@ class RedGymEnv(Env):
                 "levels_sum": sum(levels),
                 "ptypes": self.read_party(),
                 "hp": self.read_hp_fraction(),
-                "coord": sum(self.seen_coords.values()),
-                "map_id": sum(self.seen_map_ids.values()),
+                "coord": np.sum(self.seen_global_coords),
+                "map_id": np.sum(self.seen_map_ids),
                 "npc": sum(self.seen_npcs.values()),
                 "hidden_obj": sum(self.seen_hidden_objs.values()),
                 "deaths": self.died_count,
@@ -516,7 +525,7 @@ class RedGymEnv(Env):
                 "moves_obtained": int(sum(self.moves_obtained)),
                 "opponent_level": self.max_opponent_level,
             },
-            "pokemon_exploration_map": self.get_explore_map()
+            "pokemon_exploration_map": self.seen_global_coords,  # self.get_explore_map()
         }
 
     def start_video(self):
@@ -559,7 +568,8 @@ class RedGymEnv(Env):
 
     def update_seen_coords(self):
         x_pos, y_pos, map_n = self.get_game_coords()
-        self.seen_coords[(x_pos, y_pos, map_n)] = 1
+        # self.seen_coords[(x_pos, y_pos, map_n)] = 1
+        self.seen_global_coords[local_to_global(y_pos, x_pos, map_n)] = 1
         self.seen_map_ids[map_n] = 1
 
     def get_explore_map(self):
@@ -571,7 +581,7 @@ class RedGymEnv(Env):
             else:
                 explore_map[gy, gx] = v
 
-        return explore_map 
+        return explore_map
 
     def update_recent_screens(self, cur_screen):
         # self.recent_screens = np.roll(self.recent_screens, 1, axis=2)
@@ -661,10 +671,10 @@ class RedGymEnv(Env):
             # "death_reward": self.died_count,
             "badge": self.get_badges() * 5,
             "heal": self.total_healing_rew,
-            "explore": sum(self.seen_coords.values()) * 0.01,
+            "explore": np.sum(self.seen_global_coords) * 0.01,
             "explore_maps": self.reward_scale
             * self.explore_npc_weight
-            * sum(self.seen_map_ids.values())
+            * np.sum(self.seen_map_ids)
             * 0.00015,
         }
 
