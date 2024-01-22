@@ -6,13 +6,14 @@ from collections import deque
 from pathlib import Path
 from typing import Optional
 
-import matplotlib.pyplot as plt
 import mediapy as media
 import numpy as np
 from einops import repeat
 from gymnasium import Env, spaces
 from pyboy import PyBoy
 from pyboy.utils import WindowEvent
+
+from pokemonred_puffer.global_map import GLOBAL_MAP_SHAPE, local_to_global
 
 EVENT_FLAGS_START = 0xD747
 EVENT_FLAGS_END = 0xD7F6  # 0xD761 # 0xD886 temporarily lower event flag range for obs input
@@ -172,7 +173,7 @@ class RedGymEnv(Env):
                 self.pyboy.tick()
 
             self.reset_forget_explore()
-        
+
         self.base_event_flags = sum(
             self.bit_count(self.read_m(i)) for i in range(EVENT_FLAGS_START, EVENT_FLAGS_END)
         )
@@ -201,8 +202,6 @@ class RedGymEnv(Env):
         self.total_reward = self.reward_scale * sum(
             [val for _, val in self.progress_reward.items()]
         )
-
-        self.agent_stats = []
 
         self.reset_count += 1
         return self._get_obs(), {}
@@ -327,7 +326,6 @@ class RedGymEnv(Env):
                     [int(bit) for bit in f"{self.read_m(0xD356):08b}"], dtype=np.int8
                 ),
                 "events": np.array(self.read_event_bits(), dtype=np.int8),
-                "map": self.get_explore_map()[:, :, None],
                 "recent_actions": np.array(self.recent_actions),
                 "caught_pokemon": self.caught_pokemon,
                 "seen_pokemon": self.seen_pokemon,
@@ -363,7 +361,6 @@ class RedGymEnv(Env):
 
         obs = self._get_obs()
 
-        # self.save_and_print_info(step_limit_reached, obs)
 
         # create a map of all event flags set, with names where possible
         # if step_limit_reached:
@@ -490,6 +487,7 @@ class RedGymEnv(Env):
         x_pos, y_pos, map_n = self.get_game_coords()
         levels = [self.read_m(a) for a in [0xD18C, 0xD1B8, 0xD1E4, 0xD210, 0xD23C, 0xD268]]
         return {
+            "stats": {
                 "step": self.step_count,
                 "x": x_pos,
                 "y": y_pos,
@@ -515,8 +513,9 @@ class RedGymEnv(Env):
                 "seen_pokemon": int(sum(self.seen_pokemon)),
                 "moves_obtained": int(sum(self.moves_obtained)),
                 "opponent_level": self.max_opponent_level,
-            }
-        
+            },
+            "pokemon_exploration_map": self.get_explore_map(),
+        }
 
     def start_video(self):
         if self.full_frame_writer is not None:
@@ -552,7 +551,6 @@ class RedGymEnv(Env):
     def add_video_frame(self):
         self.full_frame_writer.add_image(self.render(reduce_res=False)[:, :, 0])
         self.model_frame_writer.add_image(self.render(reduce_res=True)[:, :, 0])
-        self.map_frame_writer.add_image(self.get_explore_map())
 
     def get_game_coords(self):
         return (self.read_m(0xD362), self.read_m(0xD361), self.read_m(0xD35E))
@@ -562,24 +560,16 @@ class RedGymEnv(Env):
         self.seen_coords[(x_pos, y_pos, map_n)] = 1
         self.seen_map_ids[map_n] = 1
 
-    def get_global_coords(self, x_pos, y_pos, map_n, explore_map_shape):
-        gx, gy = (
-            np.array([x_pos, -y_pos])
-            + self.get_map_location(map_n)["coordinates"]
-            + self.coords_pad * 2
-        )
-        return explore_map_shape[0] - gy, gx
-
     def get_explore_map(self):
-        explore_map = np.zeros((self.explore_map_dim, self.explore_map_dim), dtype=np.uint8)
+        explore_map = np.zeros(GLOBAL_MAP_SHAPE)
         for (x, y, map_n), v in self.seen_coords.items():
-            gy, gx = self.get_global_coords(x, y, map_n, explore_map.shape)
+            gy, gx = local_to_global(y, x, map_n)
             if gy >= explore_map.shape[0] or gx >= explore_map.shape[1]:
                 print(f"coord out of bounds! global: ({gx}, {gy}) game: ({x}, {y}, {map_n})")
             else:
-                explore_map[gy, gx] = int(255 * v)
+                explore_map[gy, gx] = v
 
-        return repeat(explore_map, "h w -> (h h2) (w w2)", h2=2, w2=2)
+        return explore_map 
 
     def update_recent_screens(self, cur_screen):
         # self.recent_screens = np.roll(self.recent_screens, 1, axis=2)
@@ -608,61 +598,6 @@ class RedGymEnv(Env):
         done = self.step_count >= self.max_steps - 1
         # done = self.read_hp_fraction() == 0 # end game on loss
         return done
-
-    def save_and_print_info(self, done, obs):
-        if self.print_rewards:
-            prog_string = f"step: {self.step_count:6d}"
-            for key, val in self.progress_reward.items():
-                prog_string += f" {key}: {val:5.2f}"
-            prog_string += f" sum: {self.total_reward:5.2f}"
-            print(f"\r{prog_string}", end="", flush=True)
-
-        if self.step_count % 50 == 0:
-            plt.imsave(
-                self.s_path / Path(f"curframe_{self.instance_id}.jpeg"),
-                self.render(reduce_res=False)[:, :, 0:1],
-            )
-
-        if self.print_rewards and done:
-            print("", flush=True)
-            if self.save_final_state:
-                fs_path = self.s_path / Path("final_states")
-                fs_path.mkdir(exist_ok=True)
-                plt.imsave(
-                    fs_path
-                    / Path(f"frame_r{self.total_reward:.4f}_{self.reset_count}_explore_map.jpeg"),
-                    obs["map"][:, :, 0],
-                )
-                plt.imsave(
-                    fs_path
-                    / Path(
-                        f"frame_r{self.total_reward:.4f}_{self.reset_count}_full_explore_map.jpeg"
-                    ),
-                    self.get_explore_map(),
-                )
-                plt.imsave(
-                    fs_path / Path(f"frame_r{self.total_reward:.4f}_{self.reset_count}_full.jpeg"),
-                    self.render(reduce_res=False)[:, :, 0],
-                )
-
-        if self.save_video and done:
-            self.full_frame_writer.close()
-            self.model_frame_writer.close()
-            self.map_frame_writer.close()
-
-        """
-        if done:
-            self.all_runs.append(self.progress_reward)
-            with open(
-                self.s_path / Path(f"all_runs_{self.instance_id}.json"), "w"
-            ) as f:
-                json.dump(self.all_runs, f)
-            pd.DataFrame(self.agent_stats).to_csv(
-                self.s_path / Path(f"agent_stats_{self.instance_id}.csv.gz"),
-                compression="gzip",
-                mode="a",
-            )
-        """
 
     def read_m(self, addr):
         return self.pyboy.get_memory_value(addr)
