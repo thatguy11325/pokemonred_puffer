@@ -303,7 +303,7 @@ class RedGymEnv(Env):
         visited_mask = (
             255
             * np.repeat(
-                np.repeat(self.seen_global_coords[gr - 5 : gr + 5, gc - 4 : gc + 6], 16, 0), 16, -1
+                np.repeat(self.seen_global_coords[gr - 4 : gr + 5, gc - 4 : gc + 6], 16, 0), 16, -1
             )
         ).astype(np.uint8)
         visited_mask = np.expand_dims(visited_mask, -1)
