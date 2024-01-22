@@ -255,7 +255,6 @@ class RedGymEnv(Env):
     def render(self, reduce_res=False):
         # (144, 160, 3)
         game_pixels_render = self.screen.screen_ndarray()[:, :, 0:1]
-        visited_mask = np.zeros_like(game_pixels_render)
         # place an overlay on top of the screen greying out places we haven't visited
         # first get our location
         player_x, player_y, map_n = self.get_game_coords()
