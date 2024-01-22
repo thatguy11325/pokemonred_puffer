@@ -355,7 +355,9 @@ class RedGymEnv(Env):
         self.last_health = self.read_hp_fraction()
         self.update_map_progress()
 
-        info = self.agent_stats(action)
+        info = {}
+        if self.step_count % 1000 == 0:
+            info = self.agent_stats(action)
 
         step_limit_reached = self.check_if_done()
 
@@ -514,7 +516,7 @@ class RedGymEnv(Env):
                 "moves_obtained": int(sum(self.moves_obtained)),
                 "opponent_level": self.max_opponent_level,
             },
-            "pokemon_exploration_map": self.get_explore_map(),
+            "pokemon_exploration_map": self.get_explore_map()
         }
 
     def start_video(self):
