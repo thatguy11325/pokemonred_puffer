@@ -232,7 +232,6 @@ def evaluate(data):
     env_profiler = pufferlib.utils.Profiler()
     inference_profiler = pufferlib.utils.Profiler()
     with pufferlib.utils.Profiler(memory=True, pytorch_memory=True) as eval_profiler:
-
         ptr = step = padded_steps_collected = agent_steps_collected = 0
         infos = defaultdict(lambda: defaultdict(list))
         while True:
@@ -246,9 +245,17 @@ def evaluate(data):
             i = data.policy_pool.update_scores(i, "return")
 
             with inference_profiler, torch.no_grad():
-                o = torch.as_tensor(o, device=data.device)
-                r = torch.as_tensor(r, dtype=torch.float32, device=data.device).view(-1)
-                d = torch.as_tensor(d, dtype=torch.float32, device=data.device).view(-1)
+                o = torch.as_tensor(o).to(device=data.device, non_blocking=True)
+                r = (
+                    torch.as_tensor(r, dtype=torch.float32)
+                    .to(device=data.device, non_blocking=True)
+                    .view(-1)
+                )
+                d = (
+                    torch.as_tensor(d, dtype=torch.float32)
+                    .to(device=data.device, non_blocking=True)
+                    .view(-1)
+                )
 
             agent_steps_collected += sum(mask)
             padded_steps_collected += len(mask)
@@ -261,7 +268,9 @@ def evaluate(data):
                         next_lstm_state[1][:, env_id],
                     )
 
-                actions, logprob, value, next_lstm_state = data.policy_pool.forwards(o, next_lstm_state)
+                actions, logprob, value, next_lstm_state = data.policy_pool.forwards(
+                    o, next_lstm_state
+                )
 
                 if next_lstm_state is not None:
                     h, c = next_lstm_state
@@ -293,11 +302,11 @@ def evaluate(data):
                         infos[policy_name][name].append(dat)
 
             with env_profiler:
-                data.pool.send(actions.cpu().numpy())
+                data.pool.send(actions.to(device="cpu", non_blocking=True).numpy())
 
     data.global_step += padded_steps_collected
-    data.reward = float(torch.mean(data.rewards))
-    data.SPS = int(padded_steps_collected / eval_profiler.elapsed)
+    data.reward = torch.mean(data.rewards).float().item()
+    data.SPS = (padded_steps_collected / eval_profiler.elapsed).int().item()
 
     perf = data.performance
     perf.total_uptime = int(time.time() - data.start_time)
@@ -397,7 +406,7 @@ def train(data):
         for epoch in range(config.update_epochs):
             lstm_state = None
             for mb in range(num_minibatches):
-                mb_obs = b_obs[mb].to(data.device)
+                mb_obs = b_obs[mb].to(data.device, non_blocking=True)
                 mb_actions = b_actions[mb].contiguous()
                 mb_values = b_values[mb].reshape(-1)
                 mb_advantages = b_advantages[mb].reshape(-1)
