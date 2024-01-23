@@ -295,11 +295,6 @@ class RedGymEnv(Env):
                         )
                     )
                 )
-        import cv2
-
-        cv2.imshow("visited_mask", (game_pixels_render.astype(np.float32) * visited_mask.astype(np.float32) / 255.0).astype(np.uint8))
-        cv2.waitKey(3000)
-        cv2.destroyAllWindows()
         """
         gr, gc = local_to_global(player_y, player_x, map_n)
         visited_mask = (
