@@ -365,6 +365,7 @@ class RedGymEnv(Env):
         self.update_map_progress()
 
         info = {}
+        # TODO: Make log frequency a configuration parameter
         if self.step_count % 1000 == 0:
             info = self.agent_stats(action)
 
