@@ -330,7 +330,7 @@ def evaluate(data):
             # Temporary hack for NMMO competition
             continue
         if "pokemon_exploration_map" in k:
-            overlay = make_pokemon_red_overlay(sum(v))
+            overlay = make_pokemon_red_overlay(np.stack(v, axis=0))
             if data.wandb is not None:
                 data.stats["Media/aggregate_exploration_map"] = data.wandb.Image(overlay)
         try:  # TODO: Better checks on log data types
@@ -364,6 +364,7 @@ def train(data):
             data.optimizer.param_groups[0]["lr"] = lrnow
 
         num_minibatches = config.batch_size // config.bptt_horizon // config.batch_rows
+        assert num_minibatches > 0, "config.batch_size // config.bptt_horizon // config.batch_rows must be > 0"
         idxs = sorted(range(len(data.sort_keys)), key=data.sort_keys.__getitem__)
         data.sort_keys = []
         b_idxs = (
