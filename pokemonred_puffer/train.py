@@ -12,7 +12,7 @@ import wandb
 import yaml
 
 from pokemonred_puffer import eval
-from pokemonred_puffer.cleanrl_puffer import CleanPuffeRL, done_training, rollout
+from pokemonred_puffer.cleanrl_puffer import CleanPuffeRL, rollout
 from pokemonred_puffer.env_creator import env_creator 
 from pokemonred_puffer.policies import Recurrent, Policy 
 
@@ -143,7 +143,7 @@ def train(args, env_module, make_env):
         exp_name=args.exp_name,
         track=args.track,
     ) as trainer:
-        while not done_training(trainer):
+        while not trainer.done_training():
             trainer.evaluate()
             trainer.train()
 
