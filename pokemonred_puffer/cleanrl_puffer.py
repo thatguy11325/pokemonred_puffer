@@ -595,7 +595,7 @@ class CleanPuffeRL:
 
         self.update += 1
         if self.update % config.checkpoint_interval == 0 or self.done_training():
-            self.save_checkpoint(self)
+            self.save_checkpoint()
 
     def close(self):
         self.pool.close()
@@ -603,7 +603,7 @@ class CleanPuffeRL:
         if self.wandb is not None:
             artifact_name = f"{self.exp_name}_model"
             artifact = self.wandb.Artifact(artifact_name, type="model")
-            model_path = self.save_checkpoint(self)
+            model_path = self.save_checkpoint()
             artifact.add_file(model_path)
             self.wandb.run.log_artifact(artifact)
             self.wandb.finish()
