@@ -1,6 +1,4 @@
 import pufferlib.models
-import torch
-from pokemonred_puffer.resnet import BasicBlock, ResNet 
 
 
 class Recurrent(pufferlib.models.RecurrentWrapper):
@@ -8,6 +6,15 @@ class Recurrent(pufferlib.models.RecurrentWrapper):
         super().__init__(env, policy, input_size, hidden_size, num_layers)
 
 
+class Policy(pufferlib.models.ProcgenResnet):
+    def __init__(self, env, cnn_width=16, mlp_width=512):
+        super().__init__(
+            env=env,
+            cnn_width=cnn_width,
+            mlp_width=mlp_width,
+        )
+
+'''
 class Policy(pufferlib.models.Policy):
     def __init__(
         self,
@@ -56,3 +63,4 @@ class Policy(pufferlib.models.Policy):
         action = self.actor(flat_hidden)
         value = self.value_fn(flat_hidden)
         return action, value
+'''
