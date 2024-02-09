@@ -236,16 +236,17 @@ class RedGymEnv(Env):
 
     def step_forget_explore(self):
         self.seen_coords.update(
-            (k, min(0.05, v * self.step_forgetting_factor["coords"]))
+            (k, max(0.25, v * self.step_forgetting_factor["coords"]))
             for k, v in self.seen_coords.items()
         )
         # self.seen_global_coords *= self.step_forgetting_factor["coords"]
         self.seen_map_ids *= self.step_forgetting_factor["map_ids"]
         self.seen_npcs.update(
-            (k, min(0.5, v * self.step_forgetting_factor["npc"])) for k, v in self.seen_npcs.items()
+            (k, max(0.25, v * self.step_forgetting_factor["npc"]))
+            for k, v in self.seen_npcs.items()
         )
         self.seen_hidden_objs.update(
-            (k, min(0.5, v * self.step_forgetting_factor["hidden_objs"]))
+            (k, max(0.25, v * self.step_forgetting_factor["hidden_objs"]))
             for k, v in self.seen_hidden_objs.items()
         )
 
@@ -291,7 +292,7 @@ class RedGymEnv(Env):
                                 player_y + y + 1,
                                 map_n,
                             ),
-                            0,
+                            0.25,
                         )
                     )
                 )
@@ -671,7 +672,7 @@ class RedGymEnv(Env):
             "badge": self.get_badges() * 5,
             "heal": self.total_healing_rew,
             "explore": sum(self.seen_coords.values())
-            * 0.01,  # np.sum(self.seen_global_coords) * 0.01,
+            * 0.001,  # np.sum(self.seen_global_coords) * 0.01,
             "explore_maps": self.reward_scale
             * self.explore_npc_weight
             * np.sum(self.seen_map_ids)

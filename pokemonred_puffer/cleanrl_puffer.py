@@ -1,6 +1,7 @@
 import os
 import random
 import time
+from collections import deque
 from types import SimpleNamespace
 from typing import Any, Callable
 import uuid
@@ -237,6 +238,7 @@ class CleanPuffeRL:
         self.global_step = resume_state.get("global_step", 0)
         self.agent_step = resume_state.get("agent_step", 0)
         self.update = resume_state.get("update", 0)
+        self.lr_update = resume_state.get("lr_update", 0)
 
         self.optimizer = optim.Adam(self.agent.parameters(), lr=config.learning_rate, eps=1e-5)
         self.opt_state = resume_state.get("optimizer_state_dict", None)
@@ -305,6 +307,8 @@ class CleanPuffeRL:
         self.learning_rate = (config.learning_rate,)
         self.losses = Losses()
         self.performance = Performance()
+
+        self.reward_buffer = deque(maxlen=100)
 
     @pufferlib.utils.profile
     def evaluate(self):
@@ -405,6 +409,7 @@ class CleanPuffeRL:
                 self.dones_ary[ptr:end] = d.cpu().numpy()[indices]
                 self.sort_keys.extend([(env_id[i], step) for i in indices])
 
+
                 # Update pointer
                 ptr += len(indices)
 
@@ -415,6 +420,12 @@ class CleanPuffeRL:
 
             with env_profiler:
                 self.pool.send(actions)
+        
+        self.reward_buffer.append(self.r.cpu().numpy().sum())
+        if np.var(self.reward_buffer) < 1e-6:
+            self.reward_buffer.clear()
+            # reset lr update if the reward starts stalling
+            self.lr_update = 1.0
 
         eval_profiler.stop()
 
@@ -468,7 +479,7 @@ class CleanPuffeRL:
         train_profiler.start()
 
         if config.anneal_lr:
-            frac = 1.0 - (self.update - 1.0) / self.total_updates
+            frac = 1.0 - (self.lr_update - 1.0) / self.total_updates
             lrnow = frac * config.learning_rate
             self.optimizer.param_groups[0]["lr"] = lrnow
 
@@ -620,6 +631,7 @@ class CleanPuffeRL:
             print_dashboard(self.stats, self.init_performance, self.performance)
 
         self.update += 1
+        self.lr_update += 1
         if self.update % config.checkpoint_interval == 0 or self.done_training():
             self.save_checkpoint()
 
