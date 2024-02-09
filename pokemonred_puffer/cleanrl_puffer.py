@@ -243,6 +243,7 @@ class CleanPuffeRL:
 
         if config.compile:
             self.agent = torch.compile(agent, mode=config.compile_mode)
+            self.calculate_loss = torch.compile(self.calculate_loss, mode=config.compile_mode)
 
         if config.verbose:
             self.n_params = sum(p.numel() for p in agent.parameters() if p.requires_grad)
@@ -561,19 +562,19 @@ class CleanPuffeRL:
                 # Policy loss
                 pg_loss1 = -mb_advantages * ratio
                 pg_loss2 = -mb_advantages * torch.clamp(
-                    ratio, 1 - config.clip_coef, 1 + config.clip_coef
+                    ratio, 1 - self.config.clip_coef, 1 + self.config.clip_coef
                 )
                 pg_loss = torch.max(pg_loss1, pg_loss2).mean()
                 pg_losses.append(pg_loss.item())
 
                 # Value loss
                 newvalue = newvalue.view(-1)
-                if config.clip_vloss:
+                if self.config.clip_vloss:
                     v_loss_unclipped = (newvalue - mb_returns) ** 2
                     v_clipped = mb_values + torch.clamp(
                         newvalue - mb_values,
-                        -config.vf_clip_coef,
-                        config.vf_clip_coef,
+                        -self.config.vf_clip_coef,
+                        self.config.vf_clip_coef,
                     )
                     v_loss_clipped = (v_clipped - mb_returns) ** 2
                     v_loss_max = torch.max(v_loss_unclipped, v_loss_clipped)
@@ -585,11 +586,7 @@ class CleanPuffeRL:
                 entropy_loss = entropy.mean()
                 entropy_losses.append(entropy_loss.item())
 
-                loss = pg_loss - config.ent_coef * entropy_loss + v_loss * config.vf_coef
-                self.optimizer.zero_grad()
-                loss.backward()
-                nn.utils.clip_grad_norm_(self.agent.parameters(), config.max_grad_norm)
-                self.optimizer.step()
+                self.calculate_loss(mb_advantages, pg_loss, entropy_loss, v_loss)
 
             if config.target_kl is not None:
                 if approx_kl > config.target_kl:
@@ -667,6 +664,13 @@ class CleanPuffeRL:
         os.rename(state_path + ".tmp", state_path)
 
         return model_path
+
+    def calculate_loss(self, pg_loss, entropy_loss, v_loss):
+        loss = pg_loss - self.config.ent_coef * entropy_loss + v_loss * self.config.vf_coef
+        self.optimizer.zero_grad()
+        loss.backward()
+        nn.utils.clip_grad_norm_(self.agent.parameters(), self.config.max_grad_norm)
+        self.optimizer.step()
 
     def done_training(self):
         return self.update >= self.total_updates

@@ -32,6 +32,8 @@ train:
   batch_rows: 128
   bptt_horizon: 16 #8
   vf_clip_coef: 0.1
+  compile: True
+  compile_mode: reduce-overhead
   
 sweep:
   method: random
@@ -62,13 +64,14 @@ pokemon_red:
   package: pokemon_red
   train:
     total_timesteps: 100_000_000
-    num_envs: 96
-    envs_per_worker: 1
-    envpool_batch_size: 16 # 32
-    update_epochs: 3 
+    num_envs: 128
+    envs_per_worker: 4
+    envs_per_batch: 48 
+    update_epochs: 3
     gamma: 0.998
     batch_size: 32768
     batch_rows: 128
+    compile: True
 
 pokemon-red:
   package: pokemon_red
