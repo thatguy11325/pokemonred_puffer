@@ -422,7 +422,8 @@ class CleanPuffeRL:
                 self.pool.send(actions)
         
         self.reward_buffer.append(self.r.cpu().numpy().sum())
-        if np.var(self.reward_buffer) < 1e-6:
+        # Probably should normalize the rewards before trying to take the variance...
+        if len(self.reward_buffer) == self.reward_buffer.maxlen and np.var(self.reward_buffer) < 1e-6:
             self.reward_buffer.clear()
             # reset lr update if the reward starts stalling
             self.lr_update = 1.0
