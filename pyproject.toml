@@ -12,6 +12,7 @@ classifiers = [
 	"Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = [
+    "./PufferLib",
     "einops",
     "opencv-python",
     "numpy",

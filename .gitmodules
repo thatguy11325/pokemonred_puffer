@@ -1,0 +1,3 @@
+[submodule "PufferLib"]
+	path = PufferLib
+	url = git@github.com:PufferAI/PufferLib.git
