@@ -244,11 +244,11 @@ class CleanPuffeRL:
         self.opt_state = resume_state.get("optimizer_state_dict", None)
 
         if config.compile:
-            self.agent = torch.compile(agent, mode=config.compile_mode)
+            self.agent = torch.compile(self.agent, mode=config.compile_mode)
             self.calculate_loss = torch.compile(self.calculate_loss, mode=config.compile_mode)
 
         if config.verbose:
-            self.n_params = sum(p.numel() for p in agent.parameters() if p.requires_grad)
+            self.n_params = sum(p.numel() for p in self.agent.parameters() if p.requires_grad)
             print(f"Model Size: {self.n_params//1000} K parameters")
 
         if self.opt_state is not None:
@@ -277,12 +277,12 @@ class CleanPuffeRL:
                 torch.zeros(shape, device=self.device),
             )
         self.obs = torch.zeros(config.batch_size + 1, *obs_shape)
-        self.actions = torch.zeros(config.batch_size + 1, *atn_shape, dtype=int, device=self.device)
-        self.logprobs = torch.zeros(config.batch_size + 1, device=self.device)
-        self.rewards = torch.zeros(config.batch_size + 1, device=self.device)
-        self.dones = torch.zeros(config.batch_size + 1, device=self.device)
-        self.truncateds = torch.zeros(config.batch_size + 1, device=self.device)
-        self.values = torch.zeros(config.batch_size + 1, device=self.device)
+        self.actions = torch.zeros(config.batch_size + 1, *atn_shape, dtype=int)
+        self.logprobs = torch.zeros(config.batch_size + 1)
+        self.rewards = torch.zeros(config.batch_size + 1)
+        self.dones = torch.zeros(config.batch_size + 1)
+        self.truncateds = torch.zeros(config.batch_size + 1)
+        self.values = torch.zeros(config.batch_size + 1)
 
         self.obs_ary = np.asarray(self.obs)
         self.actions_ary = np.asarray(self.actions)
