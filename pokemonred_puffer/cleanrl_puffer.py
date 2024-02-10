@@ -637,12 +637,13 @@ class CleanPuffeRL:
 
         self.update += 1
         self.lr_update += 1
-        if self.update % config.checkpoint_interval == 0 or self.done_training():
-            self.save_checkpoint()
+        # if self.update % config.checkpoint_interval == 0 or self.done_training():
+        #     self.save_checkpoint()
 
     def close(self):
         self.pool.close()
 
+        """
         if self.wandb is not None:
             artifact_name = f"{self.exp_name}_model"
             artifact = self.wandb.Artifact(artifact_name, type="model")
@@ -650,6 +651,7 @@ class CleanPuffeRL:
             artifact.add_file(model_path)
             self.wandb.run.log_artifact(artifact)
             self.wandb.finish()
+        """
 
     def save_checkpoint(self):
         path = os.path.join(self.config.data_dir, self.exp_name)
