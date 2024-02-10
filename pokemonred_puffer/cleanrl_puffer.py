@@ -20,6 +20,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from pokemonred_puffer.eval import make_pokemon_red_overlay
+from pokemonred_puffer.global_map import GLOBAL_MAP_SHAPE
 
 
 @pufferlib.dataclass
@@ -309,6 +310,7 @@ class CleanPuffeRL:
         self.performance = Performance()
 
         self.reward_buffer = deque(maxlen=100)
+        self.exploration_map_agg = np.zeros((config.num_envs, *GLOBAL_MAP_SHAPE), dtype=np.float32)
 
     @pufferlib.utils.profile
     def evaluate(self):
@@ -454,7 +456,8 @@ class CleanPuffeRL:
                 # Temporary hack for NMMO competition
                 continue
             if "pokemon_exploration_map" in k:
-                overlay = make_pokemon_red_overlay(np.stack(v, axis=0))
+                self.exploration_map_agg[env_id, :, :] = v
+                overlay = make_pokemon_red_overlay(self.exploration_map_agg)
                 if self.wandb is not None:
                     self.stats["Media/aggregate_exploration_map"] = self.wandb.Image(overlay)
             try:  # TODO: Better checks on log data types
