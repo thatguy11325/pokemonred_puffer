@@ -246,7 +246,8 @@ class CleanPuffeRL:
 
         if config.compile:
             self.agent = torch.compile(self.agent, mode=config.compile_mode)
-            self.calculate_loss = torch.compile(self.calculate_loss, mode=config.compile_mode)
+            # TODO: Figure out how to compile the optimizer!
+            # self.calculate_loss = torch.compile(self.calculate_loss, mode=config.compile_mode)
 
         if config.verbose:
             self.n_params = sum(p.numel() for p in self.agent.parameters() if p.requires_grad)
