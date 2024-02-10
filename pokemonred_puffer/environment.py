@@ -8,7 +8,7 @@ from typing import Optional
 
 import mediapy as media
 import numpy as np
-from einops import repeat
+from skimage.transform import resize
 from gymnasium import Env, spaces
 from pyboy import PyBoy
 from pyboy.utils import WindowEvent
@@ -94,7 +94,7 @@ class RedGymEnv(Env):
 
         # self.output_shape = (72, 80, self.frame_stacks)
         # self.output_shape = (144, 160, self.frame_stacks)
-        self.output_shape = (144, 160, self.frame_stacks * 2)
+        self.output_shape = (144, 160, self.frame_stacks * 3)
         self.coords_pad = 12
 
         # Set these in ALL subclasses
@@ -236,17 +236,17 @@ class RedGymEnv(Env):
 
     def step_forget_explore(self):
         self.seen_coords.update(
-            (k, max(0.25, v * self.step_forgetting_factor["coords"]))
+            (k, max(0.15, v * self.step_forgetting_factor["coords"]))
             for k, v in self.seen_coords.items()
         )
         # self.seen_global_coords *= self.step_forgetting_factor["coords"]
         self.seen_map_ids *= self.step_forgetting_factor["map_ids"]
         self.seen_npcs.update(
-            (k, max(0.25, v * self.step_forgetting_factor["npc"]))
+            (k, max(0.15, v * self.step_forgetting_factor["npc"]))
             for k, v in self.seen_npcs.items()
         )
         self.seen_hidden_objs.update(
-            (k, max(0.25, v * self.step_forgetting_factor["hidden_objs"]))
+            (k, max(0.15, v * self.step_forgetting_factor["hidden_objs"]))
             for k, v in self.seen_hidden_objs.items()
         )
 
@@ -292,7 +292,7 @@ class RedGymEnv(Env):
                                 player_y + y + 1,
                                 map_n,
                             ),
-                            0.25,
+                            0.15,
                         )
                     )
                 )
@@ -370,6 +370,10 @@ class RedGymEnv(Env):
             info = self.agent_stats(action)
 
         obs = self._get_obs()
+
+        obs = np.stack(
+            [obs, resize(self.get_global_map(), obs.shape[1:], anti_aliasing=False)], axis=0
+        )
 
         # create a map of all event flags set, with names where possible
         # if step_limit_reached:
