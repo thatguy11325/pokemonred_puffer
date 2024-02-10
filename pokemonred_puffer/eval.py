@@ -1,11 +1,7 @@
-import contextlib
 import os
-import uuid
-from pathlib import Path
 
 import cv2
 import matplotlib.colors as mcolors
-import mediapy as media
 import numpy as np
 import torch
 
