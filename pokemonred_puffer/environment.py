@@ -318,6 +318,9 @@ class RedGymEnv(Env):
 
     def _get_obs(self):
         screen = self.render()
+        screen = np.stack(
+            [screen, resize(self.get_global_map(), screen.shape[1:], anti_aliasing=False)], axis=0
+        )
 
         self.update_recent_screens(screen)
 
@@ -370,10 +373,6 @@ class RedGymEnv(Env):
             info = self.agent_stats(action)
 
         obs = self._get_obs()
-
-        obs = np.stack(
-            [obs, resize(self.get_global_map(), obs.shape[1:], anti_aliasing=False)], axis=0
-        )
 
         # create a map of all event flags set, with names where possible
         # if step_limit_reached:
