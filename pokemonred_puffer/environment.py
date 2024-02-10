@@ -604,11 +604,6 @@ class RedGymEnv(Env):
         self.total_reward = new_total
         return new_step
 
-    def check_if_done(self):
-        done = self.step_count >= self.max_steps - 1
-        # done = self.read_hp_fraction() == 0 # end game on loss
-        return done
-
     def read_m(self, addr):
         return self.pyboy.get_memory_value(addr)
 

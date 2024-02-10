@@ -12,14 +12,14 @@ classifiers = [
 	"Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = [
-    "./PufferLib",
     "einops",
     "opencv-python",
     "numpy",
     "pufferlib[cleanrl,pokemon_red]",
     "torch>=2.1",
     "torchvision",
-    "wandb"
+    "wandb",
+    "websockets",
 ]
 
 [tool.setuptools.packages.find]

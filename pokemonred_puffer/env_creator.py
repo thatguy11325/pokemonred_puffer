@@ -1,12 +1,9 @@
-import random
-from typing import Optional
-import uuid
-import gymnasium
 import functools
 
 import pufferlib.emulation
 
 from pokemonred_puffer.environment import RedGymEnv
+from pokemonred_puffer.stream_wrapper import StreamWrapper
 
 
 def env_creator(name="pokemon_red"):
@@ -15,7 +12,7 @@ def env_creator(name="pokemon_red"):
 
 def make(name, **kwargs):
     """Pokemon Red"""
-    env = RedGymEnv(kwargs)
+    env = StreamWrapper(RedGymEnv(kwargs), stream_metadata={"user": "thatguy"})
     print("reset complete)")
     # Looks like the following will optionally create the object for you
     # Or use theo ne you pass it. I'll just construct it here.
