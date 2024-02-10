@@ -369,8 +369,6 @@ class RedGymEnv(Env):
         if self.step_count % 1000 == 0:
             info = self.agent_stats(action)
 
-        step_limit_reached = self.check_if_done()
-
         obs = self._get_obs()
 
         # create a map of all event flags set, with names where possible
@@ -391,7 +389,7 @@ class RedGymEnv(Env):
 
         self.step_count += 1
 
-        return obs, new_reward, False, step_limit_reached, info
+        return obs, new_reward, False, False, info
 
     def find_neighboring_sign(self, sign_id, player_direction, player_x, player_y) -> bool:
         sign_y = self.pyboy.get_memory_value(0xD4B1 + (2 * sign_id))
