@@ -598,7 +598,7 @@ class CleanPuffeRL:
                 entropy_loss = entropy.mean()
                 entropy_losses.append(entropy_loss.item())
 
-                self.calculate_loss(mb_advantages, pg_loss, entropy_loss, v_loss)
+                self.calculate_loss(pg_loss, entropy_loss, v_loss)
 
             if config.target_kl is not None:
                 if approx_kl > config.target_kl:
