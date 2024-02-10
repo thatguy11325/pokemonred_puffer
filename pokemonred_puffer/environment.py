@@ -307,7 +307,7 @@ class RedGymEnv(Env):
         visited_mask = np.expand_dims(visited_mask, -1)
         """
 
-        game_pixels_render = np.stack([game_pixels_render, visited_mask], axis=-1)
+        game_pixels_render = np.concatenate([game_pixels_render, visited_mask], axis=-1)
 
         if reduce_res:
             # game_pixels_render = (
@@ -322,10 +322,11 @@ class RedGymEnv(Env):
             [
                 screen,
                 np.expand_dims(
-                    resize(self.get_explore_map(), screen.shape[1:], anti_aliasing=False), axis=0
+                    255 * resize(self.get_explore_map(), screen.shape[:-1], anti_aliasing=False),
+                    axis=-1,
                 ),
             ],
-            axis=0,
+            axis=-1,
         )
 
         self.update_recent_screens(screen)
