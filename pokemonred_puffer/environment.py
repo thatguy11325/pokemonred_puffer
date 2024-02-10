@@ -318,8 +318,14 @@ class RedGymEnv(Env):
 
     def _get_obs(self):
         screen = self.render()
-        screen = np.stack(
-            [screen, resize(self.get_explore_map(), screen.shape[1:], anti_aliasing=False)], axis=0
+        screen = np.concatenate(
+            [
+                screen,
+                np.expand_dims(
+                    resize(self.get_explore_map(), screen.shape[1:], anti_aliasing=False), axis=0
+                ),
+            ],
+            axis=0,
         )
 
         self.update_recent_screens(screen)
