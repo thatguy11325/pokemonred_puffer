@@ -66,3 +66,6 @@ class StreamWrapper(gym.Wrapper):
             self.websocket = await websockets.connect(self.ws_address)
         except:
             self.websocket = None
+
+    def reset(self, *args, **kwargs):
+        return self.env.reset(*args, **kwargs)

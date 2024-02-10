@@ -421,7 +421,7 @@ class CleanPuffeRL:
             with env_profiler:
                 self.pool.send(actions)
         
-        self.reward_buffer.append(self.r.cpu().numpy().sum())
+        self.reward_buffer.append(r.cpu().numpy().sum())
         # Probably should normalize the rewards before trying to take the variance...
         if len(self.reward_buffer) == self.reward_buffer.maxlen and np.var(self.reward_buffer) < 1e-6:
             self.reward_buffer.clear()
