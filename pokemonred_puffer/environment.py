@@ -330,7 +330,7 @@ class RedGymEnv(Env):
                 np.expand_dims(
                     255 * resize(self.explore_map, screen.shape[:-1], anti_aliasing=False),
                     axis=-1,
-                ),
+                ).astype(np.uint8),
             ],
             axis=-1,
         )
@@ -539,8 +539,8 @@ class RedGymEnv(Env):
                 "moves_obtained": int(sum(self.moves_obtained)),
                 "opponent_level": self.max_opponent_level,
             },
-                "reward": self.get_game_state_reward(),
-            "pokemon_exploration_map": self.explore_map
+            "reward": self.get_game_state_reward(),
+            "pokemon_exploration_map": self.explore_map,
         }
 
     def start_video(self):
