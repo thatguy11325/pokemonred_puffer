@@ -538,8 +538,8 @@ class RedGymEnv(Env):
                 "seen_pokemon": int(sum(self.seen_pokemon)),
                 "moves_obtained": int(sum(self.moves_obtained)),
                 "opponent_level": self.max_opponent_level,
+                "reward": self.get_game_state_reward(),
             },
-            "reward": self.get_game_state_reward(),
             "pokemon_exploration_map": self.explore_map
         }
 
