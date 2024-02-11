@@ -683,7 +683,7 @@ class RedGymEnv(Env):
             "badge": self.get_badges() * 5,
             "heal": self.total_healing_rew,
             "explore": sum(self.seen_coords.values())
-            * 0.001,  # np.sum(self.seen_global_coords) * 0.01,
+            * 0.005,  # np.sum(self.seen_global_coords) * 0.01,
             "explore_maps": self.reward_scale
             * self.explore_npc_weight
             * np.sum(self.seen_map_ids)
