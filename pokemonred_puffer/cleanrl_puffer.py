@@ -458,7 +458,8 @@ class CleanPuffeRL:
                 continue
             if "pokemon_exploration_map" in k:
                 # self.exploration_map_agg[env_id, :, :] = v
-                overlay = make_pokemon_red_overlay(self.exploration_map_agg)
+                # overlay = make_pokemon_red_overlay(self.exploration_map_agg)
+                overlay = make_pokemon_red_overlay(v)
                 if self.wandb is not None:
                     self.stats["Media/aggregate_exploration_map"] = self.wandb.Image(overlay)
             try:  # TODO: Better checks on log data types
