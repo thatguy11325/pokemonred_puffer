@@ -221,12 +221,13 @@ if __name__ == "__main__":
         "explore_npc_weight": 1,  # 2.5
         "frame_stacks": parsed_args.frame_stacks,
         "policy": parsed_args.policy,
-        "reset_forgetting_factor": {"npc": 0, "hidden_objs": 0, "coords": 0, "map_ids": 0},
+        "reset_forgetting_factor": {"npc": 0, "hidden_objs": 0, "coords": 0, "map_ids": 0, "explore": 0},
         "step_forgetting_factor": {
-            "npc": 0.998,
-            "hidden_objs": 0.998,
-            "coords": 0.998,
-            "map_ids": 0.998,
+            "npc": 0.999,
+            "hidden_objs": 0.999,
+            "coords": 0.999,
+            "map_ids": 0.999,
+            "explore": 0.999
         },
         "forgetting_frequency": 10,
         "reset_state": False,
