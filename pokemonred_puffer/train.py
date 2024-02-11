@@ -223,8 +223,8 @@ if __name__ == "__main__":
         "policy": parsed_args.policy,
         "reset_forgetting_factor": {"npc": 0, "hidden_objs": 0, "coords": 0, "map_ids": 0, "explore": 0},
         "step_forgetting_factor": {
-            "npc": 0.999,
-            "hidden_objs": 0.999,
+            "npc": 0.95,
+            "hidden_objs": 0.95,
             "coords": 0.999,
             "map_ids": 0.999,
             "explore": 0.999
