@@ -677,7 +677,7 @@ class RedGymEnv(Env):
             "explore_hidden_objs": self.reward_scale
             * sum(self.seen_hidden_objs.values())
             * 0.00015,
-            "level": self.get_levels_reward(),
+            "level": 0, # self.get_levels_reward(),
             # "opponent_level": self.max_opponent_level,
             # "death_reward": self.died_count,
             "badge": self.get_badges() * 5,
