@@ -154,6 +154,7 @@ class RedGymEnv(Env):
             self.seen_pokemon = np.zeros(152, dtype=np.uint8)
             self.caught_pokemon = np.zeros(152, dtype=np.uint8)
             self.moves_obtained = np.zeros(0xA5, dtype=np.uint8)
+            self.explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
             self.init_map_mem()
             self.init_npc_mem()
             self.init_hidden_obj_mem()
@@ -233,6 +234,7 @@ class RedGymEnv(Env):
             (k, v * self.reset_forgetting_factor["hidden_objs"])
             for k, v in self.seen_hidden_objs.items()
         )
+        self.explore_map *= 0
 
     def step_forget_explore(self):
         self.seen_coords.update(
@@ -248,6 +250,10 @@ class RedGymEnv(Env):
         self.seen_hidden_objs.update(
             (k, max(0.15, v * self.step_forgetting_factor["hidden_objs"]))
             for k, v in self.seen_hidden_objs.items()
+        )
+        self.explore_map *= self.step_forgetting_factor["explore"]
+        self.explore_map[self.explore_map > 0] = np.clip(
+            self.explore_map[self.explore_map > 0], 0.15, 1
         )
 
     def render(self, reduce_res=False):
@@ -322,7 +328,7 @@ class RedGymEnv(Env):
             [
                 screen,
                 np.expand_dims(
-                    255 * resize(self.get_explore_map(), screen.shape[:-1], anti_aliasing=False),
+                    255 * resize(self.explore_map, screen.shape[:-1], anti_aliasing=False),
                     axis=-1,
                 ),
             ],
@@ -533,7 +539,7 @@ class RedGymEnv(Env):
                 "moves_obtained": int(sum(self.moves_obtained)),
                 "opponent_level": self.max_opponent_level,
             },
-            "pokemon_exploration_map": self.get_explore_map(),  # self.seen_global_coords
+            "pokemon_exploration_map": self.explore_map
         }
 
     def start_video(self):
@@ -577,6 +583,7 @@ class RedGymEnv(Env):
     def update_seen_coords(self):
         x_pos, y_pos, map_n = self.get_game_coords()
         self.seen_coords[(x_pos, y_pos, map_n)] = 1
+        self.explore_map[local_to_global(y_pos, x_pos, map_n)] = 1
         # self.seen_global_coords[local_to_global(y_pos, x_pos, map_n)] = 1
         self.seen_map_ids[map_n] = 1
 
