@@ -16,7 +16,7 @@ from pyboy.utils import WindowEvent
 from pokemonred_puffer.global_map import GLOBAL_MAP_SHAPE, local_to_global
 
 EVENT_FLAGS_START = 0xD747
-EVENT_FLAGS_END = 0xD7F6  # 0xD761 # 0xD886 temporarily lower event flag range for obs input
+EVENTS_FLAGS_LENGTH = 320
 MUSEUM_TICKET = (0xD754, 0)
 PARTY_SIZE = 0xD163
 PARTY_LEVEL_ADDRS = [0xD18C, 0xD1B8, 0xD1E4, 0xD210, 0xD23C, 0xD268]
@@ -109,7 +109,7 @@ class RedGymEnv(Env):
                     "health": spaces.Box(low=0, high=1),
                     "level": spaces.Box(low=-1, high=1, shape=(self.enc_freqs,)),
                     "badges": spaces.MultiBinary(8),
-                    "events": spaces.MultiBinary((EVENT_FLAGS_END - EVENT_FLAGS_START) * 8),
+                    # "events": spaces.MultiBinary((EVENT_FLAGS_END - EVENT_FLAGS_START) * 8),
                     "map": spaces.Box(
                         low=0,
                         high=255,
@@ -177,7 +177,8 @@ class RedGymEnv(Env):
             self.reset_forget_explore()
 
         self.base_event_flags = sum(
-            self.bit_count(self.read_m(i)) for i in range(EVENT_FLAGS_START, EVENT_FLAGS_END)
+            self.bit_count(self.read_m(i))
+            for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
         )
 
         self.levels_satisfied = False
@@ -677,7 +678,7 @@ class RedGymEnv(Env):
             "explore_hidden_objs": self.reward_scale
             * sum(self.seen_hidden_objs.values())
             * 0.00015,
-            "level": 0, # self.get_levels_reward(),
+            "level": 0,  # self.get_levels_reward(),
             # "opponent_level": self.max_opponent_level,
             # "death_reward": self.died_count,
             "badge": self.get_badges() * 5,
