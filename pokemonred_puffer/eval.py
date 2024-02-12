@@ -19,7 +19,7 @@ def make_pokemon_red_overlay(counts: np.ndarray):
     # scaled = np.clip(counts, 0, 1000) / 1000.0
 
     # Convert counts to hue map
-    hsv = np.stack([scaled, nonzero, nonzero], axis=-1)
+    hsv = np.stack([2 * (1 - scaled) / 3, nonzero, nonzero], axis=-1)
 
     # Convert the HSV image to RGB
     overlay = 255 * mcolors.hsv_to_rgb(hsv)
