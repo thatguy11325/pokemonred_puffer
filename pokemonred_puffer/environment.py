@@ -633,7 +633,7 @@ class RedGymEnv(Env):
     def read_event_bits(self):
         return [
             int(bit)
-            for i in range(EVENT_FLAGS_START, EVENT_FLAGS_END)
+            for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
             for bit in f"{self.read_m(i):08b}"
         ]
 
@@ -657,7 +657,12 @@ class RedGymEnv(Env):
     def get_all_events_reward(self):
         # adds up all event flags, exclude museum ticket
         return max(
-            sum([self.bit_count(self.read_m(i)) for i in range(EVENT_FLAGS_START, EVENT_FLAGS_END)])
+            sum(
+                [
+                    self.bit_count(self.read_m(i))
+                    for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
+                ]
+            )
             - self.base_event_flags
             - int(self.read_bit(*MUSEUM_TICKET)),
             0,
