@@ -643,13 +643,11 @@ class RedGymEnv(Env):
             x for x in [self.read_m(addr) for addr in PARTY_LEVEL_ADDRS[:party_size]] if x > 0
         ]
         self.max_level_sum = max(self.max_level_sum, sum(party_levels))
-        """
         if self.max_level_sum < 30:
             return self.max_level_sum
         else:
             return 30 + (self.max_level_sum - 30) / 4
-        """
-        return 1.0 / (1 + 1000 * abs(max(party_levels) - self.max_opponent_level))
+        # return 1.0 / (1 + 1000 * abs(max(party_levels) - self.max_opponent_level))
 
     def get_badges(self):
         return self.bit_count(self.read_m(0xD356))
