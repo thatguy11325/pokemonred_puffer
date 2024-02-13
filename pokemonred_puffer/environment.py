@@ -280,29 +280,31 @@ class RedGymEnv(Env):
         # guess we want to attempt to map the pixels to player units or vice versa
         # Experimentally determined magic numbers below. Beware
         visited_mask = np.zeros_like(game_pixels_render)
-        for y in range(-72 // 16, 72 // 16):
-            for x in range(-80 // 16, 80 // 16):
-                # y-y1 = m (x-x1)
-                # map [(0,0),(1,1)] -> [(0,.5),(1,1)] (cause we dont wnat it to be fully black)
-                # y = 1/2 x + .5
-                # current location tiles - player_y*8, player_x*8
-                visited_mask[
-                    16 * y + 76 : 16 * y + 16 + 76,
-                    16 * x + 80 : 16 * x + 16 + 80,
-                    :,
-                ] = int(
-                    255
-                    * (
-                        self.seen_coords.get(
-                            (
-                                player_x + x + 1,
-                                player_y + y + 1,
-                                map_n,
-                            ),
-                            0.15,
+        # If not in battle, set the visited mask. There's no reason to process it when in battle
+        if self.read_m(0xD057) == 0:
+            for y in range(-72 // 16, 72 // 16):
+                for x in range(-80 // 16, 80 // 16):
+                    # y-y1 = m (x-x1)
+                    # map [(0,0),(1,1)] -> [(0,.5),(1,1)] (cause we dont wnat it to be fully black)
+                    # y = 1/2 x + .5
+                    # current location tiles - player_y*8, player_x*8
+                    visited_mask[
+                        16 * y + 76 : 16 * y + 16 + 76,
+                        16 * x + 80 : 16 * x + 16 + 80,
+                        :,
+                    ] = int(
+                        255
+                        * (
+                            self.seen_coords.get(
+                                (
+                                    player_x + x + 1,
+                                    player_y + y + 1,
+                                    map_n,
+                                ),
+                                0.15,
+                            )
                         )
                     )
-                )
         """
         gr, gc = local_to_global(player_y, player_x, map_n)
         visited_mask = (
@@ -364,9 +366,7 @@ class RedGymEnv(Env):
         if self.save_video and self.step_count == 0:
             self.start_video()
 
-        # counter intuitive but we short circuit on the step count
-        # to avoid a more expensive read_m of is in battle
-        if self.step_count % self.forgetting_frequency == 0 and self.read_m(0xD057) == 0:
+        if self.step_count % self.forgetting_frequency == 0:
             self.step_forget_explore()
 
         self.run_action_on_emulator(action)
@@ -643,10 +643,13 @@ class RedGymEnv(Env):
             x for x in [self.read_m(addr) for addr in PARTY_LEVEL_ADDRS[:party_size]] if x > 0
         ]
         self.max_level_sum = max(self.max_level_sum, sum(party_levels))
+        """
         if self.max_level_sum < 30:
             return self.max_level_sum
         else:
             return 30 + (self.max_level_sum - 30) / 4
+        """
+        return 1.0 / (1 + 1000 * abs(max(party_levels) - self.max_opponent_level))
 
     def get_badges(self):
         return self.bit_count(self.read_m(0xD356))
@@ -683,7 +686,7 @@ class RedGymEnv(Env):
             "explore_hidden_objs": self.reward_scale
             * sum(self.seen_hidden_objs.values())
             * 0.00015,
-            "level": 0,  # self.get_levels_reward(),
+            "level": self.get_levels_reward(),
             # "opponent_level": self.max_opponent_level,
             # "death_reward": self.died_count,
             "badge": self.get_badges() * 5,
@@ -699,10 +702,10 @@ class RedGymEnv(Env):
         return state_scores
 
     def update_max_op_level(self):
-        opp_base_level = 5
+        # opp_base_level = 5
         opponent_level = (
             max([self.read_m(a) for a in [0xD8C5, 0xD8F1, 0xD91D, 0xD949, 0xD975, 0xD9A1]])
-            - opp_base_level
+            # - opp_base_level
         )
         self.max_opponent_level = max(self.max_opponent_level, opponent_level)
         return self.max_opponent_level
