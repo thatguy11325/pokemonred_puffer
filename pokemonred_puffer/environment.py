@@ -673,7 +673,7 @@ class RedGymEnv(Env):
         # addresses from https://datacrystal.romhacking.net/wiki/Pok%C3%A9mon_Red/Blue:RAM_map
         # https://github.com/pret/pokered/blob/91dc3c9f9c8fd529bb6e8307b58b96efa0bec67e/constants/event_constants.asm
         state_scores = {
-            "event": self.update_max_event_rew(),
+            "event": 2 * self.update_max_event_rew(),
             "explore_npcs": self.reward_scale
             * self.explore_npc_weight
             * sum(self.seen_npcs.values())
