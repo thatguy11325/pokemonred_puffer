@@ -677,20 +677,20 @@ class RedGymEnv(Env):
             "explore_npcs": self.reward_scale
             * self.explore_npc_weight
             * sum(self.seen_npcs.values())
-            * 0.00015,
+            * 0.015,
             "seen_pokemon": self.reward_scale * sum(self.seen_pokemon) * 0.000010,
             "caught_pokemon": self.reward_scale * sum(self.caught_pokemon) * 0.000010,
             "moves_obtained": self.reward_scale * sum(self.moves_obtained) * 0.000010,
             "explore_hidden_objs": self.reward_scale
             * sum(self.seen_hidden_objs.values())
-            * 0.00015,
+            * 0.015,
             "level": self.get_levels_reward(),
             # "opponent_level": self.max_opponent_level,
             # "death_reward": self.died_count,
             "badge": self.get_badges() * 5,
             "heal": self.total_healing_rew,
             "explore": sum(self.seen_coords.values())
-            * 0.005,  # np.sum(self.seen_global_coords) * 0.01,
+            * 0.00005,  # np.sum(self.seen_global_coords) * 0.01,
             "explore_maps": self.reward_scale
             * self.explore_npc_weight
             * np.sum(self.seen_map_ids)
