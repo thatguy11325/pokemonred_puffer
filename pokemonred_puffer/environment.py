@@ -389,7 +389,8 @@ class RedGymEnv(Env):
 
         self.step_count += 1
 
-        return obs, new_reward, self.step_count > self.max_steps, False, info
+        # return obs, new_reward, self.step_count > self.max_steps, False, info
+        return obs, new_reward, False, False, info
 
     def find_neighboring_sign(self, sign_id, player_direction, player_x, player_y) -> bool:
         sign_y = self.pyboy.get_memory_value(0xD4B1 + (2 * sign_id))
