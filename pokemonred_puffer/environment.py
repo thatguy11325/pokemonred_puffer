@@ -205,6 +205,7 @@ class RedGymEnv(Env):
         self.total_reward = sum([val for _, val in self.progress_reward.items()])
 
         self.reset_count += 1
+        self.first = False
         return self._get_obs(), {}
 
     def init_map_mem(self):
