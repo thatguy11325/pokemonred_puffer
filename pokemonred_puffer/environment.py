@@ -171,6 +171,7 @@ class RedGymEnv(Env):
             for _ in range(seed):
                 self.pyboy.tick()
 
+            self.explore_map *= 0
             self.init_map_mem()
             self.init_npc_mem()
             self.init_hidden_obj_mem()
