@@ -43,13 +43,10 @@ class RedGymEnv(Env):
         self.explore_hidden_obj_weight = (
             1 if "explore_hidden_obj_weight" not in config else config["explore_hidden_obj_weight"]
         )
-        self.reward_scale = 1 if "reward_scale" not in config else config["reward_scale"]
         self.policy = config["policy"]
         self.instance_id = (
             str(uuid.uuid4())[:8] if "instance_id" not in config else config["instance_id"]
         )
-        self.reset_state = config["reset_state"]
-        self.reset_forgetting_factor = config["reset_forgetting_factor"]
         self.step_forgetting_factor = config["step_forgetting_factor"]
         self.forgetting_frequency = config["forgetting_frequency"]
         self.s_path.mkdir(exist_ok=True)
@@ -159,7 +156,7 @@ class RedGymEnv(Env):
             self.init_npc_mem()
             self.init_hidden_obj_mem()
 
-        if self.first or self.reset_state:
+        if self.first or random.uniform(0, 1) < 0.5:
             with open(self.init_state, "rb") as f:
                 self.pyboy.load_state(f)
             self.recent_screens.clear()
@@ -174,7 +171,9 @@ class RedGymEnv(Env):
             for _ in range(seed):
                 self.pyboy.tick()
 
-            self.reset_forget_explore()
+            self.init_map_mem()
+            self.init_npc_mem()
+            self.init_hidden_obj_mem()
 
         self.base_event_flags = sum(
             self.bit_count(self.read_m(i))
@@ -202,9 +201,7 @@ class RedGymEnv(Env):
 
         self.max_map_progress = 0
         self.progress_reward = self.get_game_state_reward()
-        self.total_reward = self.reward_scale * sum(
-            [val for _, val in self.progress_reward.items()]
-        )
+        self.total_reward = sum([val for _, val in self.progress_reward.items()])
 
         self.reset_count += 1
         return self._get_obs(), {}
@@ -221,21 +218,6 @@ class RedGymEnv(Env):
 
     def init_hidden_obj_mem(self):
         self.seen_hidden_objs = {}
-
-    def reset_forget_explore(self):
-        self.seen_coords.update(
-            (k, v * self.reset_forgetting_factor["coords"]) for k, v in self.seen_coords.items()
-        )
-        # self.seen_global_coords *= self.reset_forgetting_factor["coords"]
-        self.seen_map_ids *= self.reset_forgetting_factor["map_ids"]
-        self.seen_npcs.update(
-            (k, v * self.reset_forgetting_factor["npc"]) for k, v in self.seen_npcs.items()
-        )
-        self.seen_hidden_objs.update(
-            (k, v * self.reset_forgetting_factor["hidden_objs"])
-            for k, v in self.seen_hidden_objs.items()
-        )
-        self.explore_map *= 0
 
     def step_forget_explore(self):
         self.seen_coords.update(
@@ -406,7 +388,7 @@ class RedGymEnv(Env):
 
         self.step_count += 1
 
-        return obs, new_reward, False, False, info
+        return obs, new_reward, self.step_count > self.max_steps, False, info
 
     def find_neighboring_sign(self, sign_id, player_direction, player_x, player_y) -> bool:
         sign_y = self.pyboy.get_memory_value(0xD4B1 + (2 * sign_id))
