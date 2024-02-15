@@ -224,7 +224,7 @@ if __name__ == "__main__":
         "reset_forgetting_factor": {"npc": 0, "hidden_objs": 0, "coords": 0, "map_ids": 0, "explore": 0},
         "step_forgetting_factor": {
             "npc": 0.95,
-            "hidden_objs": 0.5,
+            "hidden_objs": 0.95,
             "coords": 0.9995,
             "map_ids": 0.995,
             "explore": 0.9995
