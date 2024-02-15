@@ -231,10 +231,10 @@ class RedGymEnv(Env):
             (k, max(0.15, v * self.step_forgetting_factor["npc"]))
             for k, v in self.seen_npcs.items()
         )
-        self.seen_hidden_objs.update(
-            (k, max(0.15, v * self.step_forgetting_factor["hidden_objs"]))
-            for k, v in self.seen_hidden_objs.items()
-        )
+        # self.seen_hidden_objs.update(
+        #     (k, max(0.15, v * self.step_forgetting_factor["hidden_objs"]))
+        #     for k, v in self.seen_hidden_objs.items()
+        # )
         self.explore_map *= self.step_forgetting_factor["explore"]
         self.explore_map[self.explore_map > 0] = np.clip(
             self.explore_map[self.explore_map > 0], 0.15, 1
@@ -668,7 +668,7 @@ class RedGymEnv(Env):
             # "death_reward": self.died_count,
             "badge": self.get_badges() * 5,
             "heal": self.total_healing_rew,
-            "explore": sum(self.seen_coords.values()) * 0.001,
+            "explore": sum(self.seen_coords.values()) * 0.01,
             "explore_maps": np.sum(self.seen_map_ids) * 0.001,
         }
 

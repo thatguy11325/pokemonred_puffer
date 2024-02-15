@@ -221,7 +221,7 @@ if __name__ == "__main__":
         "frame_stacks": parsed_args.frame_stacks,
         "policy": parsed_args.policy,
         "step_forgetting_factor": {
-            "npc": 0.95,
+            "npc": 0.995,
             "hidden_objs": 0.95,
             "coords": 0.9995,
             "map_ids": 0.995,
