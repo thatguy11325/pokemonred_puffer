@@ -156,7 +156,7 @@ class RedGymEnv(Env):
             self.init_npc_mem()
             self.init_hidden_obj_mem()
 
-        if self.first or random.uniform(0, 1) < 0.5:
+        if self.first: # or random.uniform(0, 1) < 0.5:
             with open(self.init_state, "rb") as f:
                 self.pyboy.load_state(f)
             self.recent_screens.clear()
@@ -669,7 +669,7 @@ class RedGymEnv(Env):
             "badge": self.get_badges() * 5,
             "heal": self.total_healing_rew,
             "explore": sum(self.seen_coords.values()) * 0.001,
-            "explore_maps": np.sum(self.seen_map_ids) * 0.01,
+            "explore_maps": np.sum(self.seen_map_ids) * 0.001,
         }
 
         return state_scores
