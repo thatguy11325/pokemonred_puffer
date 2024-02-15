@@ -667,9 +667,8 @@ class RedGymEnv(Env):
             # "death_reward": self.died_count,
             "badge": self.get_badges() * 5,
             "heal": self.total_healing_rew,
-            "explore": sum(self.seen_coords.values())
-            * 0.0001,  # np.sum(self.seen_global_coords) * 0.01,
-            "explore_maps": np.sum(self.seen_map_ids) * 0.001,
+            "explore": sum(self.seen_coords.values()) * 0.001,
+            "explore_maps": np.sum(self.seen_map_ids) * 0.01,
         }
 
         return state_scores
