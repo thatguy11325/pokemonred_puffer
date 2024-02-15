@@ -206,7 +206,7 @@ if __name__ == "__main__":
         "early_stop": False,
         "action_freq": 24,
         "init_state": parsed_args.state_path,
-        "max_steps": config.train["total_timesteps"],
+        "max_steps": 3_000_000,
         "print_rewards": True,
         "save_video": parsed_args.save_video,
         "fast_video": parsed_args.fast_video,
@@ -215,13 +215,11 @@ if __name__ == "__main__":
         "debug": False,
         "sim_frame_dist": 2_000_000.0,
         "use_screen_explore": True,
-        "reward_scale": 4,
         "extra_buttons": False,
         "explore_weight": 3,  # 2.5
         "explore_npc_weight": 1,  # 2.5
         "frame_stacks": parsed_args.frame_stacks,
         "policy": parsed_args.policy,
-        "reset_forgetting_factor": {"npc": 0, "hidden_objs": 0, "coords": 0, "map_ids": 0, "explore": 0},
         "step_forgetting_factor": {
             "npc": 0.95,
             "hidden_objs": 0.95,
@@ -230,7 +228,6 @@ if __name__ == "__main__":
             "explore": 0.9995
         },
         "forgetting_frequency": 10,
-        "reset_state": False,
     }
 
     env_module = importlib.import_module(f"pokemonred_puffer")
