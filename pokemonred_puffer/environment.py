@@ -367,7 +367,7 @@ class RedGymEnv(Env):
 
         info = {}
         # TODO: Make log frequency a configuration parameter
-        if self.step_count % 1000 == 0:
+        if self.step_count % 20000 == 0:
             info = self.agent_stats(action)
 
         obs = self._get_obs()
