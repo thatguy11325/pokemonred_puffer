@@ -658,7 +658,7 @@ class RedGymEnv(Env):
         # addresses from https://datacrystal.romhacking.net/wiki/Pok%C3%A9mon_Red/Blue:RAM_map
         # https://github.com/pret/pokered/blob/91dc3c9f9c8fd529bb6e8307b58b96efa0bec67e/constants/event_constants.asm
         state_scores = {
-            "event": 2 * self.update_max_event_rew(),
+            "event": 4 * self.update_max_event_rew(),
             "explore_npcs": sum(self.seen_npcs.values()) * 0.02,
             "seen_pokemon": sum(self.seen_pokemon) * 0.000010,
             "caught_pokemon": sum(self.caught_pokemon) * 0.000010,
@@ -670,7 +670,7 @@ class RedGymEnv(Env):
             "badge": self.get_badges() * 5,
             "heal": self.total_healing_rew,
             "explore": sum(self.seen_coords.values()) * 0.01,
-            "explore_maps": np.sum(self.seen_map_ids) * 0.001,
+            "explore_maps": np.sum(self.seen_map_ids) * 0.0001,
         }
 
         return state_scores
