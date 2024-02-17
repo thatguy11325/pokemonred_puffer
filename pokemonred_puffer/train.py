@@ -64,9 +64,9 @@ def make_policy(env, env_module, args):
     mode = "default"
     if args.train.device == "cuda":
         mode = "reduce-overhead"
-    policy = policy.to(args.train.device, non_blocking=True)
-    policy.get_value = torch.compile(policy.get_value, mode=mode)
-    policy.get_action_and_value = torch.compile(policy.get_action_and_value, mode=mode)
+        policy = policy.to(args.train.device, non_blocking=True)
+        policy.get_value = torch.compile(policy.get_value, mode=mode)
+        policy.get_action_and_value = torch.compile(policy.get_action_and_value, mode=mode)
     return policy
 
 
@@ -193,6 +193,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--sess-id", type=str, default=str(uuid.uuid4())[:8])
     parser.add_argument("--perfect-ivs", action="store_true", default=False, help="Enable perfect IVs")
+    parser.add_argument("--stream-wrapper", action="store_true", default=False, help="Enable stream wrapper")
 
     clean_parser = argparse.ArgumentParser(parents=[parser])
     args = parser.parse_known_args()[0].__dict__
@@ -229,7 +230,8 @@ if __name__ == "__main__":
             "explore": 0.9995
         },
         "forgetting_frequency": 10,
-        "perfect_ivs": parsed_args.perfect_ivs
+        "perfect_ivs": parsed_args.perfect_ivs,
+        "stream_wrapper": parsed_args.stream_wrapper
     }
 
     env_module = importlib.import_module(f"pokemonred_puffer")

@@ -1,7 +1,7 @@
 train:
   seed: 1
   torch_deterministic: True
-  device: mps
+  device: cpu
   total_timesteps: 100_000_000
   learning_rate: 2.5e-4
   num_envs: 6
@@ -28,10 +28,11 @@ train:
   checkpoint_interval: 200
   cpu_offload: True
   pool_kernel: [0]
-  batch_size: 1024 # 32768
-  batch_rows: 32 # 128
-  bptt_horizon: 16 #8
+  batch_size: 32768
+  batch_rows: 128
+  bptt_horizon: 8
   vf_clip_coef: 0.1
+  compile: False
 
 sweep:
   method: random
@@ -61,15 +62,15 @@ sweep:
 pokemon_red:
   package: pokemon_red
   train:
-    total_timesteps: 100_000_000
+    total_timesteps: 100_000_000_000
     num_envs: 1
     envs_per_worker: 1
-    envpool_batch_size: 1 # 16 # 32
+    envs_per_batch: 1
     update_epochs: 3 # epoch sps 3, 4==no change; 8==1500; 16==1000
     gamma: 0.998
-    batch_size: 1024 # 32768
-    batch_rows: 32 # 128
-    bptt_horizon: 16 #8
+    batch_size:  32768
+    batch_rows: 128
+    compile: False
 
 pokemon-red:
   package: pokemon_red
