@@ -22,6 +22,7 @@ PARTY_SIZE = 0xD163
 PARTY_LEVEL_ADDRS = [0xD18C, 0xD1B8, 0xD1E4, 0xD210, 0xD23C, 0xD268]
 
 
+
 # TODO: Make global map usage a configuration parameter
 class RedGymEnv(Env):
     def __init__(self, config=None):
@@ -49,6 +50,7 @@ class RedGymEnv(Env):
         )
         self.step_forgetting_factor = config["step_forgetting_factor"]
         self.forgetting_frequency = config["forgetting_frequency"]
+        self.perfect_ivs = config["perfect_ivs"]
         self.s_path.mkdir(exist_ok=True)
         self.full_frame_writer = None
         self.model_frame_writer = None
@@ -346,6 +348,12 @@ class RedGymEnv(Env):
         else:
             return np.array(self.recent_screens).reshape(self.output_shape)
 
+    def set_perfect_iv_dvs(self):
+        party_size = self.read_m(PARTY_SIZE)
+        for i in [0xd16b, 0xd197, 0xd1c3, 0xd1ef, 0xd21b, 0xd247][:party_size]:
+            for m in range(12): # Number of offsets for IV/DV
+                self.pyboy.set_memory_value(i + 17 + m, 0xFF)
+
     def step(self, action):
         if self.save_video and self.step_count == 0:
             self.start_video()
@@ -364,6 +372,8 @@ class RedGymEnv(Env):
         new_reward = self.update_reward()
         self.last_health = self.read_hp_fraction()
         self.update_map_progress()
+        if self.perfect_ivs:
+            self.set_perfect_iv_dvs()
 
         info = {}
         # TODO: Make log frequency a configuration parameter

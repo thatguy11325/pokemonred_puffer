@@ -192,6 +192,7 @@ if __name__ == "__main__":
         default="CnnLstmPolicy",
     )
     parser.add_argument("--sess-id", type=str, default=str(uuid.uuid4())[:8])
+    parser.add_argument("--perfect-ivs", action="store_true", default=False, help="Enable perfect IVs")
 
     clean_parser = argparse.ArgumentParser(parents=[parser])
     args = parser.parse_known_args()[0].__dict__
@@ -228,6 +229,7 @@ if __name__ == "__main__":
             "explore": 0.9995
         },
         "forgetting_frequency": 10,
+        "perfect_ivs": parsed_args.perfect_ivs
     }
 
     env_module = importlib.import_module(f"pokemonred_puffer")
