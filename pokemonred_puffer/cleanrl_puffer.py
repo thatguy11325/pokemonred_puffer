@@ -212,7 +212,6 @@ class CleanPuffeRL:
                 envs_per_worker=config.envs_per_worker,
                 envs_per_batch=config.envs_per_batch,
                 env_pool=config.env_pool,
-                mask_agents=True
             )
 
         obs_shape = self.pool.single_observation_space.shape
