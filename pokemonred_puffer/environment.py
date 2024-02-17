@@ -280,7 +280,10 @@ class RedGymEnv(Env):
         # guess we want to attempt to map the pixels to player units or vice versa
         # Experimentally determined magic numbers below. Beware
         visited_mask = np.zeros_like(game_pixels_render)
-        cut_mask = np.zeros_like(game_pixels_render)
+        if self.taught_cut:
+            cut_mask = np.zeros_like(game_pixels_render)
+        else:
+            cut_mask = np.random.randint(0, 255, game_pixels_render.shape, dtype=np.uint8)
         # If not in battle, set the visited mask. There's no reason to process it when in battle
         if self.read_m(0xD057) == 0:
             for y in range(-72 // 16, 72 // 16):
