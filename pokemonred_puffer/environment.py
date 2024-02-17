@@ -605,6 +605,7 @@ class RedGymEnv(Env):
                 "cut_coords": sum(self.cut_coords.values()),
             },
             "reward": self.get_game_state_reward(),
+            "reward/reward_sum": sum(self.get_game_state_reward().values()),
             "pokemon_exploration_map": self.explore_map,
         }
 
