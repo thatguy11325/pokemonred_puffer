@@ -431,7 +431,7 @@ class CleanPuffeRL:
             self.wandb.log({"reward/reward_var": reward_var})
         if (
             len(self.reward_buffer) == self.reward_buffer.maxlen
-            and reward_var < 1e-6
+            and reward_var < 1e-3
         ):
             self.reward_buffer.clear()
             # reset lr update if the reward starts stalling
