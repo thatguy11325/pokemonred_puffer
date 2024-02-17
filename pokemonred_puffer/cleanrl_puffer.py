@@ -413,7 +413,6 @@ class CleanPuffeRL:
                 self.dones_ary[ptr:end] = d.cpu().numpy()[indices]
                 self.sort_keys.extend([(env_id[i], step) for i in indices])
 
-
                 # Update pointer
                 ptr += len(indices)
 
@@ -424,10 +423,15 @@ class CleanPuffeRL:
 
             with env_profiler:
                 self.pool.send(actions)
-        
+
         self.reward_buffer.append(r.cpu().numpy().sum())
         # Probably should normalize the rewards before trying to take the variance...
-        if len(self.reward_buffer) == self.reward_buffer.maxlen and np.var(self.reward_buffer) < 1e-6:
+        if self.wandb is not None:
+            self.wandb.log({"reward/reward_var": np.var(self.reward_buffer)})
+        if (
+            len(self.reward_buffer) == self.reward_buffer.maxlen
+            and np.var(self.reward_buffer) < 1e-6
+        ):
             self.reward_buffer.clear()
             # reset lr update if the reward starts stalling
             self.lr_update = 1.0
