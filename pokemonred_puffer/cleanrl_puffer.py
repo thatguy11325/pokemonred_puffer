@@ -426,11 +426,12 @@ class CleanPuffeRL:
 
         self.reward_buffer.append(r.cpu().numpy().sum())
         # Probably should normalize the rewards before trying to take the variance...
+        reward_var = np.var(self.reward_buffer)
         if self.wandb is not None:
-            self.wandb.log({"reward/reward_var": np.var(self.reward_buffer)})
+            self.wandb.log({"reward/reward_var": reward_var})
         if (
             len(self.reward_buffer) == self.reward_buffer.maxlen
-            and np.var(self.reward_buffer) < 1e-6
+            and reward_var < 1e-6
         ):
             self.reward_buffer.clear()
             # reset lr update if the reward starts stalling
