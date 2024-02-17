@@ -21,6 +21,13 @@ MUSEUM_TICKET = (0xD754, 0)
 PARTY_SIZE = 0xD163
 PARTY_LEVEL_ADDRS = [0xD18C, 0xD1B8, 0xD1E4, 0xD210, 0xD23C, 0xD268]
 
+CUT_SEQ = [
+    deque([(0x3D, 1, 1, 0, 1, 1), (0x3D, 255, 1, 0, 1, 1), (0x3D, 1, 1, 0, 1, 1)]),
+    deque([(0x50, 1, 1, 0, 1, 1), (0x50, 255, 1, 0, 1, 1), (0x50, 1, 1, 0, 1, 1)]),
+]
+
+CUT_GRASS_SEQ = deque([(0x52, 255, 1, 0, 1, 1), (0x52, 255, 1, 0, 1, 1), (0x52, 1, 1, 0, 1, 1)])
+CUT_FAIL_SEQ = deque([(-1, 255, 0, 0, 4, 1), (-1, 255, 0, 0, 1, 1), (-1, 255, 0, 0, 1, 1)])
 
 
 # TODO: Make global map usage a configuration parameter
@@ -93,7 +100,7 @@ class RedGymEnv(Env):
 
         # self.output_shape = (72, 80, self.frame_stacks)
         # self.output_shape = (144, 160, self.frame_stacks)
-        self.output_shape = (144, 160, self.frame_stacks * 3)
+        self.output_shape = (144, 160, self.frame_stacks * 4)
         self.coords_pad = 12
 
         # Set these in ALL subclasses
@@ -157,8 +164,9 @@ class RedGymEnv(Env):
             self.init_map_mem()
             self.init_npc_mem()
             self.init_hidden_obj_mem()
+            self.init_cut_mem()
 
-        if self.first: # or random.uniform(0, 1) < 0.5:
+        if self.first:  # or random.uniform(0, 1) < 0.5:
             with open(self.init_state, "rb") as f:
                 self.pyboy.load_state(f)
             self.recent_screens.clear()
@@ -177,6 +185,7 @@ class RedGymEnv(Env):
             self.init_map_mem()
             self.init_npc_mem()
             self.init_hidden_obj_mem()
+            self.init_cut_mem()
 
         self.base_event_flags = sum(
             self.bit_count(self.read_m(i))
@@ -223,6 +232,10 @@ class RedGymEnv(Env):
     def init_hidden_obj_mem(self):
         self.seen_hidden_objs = {}
 
+    def init_cut_mem(self):
+        self.cut_coords = {}
+        self.cut_state = deque(maxlen=3)
+
     def step_forget_explore(self):
         self.seen_coords.update(
             (k, max(0.15, v * self.step_forgetting_factor["coords"]))
@@ -266,6 +279,7 @@ class RedGymEnv(Env):
         # guess we want to attempt to map the pixels to player units or vice versa
         # Experimentally determined magic numbers below. Beware
         visited_mask = np.zeros_like(game_pixels_render)
+        cut_mask = np.zeros_like(game_pixels_render)
         # If not in battle, set the visited mask. There's no reason to process it when in battle
         if self.read_m(0xD057) == 0:
             for y in range(-72 // 16, 72 // 16):
@@ -291,6 +305,23 @@ class RedGymEnv(Env):
                             )
                         )
                     )
+                    cut_mask[
+                        16 * y + 76 : 16 * y + 16 + 76,
+                        16 * x + 80 : 16 * x + 16 + 80,
+                        :,
+                    ] = int(
+                        255
+                        * (
+                            self.cut_coords.get(
+                                (
+                                    player_x + x + 1,
+                                    player_y + y + 1,
+                                    map_n,
+                                ),
+                                0,
+                            )
+                        )
+                    )
         """
         gr, gc = local_to_global(player_y, player_x, map_n)
         visited_mask = (
@@ -302,7 +333,7 @@ class RedGymEnv(Env):
         visited_mask = np.expand_dims(visited_mask, -1)
         """
 
-        game_pixels_render = np.concatenate([game_pixels_render, visited_mask], axis=-1)
+        game_pixels_render = np.concatenate([game_pixels_render, visited_mask, cut_mask], axis=-1)
 
         if reduce_res:
             # game_pixels_render = (
@@ -350,9 +381,17 @@ class RedGymEnv(Env):
 
     def set_perfect_iv_dvs(self):
         party_size = self.read_m(PARTY_SIZE)
-        for i in [0xd16b, 0xd197, 0xd1c3, 0xd1ef, 0xd21b, 0xd247][:party_size]:
-            for m in range(12): # Number of offsets for IV/DV
+        for i in [0xD16B, 0xD197, 0xD1C3, 0xD1EF, 0xD21B, 0xD247][:party_size]:
+            for m in range(12):  # Number of offsets for IV/DV
                 self.pyboy.set_memory_value(i + 17 + m, 0xFF)
+
+    def check_if_party_has_cut(self) -> bool:
+        party_size = self.read_m(PARTY_SIZE)
+        for i in [0xD16B, 0xD197, 0xD1C3, 0xD1EF, 0xD21B, 0xD247][:party_size]:
+            for m in range(4):  # Number of offsets for IV/DV
+                if self.pyboy.get_memory_value(i + 8 + m) == 15:
+                    return True
+        return False
 
     def step(self, action):
         if self.save_video and self.step_count == 0:
@@ -456,6 +495,26 @@ class RedGymEnv(Env):
                 self.pyboy._rendering(True)
             self.pyboy.tick()
 
+        # Cut check
+        # 0xCFC6 - wTileInFrontOfPlayer
+        # 0xCFCB - wUpdateSpritesEnabled
+        self.cut_state.append(
+            (
+                self.pyboy.get_memory_value(0xCFC6),
+                self.pyboy.get_memory_value(0xCFCB),
+                self.pyboy.get_memory_value(0xCD6A),
+                self.pyboy.get_memory_value(0xD367),
+                self.pyboy.get_memory_value(0xD125),
+                self.pyboy.get_memory_value(0xCD3D),
+            )
+        )
+        if self.cut_state in CUT_SEQ:
+            self.cut_coords[self.get_game_coords()] = 1
+        elif self.cut_state == CUT_GRASS_SEQ:
+            self.cut_coords[self.get_game_coords()] = 0.3
+        elif deque([(-1, *elem[1:]) for elem in self.cut_state]) == CUT_FAIL_SEQ:
+            self.cut_coords[self.get_game_coords()] = 0.005
+
         # check if the font is loaded
         if self.pyboy.get_memory_value(0xCFC4):
             # check if we are talking to a hidden object:
@@ -540,6 +599,10 @@ class RedGymEnv(Env):
                 "met_bill_2": int(self.read_bit(0xD7F2, 5)),
                 "bill_said_use_cell_separator": int(self.read_bit(0xD7F2, 6)),
                 "left_bills_house_after_helping": int(self.read_bit(0xD7F2, 7)),
+                "got_hm01": int(self.read_bit(0xD803, 0)),
+                "rubbed_captains_back": int(self.read_bit(0xD803, 1)),
+                "taught_cut": int(self.check_if_party_has_cut()),
+                "cut_coords": sum(self.cut_coords.values()),
             },
             "reward": self.get_game_state_reward(),
             "pokemon_exploration_map": self.explore_map,
@@ -687,6 +750,8 @@ class RedGymEnv(Env):
             "heal": self.total_healing_rew,
             "explore": sum(self.seen_coords.values()) * 0.01,
             "explore_maps": np.sum(self.seen_map_ids) * 0.0001,
+            "taught_cut": 4 * int(self.check_if_party_has_cut()),
+            "cut_coords": sum(self.cut_coords.values()) * 0.001,
         }
 
         return state_scores

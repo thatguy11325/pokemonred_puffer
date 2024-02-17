@@ -12,7 +12,9 @@ def env_creator(name="pokemon_red"):
 
 def make(name, **kwargs):
     """Pokemon Red"""
-    env = StreamWrapper(RedGymEnv(kwargs), stream_metadata={"user": "thatguy"})
+    env = RedGymEnv(kwargs)
+    if kwargs.get("stream_wrapper", False):
+        env = StreamWrapper(env, stream_metadata={"user": "thatguy"})
     # Looks like the following will optionally create the object for you
     # Or use theo ne you pass it. I'll just construct it here.
     return pufferlib.emulation.GymnasiumPufferEnv(
