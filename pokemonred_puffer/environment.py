@@ -187,6 +187,7 @@ class RedGymEnv(Env):
             self.init_hidden_obj_mem()
             self.init_cut_mem()
 
+        self.taught_cut = self.check_if_party_has_cut()
         self.base_event_flags = sum(
             self.bit_count(self.read_m(i))
             for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
@@ -305,23 +306,24 @@ class RedGymEnv(Env):
                             )
                         )
                     )
-                    cut_mask[
-                        16 * y + 76 : 16 * y + 16 + 76,
-                        16 * x + 80 : 16 * x + 16 + 80,
-                        :,
-                    ] = int(
-                        255
-                        * (
-                            self.cut_coords.get(
-                                (
-                                    player_x + x + 1,
-                                    player_y + y + 1,
-                                    map_n,
-                                ),
-                                0,
+                    if self.taught_cut:
+                        cut_mask[
+                            16 * y + 76 : 16 * y + 16 + 76,
+                            16 * x + 80 : 16 * x + 16 + 80,
+                            :,
+                        ] = int(
+                            255
+                            * (
+                                self.cut_coords.get(
+                                    (
+                                        player_x + x + 1,
+                                        player_y + y + 1,
+                                        map_n,
+                                    ),
+                                    0,
+                                )
                             )
                         )
-                    )
         """
         gr, gc = local_to_global(player_y, player_x, map_n)
         visited_mask = (
@@ -413,6 +415,7 @@ class RedGymEnv(Env):
         self.update_map_progress()
         if self.perfect_ivs:
             self.set_perfect_iv_dvs()
+        self.taught_cut = self.check_if_party_has_cut()
 
         info = {}
         # TODO: Make log frequency a configuration parameter
@@ -498,22 +501,23 @@ class RedGymEnv(Env):
         # Cut check
         # 0xCFC6 - wTileInFrontOfPlayer
         # 0xCFCB - wUpdateSpritesEnabled
-        self.cut_state.append(
-            (
-                self.pyboy.get_memory_value(0xCFC6),
-                self.pyboy.get_memory_value(0xCFCB),
-                self.pyboy.get_memory_value(0xCD6A),
-                self.pyboy.get_memory_value(0xD367),
-                self.pyboy.get_memory_value(0xD125),
-                self.pyboy.get_memory_value(0xCD3D),
+        if self.taught_cut:
+            self.cut_state.append(
+                (
+                    self.pyboy.get_memory_value(0xCFC6),
+                    self.pyboy.get_memory_value(0xCFCB),
+                    self.pyboy.get_memory_value(0xCD6A),
+                    self.pyboy.get_memory_value(0xD367),
+                    self.pyboy.get_memory_value(0xD125),
+                    self.pyboy.get_memory_value(0xCD3D),
+                )
             )
-        )
-        if self.cut_state in CUT_SEQ:
-            self.cut_coords[self.get_game_coords()] = 1
-        elif self.cut_state == CUT_GRASS_SEQ:
-            self.cut_coords[self.get_game_coords()] = 0.3
-        elif deque([(-1, *elem[1:]) for elem in self.cut_state]) == CUT_FAIL_SEQ:
-            self.cut_coords[self.get_game_coords()] = 0.005
+            if self.cut_state in CUT_SEQ:
+                self.cut_coords[self.get_game_coords()] = 1
+            elif self.cut_state == CUT_GRASS_SEQ:
+                self.cut_coords[self.get_game_coords()] = 0.3
+            elif deque([(-1, *elem[1:]) for elem in self.cut_state]) == CUT_FAIL_SEQ:
+                self.cut_coords[self.get_game_coords()] = 0.005
 
         # check if the font is loaded
         if self.pyboy.get_memory_value(0xCFC4):
