@@ -311,8 +311,9 @@ class CleanPuffeRL:
         self.losses = Losses()
         self.performance = Performance()
 
-        self.reward_buffer = deque(maxlen=100)
+        self.reward_buffer = deque(maxlen=10_000)
         self.exploration_map_agg = np.zeros((config.num_envs, *GLOBAL_MAP_SHAPE), dtype=np.float32)
+        self.taught_cut = False
 
     @pufferlib.utils.profile
     def evaluate(self):
@@ -434,7 +435,11 @@ class CleanPuffeRL:
                     "reward/reward_buffer_len": len(self.reward_buffer),
                 }
             )
-        if len(self.reward_buffer) == self.reward_buffer.maxlen and reward_var < 1e-4:
+        if (
+            self.taught_cut
+            and len(self.reward_buffer) == self.reward_buffer.maxlen
+            and reward_var < 2.5e-3
+        ):
             self.reward_buffer.clear()
             # reset lr update if the reward starts stalling
             self.lr_update = 1.0
@@ -473,6 +478,8 @@ class CleanPuffeRL:
             try:  # TODO: Better checks on log data types
                 self.stats[k] = np.mean(v)
                 self.max_stats[k] = np.max(v)
+                if self.max_stats["got_hm01"] > 0:
+                    self.taught_cut = True
             except:
                 continue
 
