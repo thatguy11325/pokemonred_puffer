@@ -311,7 +311,7 @@ class CleanPuffeRL:
         self.losses = Losses()
         self.performance = Performance()
 
-        self.reward_buffer = deque(maxlen=10_000)
+        self.reward_buffer = deque(maxlen=1_000)
         self.exploration_map_agg = np.zeros((config.num_envs, *GLOBAL_MAP_SHAPE), dtype=np.float32)
         self.taught_cut = False
 
@@ -425,7 +425,7 @@ class CleanPuffeRL:
             with env_profiler:
                 self.pool.send(actions)
 
-        self.reward_buffer.append(r.cpu().numpy().sum())
+        self.reward_buffer.append(r.cpu().sum().numpy())
         # Probably should normalize the rewards before trying to take the variance...
         reward_var = np.var(self.reward_buffer)
         if self.wandb is not None:
