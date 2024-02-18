@@ -434,7 +434,7 @@ class CleanPuffeRL:
                     "reward/reward_buffer_len": len(self.reward_buffer),
                 }
             )
-        if len(self.reward_buffer) == self.reward_buffer.maxlen and reward_var < 1e-3:
+        if len(self.reward_buffer) == self.reward_buffer.maxlen and reward_var < 3e-3:
             self.reward_buffer.clear()
             # reset lr update if the reward starts stalling
             self.lr_update = 1.0

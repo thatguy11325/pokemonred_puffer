@@ -100,7 +100,7 @@ class RedGymEnv(Env):
 
         # self.output_shape = (72, 80, self.frame_stacks)
         # self.output_shape = (144, 160, self.frame_stacks)
-        self.output_shape = (144, 160, self.frame_stacks * 4)
+        self.output_shape = (144, 160, self.frame_stacks * 3)
         self.coords_pad = 12
 
         # Set these in ALL subclasses
@@ -280,10 +280,12 @@ class RedGymEnv(Env):
         # guess we want to attempt to map the pixels to player units or vice versa
         # Experimentally determined magic numbers below. Beware
         visited_mask = np.zeros_like(game_pixels_render)
+        """
         if self.taught_cut:
             cut_mask = np.zeros_like(game_pixels_render)
         else:
             cut_mask = np.random.randint(0, 255, game_pixels_render.shape, dtype=np.uint8)
+        """
         # If not in battle, set the visited mask. There's no reason to process it when in battle
         if self.read_m(0xD057) == 0:
             for y in range(-72 // 16, 72 // 16):
@@ -309,6 +311,7 @@ class RedGymEnv(Env):
                             )
                         )
                     )
+                    """
                     if self.taught_cut:
                         cut_mask[
                             16 * y + 76 : 16 * y + 16 + 76,
@@ -327,6 +330,7 @@ class RedGymEnv(Env):
                                 )
                             )
                         )
+                        """
         """
         gr, gc = local_to_global(player_y, player_x, map_n)
         visited_mask = (
@@ -338,7 +342,8 @@ class RedGymEnv(Env):
         visited_mask = np.expand_dims(visited_mask, -1)
         """
 
-        game_pixels_render = np.concatenate([game_pixels_render, visited_mask, cut_mask], axis=-1)
+        # game_pixels_render = np.concatenate([game_pixels_render, visited_mask, cut_mask], axis=-1)
+        game_pixels_render = np.concatenate([game_pixels_render, visited_mask], axis=-1)
 
         if reduce_res:
             # game_pixels_render = (
