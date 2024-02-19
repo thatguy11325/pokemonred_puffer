@@ -22,8 +22,8 @@ PARTY_SIZE = 0xD163
 PARTY_LEVEL_ADDRS = [0xD18C, 0xD1B8, 0xD1E4, 0xD210, 0xD23C, 0xD268]
 
 CUT_SEQ = [
-    deque([(0x3D, 1, 1, 0, 1, 1), (0x3D, 255, 1, 0, 1, 1), (0x3D, 1, 1, 0, 1, 1)]),
-    deque([(0x50, 1, 1, 0, 1, 1), (0x50, 255, 1, 0, 1, 1), (0x50, 1, 1, 0, 1, 1)]),
+    ((0x3D, 1, 1, 0, 4, 1), (0x3D, 1, 1, 0, 1, 1)),
+    ((0x50, 1, 1, 0, 4, 1), (0x50, 1, 1, 0, 1, 1)),
 ]
 
 CUT_GRASS_SEQ = deque([(0x52, 255, 1, 0, 1, 1), (0x52, 255, 1, 0, 1, 1), (0x52, 1, 1, 0, 1, 1)])
@@ -520,7 +520,7 @@ class RedGymEnv(Env):
                     self.pyboy.get_memory_value(0xCD3D),
                 )
             )
-            if self.cut_state in CUT_SEQ:
+            if tuple(list(self.cut_state)[1:]) in CUT_SEQ:
                 self.cut_coords[self.get_game_coords()] = 1
             elif self.cut_state == CUT_GRASS_SEQ:
                 self.cut_coords[self.get_game_coords()] = 0.3
