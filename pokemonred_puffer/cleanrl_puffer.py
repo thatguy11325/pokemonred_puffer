@@ -212,7 +212,7 @@ class CleanPuffeRL:
                 envs_per_worker=config.envs_per_worker,
                 envs_per_batch=config.envs_per_batch,
                 env_pool=config.env_pool,
-                # mask_agents=True
+                # mask_agents=True,
             )
 
         obs_shape = self.pool.single_observation_space.shape
@@ -315,6 +315,8 @@ class CleanPuffeRL:
         self.exploration_map_agg = np.zeros((config.num_envs, *GLOBAL_MAP_SHAPE), dtype=np.float32)
         self.taught_cut = False
 
+        self.infos = {}
+
     @pufferlib.utils.profile
     def evaluate(self):
         config = self.config
@@ -344,7 +346,6 @@ class CleanPuffeRL:
         misc_profiler = pufferlib.utils.Profiler()
 
         ptr = step = padded_steps_collected = agent_steps_collected = 0
-        infos = defaultdict(lambda: defaultdict(list))
         while True:
             step += 1
             if ptr == config.batch_size + 1:
@@ -420,8 +421,12 @@ class CleanPuffeRL:
                 for policy_name, policy_i in i.items():
                     for agent_i in policy_i:
                         for name, dat in unroll_nested_dict(agent_i):
-                            infos[policy_name][name].append(dat)
-
+                            if policy_name not in self.infos:
+                                self.infos[policy_name] = {}
+                            if name not in self.infos[policy_name]:
+                                self.infos[policy_name][name] = [0] * self.config.num_envs
+                            self.infos[policy_name][name][agent_i["env_id"]] = dat
+                            # infos[policy_name][name].append(dat)
             with env_profiler:
                 self.pool.send(actions)
 
@@ -446,7 +451,8 @@ class CleanPuffeRL:
 
         eval_profiler.stop()
 
-        self.global_step += padded_steps_collected
+        # self.global_step += padded_steps_collected
+        self.global_step = min(self.infos["learner"]["stats/step"])
         self.reward = torch.mean(self.rewards).float().item()
         self.SPS = int(padded_steps_collected / eval_profiler.elapsed)
 
