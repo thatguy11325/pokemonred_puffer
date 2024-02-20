@@ -471,7 +471,7 @@ class CleanPuffeRL:
 
         self.stats = {}
         self.max_stats = {}
-        for k, v in infos["learner"].items():
+        for k, v in self.infos["learner"].items():
             if "Task_eval_fn" in k:
                 # Temporary hack for NMMO competition
                 continue
