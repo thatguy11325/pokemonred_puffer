@@ -424,7 +424,9 @@ class CleanPuffeRL:
                             if policy_name not in self.infos:
                                 self.infos[policy_name] = {}
                             if name not in self.infos[policy_name]:
-                                self.infos[policy_name][name] = [None] * self.config.num_envs
+                                self.infos[policy_name][name] = [
+                                    np.zeros_like(dat)
+                                ] * self.config.num_envs
                             self.infos[policy_name][name][agent_i["env_id"]] = dat
                             # infos[policy_name][name].append(dat)
             with env_profiler:
@@ -452,11 +454,7 @@ class CleanPuffeRL:
         eval_profiler.stop()
 
         # self.global_step += padded_steps_collected
-        self.global_step = (
-            0
-            if any(x is None for x in self.infos["learner"]["stats/step"])
-            else min(self.infos["learner"]["stats/step"])
-        )
+        self.global_step = np.mean(self.infos["learner"]["stats/step"])
         self.reward = torch.mean(self.rewards).float().item()
         self.SPS = int(padded_steps_collected / eval_profiler.elapsed)
 
@@ -476,23 +474,22 @@ class CleanPuffeRL:
         self.stats = {}
         self.max_stats = {}
         for k, v in self.infos["learner"].items():
-            if all(x is not None for x in v):
-                if "Task_eval_fn" in k:
-                    # Temporary hack for NMMO competition
-                    continue
-                if "pokemon_exploration_map" in k:
-                    # self.exploration_map_agg[env_id, :, :] = v
-                    # overlay = make_pokemon_red_overlay(self.exploration_map_agg)
-                    overlay = make_pokemon_red_overlay(np.stack(v, axis=0))
-                    if self.wandb is not None:
-                        self.stats["Media/aggregate_exploration_map"] = self.wandb.Image(overlay)
-                try:  # TODO: Better checks on log data types
-                    self.stats[k] = np.mean(v)
-                    self.max_stats[k] = np.max(v)
-                    if self.max_stats["got_hm01"] > 0:
-                        self.taught_cut = True
-                except:
-                    continue
+            if "Task_eval_fn" in k:
+                # Temporary hack for NMMO competition
+                continue
+            if "pokemon_exploration_map" in k:
+                # self.exploration_map_agg[env_id, :, :] = v
+                # overlay = make_pokemon_red_overlay(self.exploration_map_agg)
+                overlay = make_pokemon_red_overlay(np.stack(v, axis=0))
+                if self.wandb is not None:
+                    self.stats["Media/aggregate_exploration_map"] = self.wandb.Image(overlay)
+            try:  # TODO: Better checks on log data types
+                self.stats[k] = np.mean(v)
+                self.max_stats[k] = np.max(v)
+                if self.max_stats["got_hm01"] > 0:
+                    self.taught_cut = True
+            except:
+                continue
 
         if config.verbose:
             print_dashboard(self.stats, self.init_performance, self.performance)
