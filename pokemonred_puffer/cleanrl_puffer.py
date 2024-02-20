@@ -424,7 +424,7 @@ class CleanPuffeRL:
                             if policy_name not in self.infos:
                                 self.infos[policy_name] = {}
                             if name not in self.infos[policy_name]:
-                                self.infos[policy_name][name] = [0] * self.config.num_envs
+                                self.infos[policy_name][name] = [None] * self.config.num_envs
                             self.infos[policy_name][name][agent_i["env_id"]] = dat
                             # infos[policy_name][name].append(dat)
             with env_profiler:
