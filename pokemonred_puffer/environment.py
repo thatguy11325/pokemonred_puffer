@@ -510,6 +510,16 @@ class RedGymEnv(Env):
         # 0xCFC6 - wTileInFrontOfPlayer
         # 0xCFCB - wUpdateSpritesEnabled
         if self.taught_cut:
+            player_direction = self.pyboy.get_memory_value(0xC109)
+            x, y, map_id = self.get_game_coords() # x, y, map_id
+            if player_direction == 0: # down
+                coords = (x, y+1, map_id)
+            if player_direction == 4:
+                coords = (x, y-1, map_id)
+            if player_direction == 8:
+                coords = (x-1, y, map_id)
+            if player_direction == 0xC:
+                coords = (x+1, y, map_id)
             self.cut_state.append(
                 (
                     self.pyboy.get_memory_value(0xCFC6),
@@ -521,11 +531,11 @@ class RedGymEnv(Env):
                 )
             )
             if tuple(list(self.cut_state)[1:]) in CUT_SEQ:
-                self.cut_coords[self.get_game_coords()] = 1
+                self.cut_coords[coords] = 1
             elif self.cut_state == CUT_GRASS_SEQ:
-                self.cut_coords[self.get_game_coords()] = 0.3
+                self.cut_coords[coords] = 0.3
             elif deque([(-1, *elem[1:]) for elem in self.cut_state]) == CUT_FAIL_SEQ:
-                self.cut_coords[self.get_game_coords()] = 0.005
+                self.cut_coords[coords] = 0.005
 
         # check if the font is loaded
         if self.pyboy.get_memory_value(0xCFC4):
