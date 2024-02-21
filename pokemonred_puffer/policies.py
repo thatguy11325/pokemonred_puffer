@@ -7,12 +7,15 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
     def __init__(
         self,
         env,
-        screen_framestack: int,
-        mask_framestack: int,
-        global_map_frame_stack: int,
-        screen_flat_size: int,
-        mask_flat_size: int,
-        global_map_flat_size: int,
+        screen_framestack: int = 1,
+        mask_framestack: int = 1,
+        global_map_frame_stack: int = 1,
+        screen_flat_size: int = 14336,
+        mask_flat_size: int = 14336,
+        global_map_flat_size: int = 14336,
+        input_size: int = 512,
+        framestack: int = 1,
+        flat_size: int = 1,
         hidden_size=512,
         output_size=512,
         channels_last: bool = False,
@@ -64,6 +67,8 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
         self.value_fn = pufferlib.pytorch.layer_init(nn.Linear(output_size, 1), std=1)
 
     def encode_observations(self, observations):
+        observations = pufferlib.emulation.unpack_batched_obs(observations, self.unflatten_context)
+        
         output = []
         for okey, network, scalefactor in zip(
             ("screen", "masks", "global_map"),
