@@ -1,1 +1,1 @@
-from pokemonred_puffer.policies import Recurrent, Policy
+from pokemonred_puffer.policies import Recurrent, Policy, MultiConvolutionPolicy
