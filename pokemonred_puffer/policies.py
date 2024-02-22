@@ -72,7 +72,7 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
                 observation = observation.permute(0, 3, 1, 2)
             if self.downsample > 1:
                 observation = observation[:, :, :: self.downsample, :: self.downsample]
-            output.append(network(observation))
+            output.append(network(observation.float()))
         return self.encode_linear(torch.cat(output, dim=-1)), None
 
     def decode_actions(self, flat_hidden, lookup, concat=None):

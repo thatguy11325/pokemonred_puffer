@@ -109,10 +109,10 @@ class RedGymEnv(Env):
         self.observation_space = spaces.Dict(
             {
                 "screen": spaces.Box(
-                    low=0.0, high=1.0, shape=self.screen_output_shape, dtype=np.float32
+                    low=0, high=255, shape=self.screen_output_shape, dtype=np.uint8
                 ),
                 "global_map": spaces.Box(
-                    low=0.0, high=1.0, shape=(*GLOBAL_MAP_SHAPE, 1), dtype=np.float32
+                    low=0, high=255, shape=(*GLOBAL_MAP_SHAPE, 1), dtype=np.uint8
                 ),
             }
         )
@@ -241,7 +241,7 @@ class RedGymEnv(Env):
 
     def render(self, reduce_res=False):
         # (144, 160, 3)
-        game_pixels_render = self.screen.screen_ndarray()[:, :, 0:1].astype(np.float32) / 255.0
+        game_pixels_render = self.screen.screen_ndarray()[:, :, 0:1]
         # place an overlay on top of the screen greying out places we haven't visited
         # first get our location
         player_x, player_y, map_n = self.get_game_coords()
@@ -262,7 +262,7 @@ class RedGymEnv(Env):
         # guess we want to attempt to map the pixels to player units or vice versa
         # Experimentally determined magic numbers below. Beware
         # visited_mask = np.zeros(VISITED_MASK_SHAPE, dtype=np.float32)
-        visited_mask = np.zeros_like(game_pixels_render, dtype=np.float32)
+        visited_mask = np.zeros_like(game_pixels_render)
         """
         if self.taught_cut:
             cut_mask = np.zeros_like(game_pixels_render)
@@ -292,13 +292,16 @@ class RedGymEnv(Env):
                         16 * y + 76 : 16 * y + 16 + 76,
                         16 * x + 80 : 16 * x + 16 + 80,
                         :,
-                    ] = self.seen_coords.get(
-                        (
-                            player_x + x + 1,
-                            player_y + y + 1,
-                            map_n,
-                        ),
-                        0.15,
+                    ] = int(
+                        self.seen_coords.get(
+                            (
+                                player_x + x + 1,
+                                player_y + y + 1,
+                                map_n,
+                            ),
+                            0.15,
+                        )
+                        * 255
                     )
                     """
                     if self.taught_cut:
@@ -360,7 +363,10 @@ class RedGymEnv(Env):
 
         self.update_recent_screens(screen)
 
-        return {**screen, "global_map": np.expand_dims(self.explore_map, axis=-1)}
+        return {
+            **screen,
+            "global_map": np.expand_dims((255 * self.explore_map).astype(np.uint8), axis=-1),
+        }
 
     def set_perfect_iv_dvs(self):
         party_size = self.read_m(PARTY_SIZE)
