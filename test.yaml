@@ -68,8 +68,9 @@ pokemon_red:
     envs_per_batch: 1
     update_epochs: 3 # epoch sps 3, 4==no change; 8==1500; 16==1000
     gamma: 0.998
-    batch_size:  32768
-    batch_rows: 128
+    batch_size: 16
+    batch_rows: 4
+    bptt_horizon: 2
     compile: False
 
 pokemon-red:

@@ -98,7 +98,7 @@ class RedGymEnv(Env):
             event_names = json.load(f)
         self.event_names = event_names
 
-        self.screen_output_shape = (144, 160, self.frame_stacks)
+        self.screen_output_shape = (144, 160, 2 * self.frame_stacks)
         self.coords_pad = 12
 
         # Set these in ALL subclasses
@@ -109,12 +109,11 @@ class RedGymEnv(Env):
         self.observation_space = spaces.Dict(
             {
                 "screen": spaces.Box(
-                    low=0, high=255, shape=self.screen_output_shape, dtype=np.uint8
+                    low=0.0, high=1.0, shape=self.screen_output_shape, dtype=np.float32
                 ),
-                "masks": spaces.Box(
-                    low=0, high=1, shape=VISITED_MASK_SHAPE, dtype=np.float32
+                "global_map": spaces.Box(
+                    low=0.0, high=1.0, shape=(*GLOBAL_MAP_SHAPE, 1), dtype=np.float32
                 ),
-                "global_map": spaces.Box(low=0, high=1, shape=(*GLOBAL_MAP_SHAPE, 1), dtype=np.float32),
             }
         )
 
@@ -242,7 +241,7 @@ class RedGymEnv(Env):
 
     def render(self, reduce_res=False):
         # (144, 160, 3)
-        game_pixels_render = self.screen.screen_ndarray()[:, :, 0:1]
+        game_pixels_render = self.screen.screen_ndarray()[:, :, 0:1].astype(np.float32) / 255.0
         # place an overlay on top of the screen greying out places we haven't visited
         # first get our location
         player_x, player_y, map_n = self.get_game_coords()
@@ -262,7 +261,8 @@ class RedGymEnv(Env):
         # 68 -> player y, 72 -> player x
         # guess we want to attempt to map the pixels to player units or vice versa
         # Experimentally determined magic numbers below. Beware
-        visited_mask = np.zeros(VISITED_MASK_SHAPE, dtype=np.float32)
+        # visited_mask = np.zeros(VISITED_MASK_SHAPE, dtype=np.float32)
+        visited_mask = np.zeros_like(game_pixels_render, dtype=np.float32)
         """
         if self.taught_cut:
             cut_mask = np.zeros_like(game_pixels_render)
@@ -277,6 +277,7 @@ class RedGymEnv(Env):
                     # map [(0,0),(1,1)] -> [(0,.5),(1,1)] (cause we dont wnat it to be fully black)
                     # y = 1/2 x + .5
                     # current location tiles - player_y*8, player_x*8
+                    """
                     visited_mask[y, x, 0] = self.seen_coords.get(
                         (
                             player_x + x + 1,
@@ -285,26 +286,20 @@ class RedGymEnv(Env):
                         ),
                         0.15,
                     )
-
                     """
+
                     visited_mask[
                         16 * y + 76 : 16 * y + 16 + 76,
                         16 * x + 80 : 16 * x + 16 + 80,
                         :,
-                    ] = int(
-                        255
-                        * (
-                            self.seen_coords.get(
-                                (
-                                    player_x + x + 1,
-                                    player_y + y + 1,
-                                    map_n,
-                                ),
-                                0.15,
-                            )
-                        )
+                    ] = self.seen_coords.get(
+                        (
+                            player_x + x + 1,
+                            player_y + y + 1,
+                            map_n,
+                        ),
+                        0.15,
                     )
-                    """
                     """
                     if self.taught_cut:
                         cut_mask[
@@ -337,7 +332,7 @@ class RedGymEnv(Env):
         """
 
         # game_pixels_render = np.concatenate([game_pixels_render, visited_mask, cut_mask], axis=-1)
-        # game_pixels_render = np.concatenate([game_pixels_render, visited_mask], axis=-1)
+        game_pixels_render = np.concatenate([game_pixels_render, visited_mask], axis=-1)
 
         if reduce_res:
             # game_pixels_render = (
@@ -346,7 +341,6 @@ class RedGymEnv(Env):
             game_pixels_render = game_pixels_render[::2, ::2, :]
         return {
             "screen": game_pixels_render,
-            "masks": visited_mask,
         }
 
     def _get_obs(self):
