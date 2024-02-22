@@ -10,7 +10,7 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
     def __init__(
         self,
         env,
-        screen_framestack: int = 2,
+        screen_framestack: int = 3,
         global_map_frame_stack: int = 1,
         screen_flat_size: int = 14336,
         global_map_flat_size: int = 1600,
@@ -36,6 +36,7 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
             nn.Flatten(),
         )
 
+        """
         self.global_map_network = nn.Sequential(
             pufferlib.pytorch.layer_init(nn.Conv2d(global_map_frame_stack, 32, 16, stride=8)),
             nn.ReLU(),
@@ -45,13 +46,17 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
             nn.ReLU(),
             nn.Flatten(),
         )
+        """
 
-        self.encode_linear = pufferlib.pytorch.layer_init(
-            nn.Linear(
-                screen_flat_size + global_map_flat_size,
-                hidden_size,
+        self.encode_linear = nn.Sequential(
+            pufferlib.pytorch.layer_init(
+                nn.Linear(
+                    screen_flat_size,
+                    hidden_size,
+                ),
+                std=0.01,
             ),
-            std=0.01,
+            nn.ReLU(),
         )
 
         self.actor = pufferlib.pytorch.layer_init(
@@ -64,8 +69,8 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
 
         output = []
         for okey, network in zip(
-            ("screen", "global_map"),
-            (self.screen_network, self.global_map_network),
+            ("screen",),
+            (self.screen_network,),
         ):
             observation = observations[okey]
             if self.channels_last:
