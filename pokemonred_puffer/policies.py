@@ -17,7 +17,7 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
         input_size: int = 512,
         framestack: int = 1,
         flat_size: int = 1,
-        hidden_size=768,
+        hidden_size=512,
         output_size=512,
         channels_last: bool = True,
         downsample: int = 1,
@@ -54,7 +54,6 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
                     screen_flat_size,
                     hidden_size,
                 ),
-                std=0.01,
             ),
             nn.ReLU(),
         )
