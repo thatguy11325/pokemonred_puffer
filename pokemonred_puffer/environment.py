@@ -743,7 +743,7 @@ class RedGymEnv(Env):
             "explore_npcs": sum(self.seen_npcs.values()) * 0.02,
             # "seen_pokemon": sum(self.seen_pokemon) * 0.000010,
             # "caught_pokemon": sum(self.caught_pokemon) * 0.000010,
-            "moves_obtained": sum(self.moves_obtained) * 0.00010,
+            "moves_obtained": sum(self.moves_obtained) * 0.000010,
             "explore_hidden_objs": sum(self.seen_hidden_objs.values()) * 0.02,
             "level": self.get_levels_reward(),
             # "opponent_level": self.max_opponent_level,
