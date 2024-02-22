@@ -12,7 +12,7 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
         global_map_frame_stack: int = 1,
         screen_flat_size: int = 14336,
         mask_flat_size: int = 128,
-        global_map_flat_size: int = 169728,
+        global_map_flat_size: int = 1600,
         input_size: int = 512,
         framestack: int = 1,
         flat_size: int = 1,
@@ -41,9 +41,9 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
         )
 
         self.masks_network = nn.Sequential(
-            pufferlib.pytorch.layer_init(nn.Conv2d(mask_framestack, 64, 4, stride=2)),
+            pufferlib.pytorch.layer_init(nn.Conv2d(mask_framestack, 32, 4, stride=2)),
             nn.ReLU(),
-            pufferlib.pytorch.layer_init(nn.Conv2d(64, 64, 3, stride=1)),
+            pufferlib.pytorch.layer_init(nn.Conv2d(32, 64, 3, stride=1)),
             nn.ReLU(),
             nn.Flatten(),
             pufferlib.pytorch.layer_init(nn.Linear(mask_flat_size, 128)),
@@ -51,11 +51,11 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
         )
 
         self.global_map_network = nn.Sequential(
-            pufferlib.pytorch.layer_init(nn.Conv2d(global_map_frame_stack, 32, 8, stride=4)),
+            pufferlib.pytorch.layer_init(nn.Conv2d(global_map_frame_stack, 32, 16, stride=8)),
             nn.ReLU(),
-            pufferlib.pytorch.layer_init(nn.Conv2d(32, 64, 4, stride=2)),
+            pufferlib.pytorch.layer_init(nn.Conv2d(32, 64, 8, stride=4)),
             nn.ReLU(),
-            pufferlib.pytorch.layer_init(nn.Conv2d(64, 64, 3, stride=1)),
+            pufferlib.pytorch.layer_init(nn.Conv2d(64, 64, 4, stride=2)),
             nn.ReLU(),
             nn.Flatten(),
             pufferlib.pytorch.layer_init(nn.Linear(global_map_flat_size, global_map_hidden_size)),
