@@ -316,12 +316,13 @@ class CleanPuffeRL:
         self.taught_cut = False
 
         self.infos = {}
+        self.log = False
 
     @pufferlib.utils.profile
     def evaluate(self):
         config = self.config
         # TODO: Handle update on resume
-        if self.wandb is not None and self.performance.total_uptime > 0:
+        if self.log and self.wandb is not None and self.performance.total_uptime > 0:
             self.wandb.log(
                 {
                     "SPS": self.SPS,
@@ -337,6 +338,7 @@ class CleanPuffeRL:
                     },
                 }
             )
+            self.log = False
 
         self.policy_pool.update_policies()
         performance = defaultdict(list)
@@ -435,12 +437,13 @@ class CleanPuffeRL:
         self.reward_buffer.append(r.cpu().sum().numpy())
         # Probably should normalize the rewards before trying to take the variance...
         reward_var = np.var(self.reward_buffer)
-        if self.wandb is not None:
+        if self.log and self.wandb is not None:
             self.wandb.log(
                 {
                     "reward/reward_var": reward_var,
                     "reward/reward_buffer_len": len(self.reward_buffer),
-                }
+                },
+                step=self.global_step
             )
         if (
             self.taught_cut
@@ -454,7 +457,10 @@ class CleanPuffeRL:
         eval_profiler.stop()
 
         # self.global_step += padded_steps_collected
-        self.global_step = np.mean(self.infos["learner"]["stats/step"])
+        new_step = np.mean(self.infos["learner"]["stats/step"])
+        if new_step > self.global_step:
+            self.global_step = new_step
+            self.log = True
         self.reward = torch.mean(self.rewards).float().item()
         self.SPS = int(padded_steps_collected / eval_profiler.elapsed)
 
