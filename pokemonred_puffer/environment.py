@@ -98,7 +98,7 @@ class RedGymEnv(Env):
             event_names = json.load(f)
         self.event_names = event_names
 
-        self.screen_output_shape = (144, 160, 2 * self.frame_stacks)
+        self.screen_output_shape = (144, 160, 3 * self.frame_stacks)
         self.coords_pad = 12
 
         # Set these in ALL subclasses
@@ -110,9 +110,6 @@ class RedGymEnv(Env):
             {
                 "screen": spaces.Box(
                     low=0, high=255, shape=self.screen_output_shape, dtype=np.uint8
-                ),
-                "global_map": spaces.Box(
-                    low=0, high=255, shape=(*GLOBAL_MAP_SHAPE, 1), dtype=np.uint8
                 ),
             }
         )
@@ -342,13 +339,10 @@ class RedGymEnv(Env):
             #     downscale_local_mean(game_pixels_render, (2, 2, 1))
             # ).astype(np.uint8)
             game_pixels_render = game_pixels_render[::2, ::2, :]
-        return {
-            "screen": game_pixels_render,
-        }
+        return game_pixels_render
 
     def _get_obs(self):
         screen = self.render()
-        """
         screen = np.concatenate(
             [
                 screen,
@@ -359,14 +353,9 @@ class RedGymEnv(Env):
             ],
             axis=-1,
         )
-        """
 
         self.update_recent_screens(screen)
-
-        return {
-            **screen,
-            "global_map": np.expand_dims((255 * self.explore_map).astype(np.uint8), axis=-1),
-        }
+        return {"screen": screen}
 
     def set_perfect_iv_dvs(self):
         party_size = self.read_m(PARTY_SIZE)
