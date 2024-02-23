@@ -80,7 +80,7 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
         return self.encode_linear(
             torch.cat(
                 output
-                + [torch.nn.functional.one_hot(observations["direction"], 4).float().squeeze(1)],
+                + [torch.nn.functional.one_hot(observations["direction"].long(), 4).float().squeeze(1)],
                 dim=-1,
             )
         ), None
