@@ -86,7 +86,6 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
             if self.downsample > 1:
                 observation = observation[:, :, :: self.downsample, :: self.downsample]
             output.append(network(observation.float() / 255.0))
-        breakpoint()
         return self.encode_linear(
             torch.cat(
                 output + [one_hot(observations["direction"].long(), 4).float().squeeze(1)],
