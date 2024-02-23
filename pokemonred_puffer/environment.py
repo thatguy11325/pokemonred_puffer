@@ -111,6 +111,7 @@ class RedGymEnv(Env):
                 "screen": spaces.Box(
                     low=0, high=255, shape=self.screen_output_shape, dtype=np.uint8
                 ),
+                "direction": spaces.Discrete(4),
                 "dummy": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
             }
         )
@@ -356,7 +357,11 @@ class RedGymEnv(Env):
         )
 
         self.update_recent_screens(screen)
-        return {"screen": screen, "dummy": np.zeros(1, dtype=np.uint8)}
+        return {
+            "screen": screen,
+            "direction": self.pyboy.get_memory_value(0xC109) // 4,
+            "dummy": np.zeros(1, dtype=np.uint8),
+        }
 
     def set_perfect_iv_dvs(self):
         party_size = self.read_m(PARTY_SIZE)
