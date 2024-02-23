@@ -5,6 +5,15 @@ from torch import nn
 
 unpack_batched_obs = torch.compiler.disable(unpack_batched_obs)
 
+# Because torch.nn.functional.one_hot cannot be traced by torch as of 2.2.0
+
+
+def one_hot(tensor, num_classes):
+    index = torch.arange(0, num_classes, device=tensor.device)
+    return (tensor.view([*tensor.shape, 1]) == index.view([1] * tensor.ndim + [num_classes])).to(
+        torch.int64
+    )
+
 
 class MultiConvolutionPolicy(pufferlib.models.Policy):
     def __init__(
@@ -77,10 +86,10 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
             if self.downsample > 1:
                 observation = observation[:, :, :: self.downsample, :: self.downsample]
             output.append(network(observation.float() / 255.0))
+        breakpoint()
         return self.encode_linear(
             torch.cat(
-                output
-                + [torch.nn.functional.one_hot(observations["direction"].long(), 4).float().squeeze(1)],
+                output + [one_hot(observations["direction"].long(), 4).float().squeeze(1)],
                 dim=-1,
             )
         ), None
