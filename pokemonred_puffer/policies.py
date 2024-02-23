@@ -81,7 +81,7 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
             torch.cat(
                 [
                     output,
-                    torch.nn.functional(observations["direction"], 4).float(),
+                    torch.nn.functional.one_hot(observations["direction"], 4).float(),
                 ],
                 dim=-1,
             )
