@@ -111,8 +111,9 @@ class RedGymEnv(Env):
                 "screen": spaces.Box(
                     low=0, high=255, shape=self.screen_output_shape, dtype=np.uint8
                 ),
-                "direction": spaces.Discrete(4),
-                "dummy": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
+                # Discrete is more apt, but pufferlib is slower at processing Discrete
+                "direction": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
+                "d": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
             }
         )
 
@@ -359,8 +360,8 @@ class RedGymEnv(Env):
         self.update_recent_screens(screen)
         return {
             "screen": screen,
-            "direction": self.pyboy.get_memory_value(0xC109) // 4,
-            "dummy": np.zeros(1, dtype=np.uint8),
+            "direction": np.array(self.pyboy.get_memory_value(0xC109) // 4, dtype=np.uint8),
+            "d": np.zeros(1, dtype=np.uint8),
         }
 
     def set_perfect_iv_dvs(self):
@@ -505,11 +506,11 @@ class RedGymEnv(Env):
                 )
             )
             if tuple(list(self.cut_state)[1:]) in CUT_SEQ:
-                self.cut_coords[coords] = 1
+                self.cut_coords[coords] = 10
             elif self.cut_state == CUT_GRASS_SEQ:
-                self.cut_coords[coords] = 0.3
+                self.cut_coords[coords] = 1
             elif deque([(-1, *elem[1:]) for elem in self.cut_state]) == CUT_FAIL_SEQ:
-                self.cut_coords[coords] = 0.005
+                self.cut_coords[coords] = 1
 
         # check if the font is loaded
         if self.pyboy.get_memory_value(0xCFC4):
@@ -748,7 +749,7 @@ class RedGymEnv(Env):
             "explore": sum(self.seen_coords.values()) * 0.01,
             "explore_maps": np.sum(self.seen_map_ids) * 0.0001,
             "taught_cut": 4 * int(self.check_if_party_has_cut()),
-            "cut_coords": sum(self.cut_coords.values()) * 0.001,
+            "cut_coords": sum(self.cut_coords.values()) * 1.0,
         }
 
         return state_scores
