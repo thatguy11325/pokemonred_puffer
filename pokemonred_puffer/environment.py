@@ -568,9 +568,9 @@ class RedGymEnv(Env):
             if tuple(list(self.cut_state)[1:]) in CUT_SEQ:
                 self.cut_coords[coords] = 10
             elif self.cut_state == CUT_GRASS_SEQ:
-                self.cut_coords[coords] = .01
+                self.cut_coords[coords] = 0.01
             elif deque([(-1, *elem[1:]) for elem in self.cut_state]) == CUT_FAIL_SEQ:
-                self.cut_coords[coords] = .01
+                self.cut_coords[coords] = 0.01
 
         # check if the font is loaded
         if self.pyboy.get_memory_value(0xCFC4):
@@ -810,6 +810,14 @@ class RedGymEnv(Env):
             "explore_maps": np.sum(self.seen_map_ids) * 0.0001,
             "taught_cut": 4 * int(self.check_if_party_has_cut()),
             "cut_coords": sum(self.cut_coords.values()) * 1.0,
+            "met_bill": 5 * int(self.read_bit(0xD7F1, 0)),
+            "used_cell_separator_on_bill": 5 * int(self.read_bit(0xD7F2, 3)),
+            "ss_ticket": 5 * int(self.read_bit(0xD7F2, 4)),
+            "met_bill_2": 5 * int(self.read_bit(0xD7F2, 5)),
+            "bill_said_use_cell_separator": 5 * int(self.read_bit(0xD7F2, 6)),
+            "left_bills_house_after_helping": 5 * int(self.read_bit(0xD7F2, 7)),
+            "got_hm01": 5 * int(self.read_bit(0xD803, 0)),
+            "rubbed_captains_back": 5 * int(self.read_bit(0xD803, 1)),
         }
 
         return state_scores
