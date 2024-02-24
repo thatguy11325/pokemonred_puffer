@@ -450,7 +450,7 @@ class RedGymEnv(Env):
         self.update_seen_coords()
         self.update_heal_reward()
         self.update_pokedex()
-        self.update_moves_obtained()
+        self.update_tm_hm_moves_obtained()
         self.party_size = self.read_m(0xD163)
         self.update_max_op_level()
         new_reward = self.update_reward()
