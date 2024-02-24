@@ -31,6 +31,66 @@ CUT_FAIL_SEQ = deque([(-1, 255, 0, 0, 4, 1), (-1, 255, 0, 0, 1, 1), (-1, 255, 0,
 
 VISITED_MASK_SHAPE = (144 // 16, 160 // 16, 1)
 
+TM_HM_MOVES = set(
+    [
+        5,  # Mega punch
+        0xD,  # Razor wind
+        0xE,  # Swords dance
+        0x12,  # Whirlwind
+        0x19,  # Mega kick
+        0x5C,  # Toxic
+        0x20,  # Horn drill
+        0x22,  # Body slam
+        0x24,  # Take down
+        0x26,  # Double edge
+        0x3D,  # Bubble beam
+        0x37,  # Water gun
+        0x3A,  # Ice beam
+        0x3B,  # Blizzard
+        0x3F,  # Hyper beam
+        0x06,  # Pay day
+        0x42,  # Submission
+        0x44,  # Counter
+        0x45,  # Seismic toss
+        0x63,  # Rage
+        0x48,  # Mega drain
+        0x4C,  # Solar beam
+        0x52,  # Dragon rage
+        0x55,  # Thunderbolt
+        0x57,  # Thunder
+        0x59,  # Earthquake
+        0x5A,  # Fissure
+        0x5B,  # Dig
+        0x5E,  # Psychic
+        0x64,  # Teleport
+        0x66,  # Mimic
+        0x68,  # Double team
+        0x73,  # Reflect
+        0x75,  # Bide
+        0x76,  # Metronome
+        0x78,  # Selfdestruct
+        0x79,  # Egg bomb
+        0x7E,  # Fire blast
+        0x81,  # Swift
+        0x82,  # Skull bash
+        0x87,  # Softboiled
+        0x8A,  # Dream eater
+        0x8F,  # Sky attack
+        0x9C,  # Rest
+        0x56,  # Thunder wave
+        0x95,  # Psywave
+        0x99,  # Explosion
+        0x9D,  # Rock slide
+        0xA1,  # Tri attack
+        0xA4,  # Substitute
+        0x0F,  # Cut
+        0x13,  # Fly
+        0x39,  # Surf
+        0x46,  # Strength
+        0x94,  # Flash
+    ]
+)
+
 
 # TODO: Make global map usage a configuration parameter
 class RedGymEnv(Env):
@@ -373,7 +433,7 @@ class RedGymEnv(Env):
     def check_if_party_has_cut(self) -> bool:
         party_size = self.read_m(PARTY_SIZE)
         for i in [0xD16B, 0xD197, 0xD1C3, 0xD1EF, 0xD21B, 0xD247][:party_size]:
-            for m in range(4):  # Number of offsets for IV/DV
+            for m in range(4):
                 if self.pyboy.get_memory_value(i + 8 + m) == 15:
                     return True
         return False
@@ -739,7 +799,7 @@ class RedGymEnv(Env):
             "explore_npcs": sum(self.seen_npcs.values()) * 0.02,
             "seen_pokemon": sum(self.seen_pokemon) * 0.000010,
             "caught_pokemon": sum(self.caught_pokemon) * 0.000010,
-            "moves_obtained": sum(self.moves_obtained) * 0.000010,
+            "moves_obtained": sum(self.moves_obtained) * 0.00010,
             "explore_hidden_objs": sum(self.seen_hidden_objs.values()) * 0.02,
             "level": self.get_levels_reward(),
             # "opponent_level": self.max_opponent_level,
@@ -785,15 +845,15 @@ class RedGymEnv(Env):
                 self.caught_pokemon[8 * i + j] = 1 if caught_mem & (1 << j) else 0
                 self.seen_pokemon[8 * i + j] = 1 if seen_mem & (1 << j) else 0
 
-    def update_moves_obtained(self):
+    def update_tm_hm_moves_obtained(self):
         # Scan party
         for i in [0xD16B, 0xD197, 0xD1C3, 0xD1EF, 0xD21B, 0xD247]:
             if self.pyboy.get_memory_value(i) != 0:
                 for j in range(4):
                     move_id = self.pyboy.get_memory_value(i + j + 8)
-                    if move_id != 0:
-                        if move_id != 0:
-                            self.moves_obtained[move_id] = 1
+                    if move_id != 0 and move_id in TM_HM_MOVES:
+                        self.moves_obtained[move_id] = 1
+        """
         # Scan current box (since the box doesn't auto increment in pokemon red)
         num_moves = 4
         box_struct_length = 25 * num_moves * 2
@@ -804,6 +864,7 @@ class RedGymEnv(Env):
                     move_id = self.pyboy.get_memory_value(offset + j + 8)
                     if move_id != 0:
                         self.moves_obtained[move_id] = 1
+        """
 
     def read_hp_fraction(self):
         hp_sum = sum(
