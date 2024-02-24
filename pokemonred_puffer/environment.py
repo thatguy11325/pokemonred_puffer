@@ -568,9 +568,9 @@ class RedGymEnv(Env):
             if tuple(list(self.cut_state)[1:]) in CUT_SEQ:
                 self.cut_coords[coords] = 10
             elif self.cut_state == CUT_GRASS_SEQ:
-                self.cut_coords[coords] = 1
+                self.cut_coords[coords] = .01
             elif deque([(-1, *elem[1:]) for elem in self.cut_state]) == CUT_FAIL_SEQ:
-                self.cut_coords[coords] = 1
+                self.cut_coords[coords] = .01
 
         # check if the font is loaded
         if self.pyboy.get_memory_value(0xCFC4):
