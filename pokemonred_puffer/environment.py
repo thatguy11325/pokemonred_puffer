@@ -285,11 +285,13 @@ class RedGymEnv(Env):
         # Maybe I should preallocate a giant matrix for all map ids
         # All map ids have the same size, right?
         self.seen_coords = {}
+        self.seen_coords_since_blackout = set([])
         # self.seen_global_coords = np.zeros(GLOBAL_MAP_SHAPE)
         self.seen_map_ids = np.zeros(256)
 
     def init_npc_mem(self):
         self.seen_npcs = {}
+        self.seen_npcs_since_blackout = set([])
 
     def init_hidden_obj_mem(self):
         self.seen_hidden_objs = {}
@@ -330,6 +332,18 @@ class RedGymEnv(Env):
         self.seen_stats_menu *= self.step_forgetting_factor["stats_menu"]
         self.seen_bag_menu *= self.step_forgetting_factor["bag_menu"]
         self.seen_cancel_bag_menu *= self.step_forgetting_factor["cancel_bag_menu"]
+
+    def blackout(self):
+        # Only penalize for blacking out due to battle, not due to poison
+        if self.read_m(0xD057) == -1:
+            for k in self.seen_coords_since_blackout:
+                self.seen_coords[k] *= 0.5
+                self.explore_map[local_to_global(*k)] *= 0.5
+            for k in self.seen_npcs_since_blackout:
+                self.seen_npcs[k] *= 0.5
+
+            self.seen_coords_since_blackout.clear()
+            self.seen_npcs_since_blackout.clear()
 
     def render(self, reduce_res=False):
         # (144, 160, 3)
@@ -541,6 +555,7 @@ class RedGymEnv(Env):
         if self.perfect_ivs:
             self.set_perfect_iv_dvs()
         self.taught_cut = self.check_if_party_has_cut()
+        self.blackout()
         self.update_blackout()
 
         info = {}
@@ -699,6 +714,7 @@ class RedGymEnv(Env):
                 if npc_candidates:
                     _, npc_id = min(npc_candidates, key=lambda x: x[0])
                     self.seen_npcs[(self.pyboy.get_memory_value(0xD35E), npc_id)] = 1
+                    self.seen_npcs_since_blackout.add(self.pyboy.get_memory_value(0xD35E), npc_id)
 
             if self.check_if_in_start_menu():
                 self.seen_start_menu = 1
@@ -811,6 +827,7 @@ class RedGymEnv(Env):
     def update_seen_coords(self):
         x_pos, y_pos, map_n = self.get_game_coords()
         self.seen_coords[(x_pos, y_pos, map_n)] = 1
+        self.seen_coords_since_blackout.add((x_pos, y_pos, map_n))
         self.explore_map[local_to_global(y_pos, x_pos, map_n)] = 1
         # self.seen_global_coords[local_to_global(y_pos, x_pos, map_n)] = 1
         self.seen_map_ids[map_n] = 1
