@@ -949,7 +949,6 @@ class RedGymEnv(Env):
             "stats_menu": self.seen_stats_menu * 0.1,
             "bag_menu": self.seen_bag_menu * 0.1,
             "cancel_bag_menu": self.seen_cancel_bag_menu * 0.1,
-            "blackout_check": self.blackout_check * 0.0001,
         }
 
         return state_scores
