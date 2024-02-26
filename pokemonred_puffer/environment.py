@@ -607,7 +607,7 @@ class RedGymEnv(Env):
         self.action_hist[action] += 1
 
         # press button then release after some steps
-        # self.pyboy.send_input(self.valid_actions[action])
+        self.pyboy.send_input(self.valid_actions[action])
         # disable rendering when we don't need it
         if not self.save_video and self.headless:
             self.pyboy._rendering(False)
@@ -615,8 +615,7 @@ class RedGymEnv(Env):
             # release action, so they are stateless
             if i == 8 and action < len(self.release_actions):
                 # release button
-                # self.pyboy.send_input(self.release_actions[action])
-                pass
+                self.pyboy.send_input(self.release_actions[action])
 
             if self.save_video and not self.fast_video:
                 self.add_video_frame()
