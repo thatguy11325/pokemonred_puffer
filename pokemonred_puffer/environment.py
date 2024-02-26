@@ -519,7 +519,6 @@ class RedGymEnv(Env):
         cur_map_id = self.read_m(0xD35E)
         if cur_map_id in RESET_MAP_IDS:
             self.blackout_check = int(cur_map_id == self.read_m(0xD719))
-        
 
     def step(self, action):
         if self.save_video and self.step_count == 0:
@@ -543,7 +542,6 @@ class RedGymEnv(Env):
             self.set_perfect_iv_dvs()
         self.taught_cut = self.check_if_party_has_cut()
         self.update_blackout()
-        print(self.update_blackout())
 
         info = {}
         # TODO: Make log frequency a configuration parameter
@@ -766,7 +764,7 @@ class RedGymEnv(Env):
                 "stats_menu": self.seen_stats_menu,
                 "bag_menu": self.seen_bag_menu,
                 "cancel_bag_menu": self.seen_cancel_bag_menu,
-                "blackout_check": self.blackout_check
+                "blackout_check": self.blackout_check,
             },
             "reward": self.get_game_state_reward(),
             "reward/reward_sum": sum(self.get_game_state_reward().values()),
