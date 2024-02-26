@@ -13,8 +13,8 @@ import yaml
 
 from pokemonred_puffer import eval
 from pokemonred_puffer.cleanrl_puffer import CleanPuffeRL, rollout
-from pokemonred_puffer.env_creator import env_creator 
-from pokemonred_puffer.policies import Recurrent, Policy 
+from pokemonred_puffer.env_creator import env_creator
+from pokemonred_puffer.policies import Recurrent, Policy
 
 
 # TODO: Replace with Pydantic or Spock parser
@@ -188,8 +188,12 @@ if __name__ == "__main__":
     parser.add_argument("--fast-video", action="store_true")
     parser.add_argument("--frame-stacks", type=int, default=1)
     parser.add_argument("--sess-id", type=str, default=str(uuid.uuid4())[:8])
-    parser.add_argument("--perfect-ivs", action="store_true", default=False, help="Enable perfect IVs")
-    parser.add_argument("--stream-wrapper", action="store_true", default=False, help="Enable stream wrapper")
+    parser.add_argument(
+        "--perfect-ivs", action="store_true", default=False, help="Enable perfect IVs"
+    )
+    parser.add_argument(
+        "--stream-wrapper", action="store_true", default=False, help="Enable stream wrapper"
+    )
 
     clean_parser = argparse.ArgumentParser(parents=[parser])
     args = parser.parse_known_args()[0].__dict__
@@ -222,11 +226,16 @@ if __name__ == "__main__":
             "hidden_objs": 0.95,
             "coords": 0.9995,
             "map_ids": 0.995,
-            "explore": 0.9995
+            "explore": 0.9995,
+            "start_menu": 0.95,
+            "pokemon_menu": 0.95,
+            "stats_menu": 0.99,
+            "bag_menu": 0.95,
+            "cancel_bag_menu": 0.99,
         },
         "forgetting_frequency": 10,
         "perfect_ivs": parsed_args.perfect_ivs,
-        "stream_wrapper": parsed_args.stream_wrapper
+        "stream_wrapper": parsed_args.stream_wrapper,
     }
 
     env_module = importlib.import_module(f"pokemonred_puffer")
