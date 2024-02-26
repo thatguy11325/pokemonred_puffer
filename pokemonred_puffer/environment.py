@@ -303,7 +303,7 @@ class RedGymEnv(Env):
         self.seen_pokemon_menu = 0
         self.seen_stats_menu = 0
         self.seen_bag_menu = 0
-        self.seen_cancel_in_bag = 0
+        self.seen_cancel_bag_menu = 0
 
     def step_forget_explore(self):
         self.seen_coords.update(
@@ -329,7 +329,7 @@ class RedGymEnv(Env):
         self.seen_pokemon_menu *= self.step_forgetting_factor["pokemon_menu"]
         self.seen_stats_menu *= self.step_forgetting_factor["stats_menu"]
         self.seen_bag_menu *= self.step_forgetting_factor["bag_menu"]
-        self.seen_cancel_in_bag *= self.step_forgetting_factor["cancel_in_bag"]
+        self.seen_cancel_bag_menu *= self.step_forgetting_factor["cancel_bag_menu"]
 
     def render(self, reduce_res=False):
         # (144, 160, 3)
@@ -502,7 +502,7 @@ class RedGymEnv(Env):
             and self.read_m(0xCF94) == 3
         )
 
-    def check_if_cancel_in_bag(self, action) -> bool:
+    def check_if_cancel_bag_menu(self, action) -> bool:
         return (
             action == WindowEvent.PRESS_BUTTON_A
             and self.read_m(0xD057) == 0
@@ -715,8 +715,8 @@ class RedGymEnv(Env):
             if self.check_if_in_bag_menu():
                 self.seen_bag_menu = 1
 
-            if self.check_if_cancel_in_bag(action):
-                self.seen_cancel_in_bag = 1
+            if self.check_if_cancel_bag_menu(action):
+                self.seen_cancel_bag_menu = 1
 
         if self.save_video and self.fast_video:
             self.add_video_frame()
@@ -765,7 +765,7 @@ class RedGymEnv(Env):
                 "pokemon_menu": self.seen_pokemon_menu,
                 "stats_menu": self.seen_stats_menu,
                 "bag_menu": self.seen_bag_menu,
-                "cancel_in_bag": self.seen_cancel_in_bag,
+                "cancel_bag_menu": self.seen_cancel_bag_menu,
                 "blackout_check": self.blackout_check
             },
             "reward": self.get_game_state_reward(),
@@ -929,7 +929,7 @@ class RedGymEnv(Env):
             "pokemon_menu": self.seen_pokemon_menu * 0.1,
             "stats_menu": self.seen_stats_menu * 0.1,
             "bag_menu": self.seen_bag_menu * 0.1,
-            "cancel_in_bag": self.seen_cancel_in_bag * 0.1,
+            "cancel_bag_menu": self.seen_cancel_bag_menu * 0.1,
             "blackout_check": self.blackout_check * 0.0001,
         }
 
