@@ -279,6 +279,13 @@ class RedGymEnv(Env):
         self.cut_coords = {}
         self.cut_state = deque(maxlen=3)
 
+    def init_menu_mem(self):
+        self.seen_start_menu = 0
+        self.seen_pokemon_menu = 0
+        self.seen_stats_menu = 0
+        self.seen_bag_menu = 0
+        self.seen_cancel_in_bag = 0
+
     def step_forget_explore(self):
         self.seen_coords.update(
             (k, max(0.15, v * self.step_forgetting_factor["coords"]))
@@ -298,6 +305,12 @@ class RedGymEnv(Env):
         self.explore_map[self.explore_map > 0] = np.clip(
             self.explore_map[self.explore_map > 0], 0.15, 1
         )
+
+        self.seen_start_menu *= self.step_forgetting_factor["start_menu"]
+        self.seen_pokemon_menu *= self.step_forgetting_factor["pokemon_menu"]
+        self.seen_stats_menu *= self.step_forgetting_factor["stats_menu"]
+        self.seen_bag_menu *= self.step_forgetting_factor["bag_menu"]
+        self.seen_cancel_in_bag *= self.step_forgetting_factor["cancel_in_bag"]
 
     def render(self, reduce_res=False):
         # (144, 160, 3)
@@ -438,6 +451,51 @@ class RedGymEnv(Env):
                     return True
         return False
 
+    def check_if_in_start_menu(self) -> bool:
+        return (
+            self.read_m(0xD057) == 0
+            and self.read_m(0xCF13) == 0
+            and self.read_m(0xFF8C) == 6
+            and self.read_m(0xCF94) == 0
+        )
+
+    def check_if_in_pokemon_menu(self) -> bool:
+        return (
+            self.read_m(0xD057) == 0
+            and self.read_m(0xCF13) == 0
+            and self.read_m(0xFF8C) == 6
+            and self.read_m(0xCF94) == 2
+        )
+
+    def check_if_in_stats_menu(self) -> bool:
+        return (
+            self.read_m(0xD057) == 0
+            and self.read_m(0xCF13) == 0
+            and self.read_m(0xFF8C) == 6
+            and self.read_m(0xCF94) == 1
+        )
+
+    def check_if_in_bag_menu(self) -> bool:
+        return (
+            self.read_m(0xD057) == 0
+            and self.read_m(0xCF13) == 0
+            # and self.read_m(0xFF8C) == 6 # only sometimes
+            and self.read_m(0xCF94) == 3
+        )
+
+    def check_if_cancel_in_bag(self, action) -> bool:
+        return (
+            action == WindowEvent.PRESS_BUTTON_A
+            and self.read_m(0xD057) == 0
+            and self.read_m(0xCF13) == 0
+            # and self.read_m(0xFF8C) == 6
+            and self.read_m(0xCF94) == 3
+            and self.read_m(0xD31D) == self.read_m(0xCC36) + self.read_m(0xCC26)
+        )
+
+    def check_if_in_overworld(self) -> bool:
+        return self.read_m(0xD057) == 0 and self.read_m(0xCF13) == 0 and self.read_m(0xFF8C) == 0
+
     def step(self, action):
         if self.save_video and self.step_count == 0:
             self.start_video()
@@ -524,7 +582,7 @@ class RedGymEnv(Env):
         self.action_hist[action] += 1
 
         # press button then release after some steps
-        self.pyboy.send_input(self.valid_actions[action])
+        # self.pyboy.send_input(self.valid_actions[action])
         # disable rendering when we don't need it
         if not self.save_video and self.headless:
             self.pyboy._rendering(False)
@@ -532,7 +590,8 @@ class RedGymEnv(Env):
             # release action, so they are stateless
             if i == 8 and action < len(self.release_actions):
                 # release button
-                self.pyboy.send_input(self.release_actions[action])
+                # self.pyboy.send_input(self.release_actions[action])
+                pass
 
             if self.save_video and not self.fast_video:
                 self.add_video_frame()
@@ -617,6 +676,21 @@ class RedGymEnv(Env):
                     _, npc_id = min(npc_candidates, key=lambda x: x[0])
                     self.seen_npcs[(self.pyboy.get_memory_value(0xD35E), npc_id)] = 1
 
+            if self.check_if_in_start_menu():
+                self.seen_start_menu = 1
+
+            if self.check_if_in_pokemon_menu():
+                self.seen_pokemon_menu = 1
+
+            if self.check_if_in_stats_menu():
+                self.seen_stats_menu = 1
+
+            if self.check_if_in_bag_menu():
+                self.seen_bag_menu = 1
+
+            if self.check_if_cancel_in_bag(action):
+                self.seen_cancel_in_bag = 1
+
         if self.save_video and self.fast_video:
             self.add_video_frame()
 
@@ -660,6 +734,11 @@ class RedGymEnv(Env):
                 "rubbed_captains_back": int(self.read_bit(0xD803, 1)),
                 "taught_cut": int(self.check_if_party_has_cut()),
                 "cut_coords": sum(self.cut_coords.values()),
+                "start_menu": self.seen_start_menu,
+                "pokemon_menu": self.seen_pokemon_menu,
+                "stats_menu": self.seen_stats_menu,
+                "bag_menu": self.seen_bag_menu,
+                "cancel_in_bag": self.seen_cancel_in_bag,
             },
             "reward": self.get_game_state_reward(),
             "reward/reward_sum": sum(self.get_game_state_reward().values()),
@@ -818,6 +897,11 @@ class RedGymEnv(Env):
             "left_bills_house_after_helping": 5 * int(self.read_bit(0xD7F2, 7)),
             "got_hm01": 5 * int(self.read_bit(0xD803, 0)),
             "rubbed_captains_back": 5 * int(self.read_bit(0xD803, 1)),
+            "start_menu": self.seen_start_menu * 0.1,
+            "pokemon_menu": self.seen_pokemon_menu * 0.1,
+            "stats_menu": self.seen_stats_menu * 0.1,
+            "bag_menu": self.seen_bag_menu * 0.1,
+            "cancel_in_bag": self.seen_cancel_in_bag * 0.1,
         }
 
         return state_scores
