@@ -718,7 +718,7 @@ class RedGymEnv(Env):
                 if npc_candidates:
                     _, npc_id = min(npc_candidates, key=lambda x: x[0])
                     self.seen_npcs[(self.pyboy.get_memory_value(0xD35E), npc_id)] = 1
-                    self.seen_npcs_since_blackout.add(self.pyboy.get_memory_value(0xD35E), npc_id)
+                    self.seen_npcs_since_blackout.add((self.pyboy.get_memory_value(0xD35E), npc_id))
 
             if self.check_if_in_start_menu():
                 self.seen_start_menu = 1
