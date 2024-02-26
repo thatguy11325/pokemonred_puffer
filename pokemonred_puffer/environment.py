@@ -288,6 +288,7 @@ class RedGymEnv(Env):
         self.seen_coords_since_blackout = set([])
         # self.seen_global_coords = np.zeros(GLOBAL_MAP_SHAPE)
         self.seen_map_ids = np.zeros(256)
+        self.seen_map_ids_since_blackout = set([])
 
     def init_npc_mem(self):
         self.seen_npcs = {}
@@ -341,9 +342,12 @@ class RedGymEnv(Env):
                 self.explore_map[local_to_global(*k)] *= 0.5
             for k in self.seen_npcs_since_blackout:
                 self.seen_npcs[k] *= 0.5
+            for k in self.seen_map_ids_since_blackout:
+                self.seen_map_ids[k] *= 0.5
 
             self.seen_coords_since_blackout.clear()
             self.seen_npcs_since_blackout.clear()
+            self.seen_map_ids_since_blackout.clear()
 
     def render(self, reduce_res=False):
         # (144, 160, 3)
@@ -831,6 +835,7 @@ class RedGymEnv(Env):
         self.explore_map[local_to_global(y_pos, x_pos, map_n)] = 1
         # self.seen_global_coords[local_to_global(y_pos, x_pos, map_n)] = 1
         self.seen_map_ids[map_n] = 1
+        self.seen_map_ids_since_blackout.add(map_n)
 
     def get_explore_map(self):
         explore_map = np.zeros(GLOBAL_MAP_SHAPE)
