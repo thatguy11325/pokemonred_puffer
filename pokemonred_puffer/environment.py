@@ -223,6 +223,7 @@ class RedGymEnv(Env):
             self.init_npc_mem()
             self.init_hidden_obj_mem()
             self.init_cut_mem()
+            self.init_menu_mem()
 
         if self.first:  # or random.uniform(0, 1) < 0.5:
             with open(self.init_state, "rb") as f:
@@ -244,6 +245,7 @@ class RedGymEnv(Env):
             self.init_npc_mem()
             self.init_hidden_obj_mem()
             self.init_cut_mem()
+            self.init_menu_mem()
 
         self.taught_cut = self.check_if_party_has_cut()
         self.base_event_flags = sum(
@@ -541,6 +543,7 @@ class RedGymEnv(Env):
             self.set_perfect_iv_dvs()
         self.taught_cut = self.check_if_party_has_cut()
         self.update_blackout()
+        print(self.update_blackout())
 
         info = {}
         # TODO: Make log frequency a configuration parameter
