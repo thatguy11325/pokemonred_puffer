@@ -104,6 +104,9 @@ RESET_MAP_IDS = set(
         0x8,  # Cinnabar Island
         0x9,  # Indigo Plateau
         0xA,  # Saffron City
+        0xF,  # Route 4 (Mt Moon)
+        0x10, # Route 10 (Rock Tunnel)
+        0xE9, # Silph Co 9F (Heal station)
     ]
 )
 
