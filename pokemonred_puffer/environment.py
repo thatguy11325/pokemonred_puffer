@@ -559,7 +559,7 @@ class RedGymEnv(Env):
         if self.perfect_ivs:
             self.set_perfect_iv_dvs()
         self.taught_cut = self.check_if_party_has_cut()
-        self.blackout()
+        # self.blackout()
         self.update_blackout()
 
         info = {}
@@ -718,7 +718,7 @@ class RedGymEnv(Env):
                 if npc_candidates:
                     _, npc_id = min(npc_candidates, key=lambda x: x[0])
                     self.seen_npcs[(self.pyboy.get_memory_value(0xD35E), npc_id)] = 1
-                    self.seen_npcs_since_blackout.add((self.pyboy.get_memory_value(0xD35E), npc_id))
+                    # self.seen_npcs_since_blackout.add((self.pyboy.get_memory_value(0xD35E), npc_id))
 
             if self.check_if_in_start_menu():
                 self.seen_start_menu = 1
@@ -831,11 +831,11 @@ class RedGymEnv(Env):
     def update_seen_coords(self):
         x_pos, y_pos, map_n = self.get_game_coords()
         self.seen_coords[(x_pos, y_pos, map_n)] = 1
-        self.seen_coords_since_blackout.add((x_pos, y_pos, map_n))
+        # self.seen_coords_since_blackout.add((x_pos, y_pos, map_n))
         self.explore_map[local_to_global(y_pos, x_pos, map_n)] = 1
         # self.seen_global_coords[local_to_global(y_pos, x_pos, map_n)] = 1
         self.seen_map_ids[map_n] = 1
-        self.seen_map_ids_since_blackout.add(map_n)
+        # self.seen_map_ids_since_blackout.add(map_n)
 
     def get_explore_map(self):
         explore_map = np.zeros(GLOBAL_MAP_SHAPE)
