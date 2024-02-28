@@ -223,6 +223,7 @@ class RedGymEnv(Env):
             self.moves_obtained = np.zeros(0xA5, dtype=np.uint8)
             self.explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
             self.init_mem()
+            self.reset_count = 0
         else:
             self.recent_screens.clear()
             self.recent_actions.clear()
@@ -231,6 +232,7 @@ class RedGymEnv(Env):
             self.moves_obtained.fill(0)
             self.explore_map *= 0
             self.reset_mem()
+            self.reset_count += 1
 
         with open(self.init_state, "rb") as f:
             self.pyboy.load_state(f)
@@ -272,7 +274,6 @@ class RedGymEnv(Env):
         self.progress_reward = self.get_game_state_reward()
         self.total_reward = sum([val for _, val in self.progress_reward.items()])
 
-        self.reset_count += 1
         self.first = False
         return self._get_obs(), {}
 
@@ -763,7 +764,7 @@ class RedGymEnv(Env):
         levels = [self.read_m(a) for a in [0xD18C, 0xD1B8, 0xD1E4, 0xD210, 0xD23C, 0xD268]]
         return {
             "stats": {
-                "step": self.step_count,
+                "step": self.step_count + self.reset_count * self.max_steps,
                 "x": x_pos,
                 "y": y_pos,
                 "map": map_n,
