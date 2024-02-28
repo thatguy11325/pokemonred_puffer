@@ -966,11 +966,11 @@ class RedGymEnv(Env):
             "got_hm01": 5 * int(self.read_bit(0xD803, 0)),
             "rubbed_captains_back": 5 * int(self.read_bit(0xD803, 1)),
             "start_menu": self.seen_start_menu * 0.1,
-            "pokemon_menu": self.seen_pokemon_menu * 0.01,
-            "stats_menu": self.seen_stats_menu * 0.01,
-            "bag_menu": self.seen_bag_menu * 0.01,
-            "cancel_bag_menu": self.seen_cancel_bag_menu * 0.01,
-            "blackout_check": self.blackout_check * 4
+            "pokemon_menu": self.seen_pokemon_menu * 0.001,
+            "stats_menu": self.seen_stats_menu * 0.001,
+            "bag_menu": self.seen_bag_menu * 0.001,
+            "cancel_bag_menu": self.seen_cancel_bag_menu * 0.001,
+            "blackout_check": self.blackout_check * 0.001
         }
 
         return state_scores
