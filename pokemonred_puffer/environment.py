@@ -943,9 +943,9 @@ class RedGymEnv(Env):
         # https://github.com/pret/pokered/blob/91dc3c9f9c8fd529bb6e8307b58b96efa0bec67e/constants/event_constants.asm
         state_scores = {
             "event": 4 * self.update_max_event_rew(),
-            "explore_npcs": sum(self.seen_npcs.values()) * 0.02,
-            "seen_pokemon": sum(self.seen_pokemon) * 0.000010,
-            "caught_pokemon": sum(self.caught_pokemon) * 0.000010,
+            "explore_npcs": sum(self.seen_npcs.values()) * 0.001,
+            "seen_pokemon": sum(self.seen_pokemon) * 0.0000010,
+            "caught_pokemon": sum(self.caught_pokemon) * 0.0000010,
             "moves_obtained": sum(self.moves_obtained) * 0.00010,
             "explore_hidden_objs": sum(self.seen_hidden_objs.values()) * 0.02,
             "level": self.get_levels_reward(),
