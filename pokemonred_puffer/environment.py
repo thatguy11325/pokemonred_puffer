@@ -222,33 +222,25 @@ class RedGymEnv(Env):
             self.caught_pokemon = np.zeros(152, dtype=np.uint8)
             self.moves_obtained = np.zeros(0xA5, dtype=np.uint8)
             self.explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
-            self.init_map_mem()
-            self.init_npc_mem()
-            self.init_hidden_obj_mem()
-            self.init_cut_mem()
-            self.init_menu_mem()
-
-        if self.first:  # or random.uniform(0, 1) < 0.5:
-            with open(self.init_state, "rb") as f:
-                self.pyboy.load_state(f)
+            self.init_mem()
+        else:
             self.recent_screens.clear()
             self.recent_actions.clear()
             self.seen_pokemon.fill(0)
             self.caught_pokemon.fill(0)
             self.moves_obtained.fill(0)
-
-            # lazy random seed setting
-            if not seed:
-                seed = random.randint(0, 4096)
-            for _ in range(seed):
-                self.pyboy.tick()
-
             self.explore_map *= 0
-            self.init_map_mem()
-            self.init_npc_mem()
-            self.init_hidden_obj_mem()
-            self.init_cut_mem()
-            self.init_menu_mem()
+            self.reset_mem()
+
+        with open(self.init_state, "rb") as f:
+            self.pyboy.load_state(f)
+
+        # lazy random seed setting
+        if not seed:
+            seed = random.randint(0, 4096)
+        for _ in range(seed):
+            self.pyboy.tick()
+
 
         self.taught_cut = self.check_if_party_has_cut()
         self.base_event_flags = sum(
@@ -284,7 +276,7 @@ class RedGymEnv(Env):
         self.first = False
         return self._get_obs(), {}
 
-    def init_map_mem(self):
+    def init_mem(self):
         # Maybe I should preallocate a giant matrix for all map ids
         # All map ids have the same size, right?
         self.seen_coords = {}
@@ -293,18 +285,43 @@ class RedGymEnv(Env):
         self.seen_map_ids = np.zeros(256)
         self.seen_map_ids_since_blackout = set([])
 
-    def init_npc_mem(self):
         self.seen_npcs = {}
         self.seen_npcs_since_blackout = set([])
 
-    def init_hidden_obj_mem(self):
         self.seen_hidden_objs = {}
 
-    def init_cut_mem(self):
         self.cut_coords = {}
         self.cut_state = deque(maxlen=3)
 
-    def init_menu_mem(self):
+        self.seen_start_menu = 0
+        self.seen_pokemon_menu = 0
+        self.seen_stats_menu = 0
+        self.seen_bag_menu = 0
+        self.seen_cancel_bag_menu = 0
+
+    def reset_mem(self):
+        self.seen_coords.update(
+            (k, 0) for k, _ in self.seen_coords.items()
+        )
+        self.seen_coords_since_blackout = set([])
+        # self.seen_global_coords = np.zeros(GLOBAL_MAP_SHAPE)
+        self.seen_map_ids *= 0 
+        self.seen_map_ids_since_blackout = set([])
+
+        self.seen_npcs.update(
+            (k, 0) for k, _ in self.seen_npcs.items()
+        )
+        self.seen_npcs_since_blackout = set([])
+
+        self.seen_hidden_objs.update(
+            (k, 0) for k, _ in self.seen_hidden_objs.items()
+        )
+
+        self.cut_coords.update(
+            (k, 0) for k, _ in self.cut_coords.items()
+        )
+        self.cut_state = deque(maxlen=3)
+
         self.seen_start_menu = 0
         self.seen_pokemon_menu = 0
         self.seen_stats_menu = 0
@@ -590,8 +607,8 @@ class RedGymEnv(Env):
 
         self.step_count += 1
 
-        # return obs, new_reward, self.step_count > self.max_steps, False, info
-        return obs, new_reward, False, False, info
+        return obs, new_reward, self.step_count > self.max_steps, False, info
+        # return obs, new_reward, False, False, info
 
     def find_neighboring_sign(self, sign_id, player_direction, player_x, player_y) -> bool:
         sign_y = self.pyboy.get_memory_value(0xD4B1 + (2 * sign_id))
@@ -787,6 +804,7 @@ class RedGymEnv(Env):
                 "bag_menu": self.seen_bag_menu,
                 "cancel_bag_menu": self.seen_cancel_bag_menu,
                 "blackout_check": self.blackout_check,
+                "item_count": self.read_m(0xD31D),
             },
             "reward": self.get_game_state_reward(),
             "reward/reward_sum": sum(self.get_game_state_reward().values()),
@@ -948,10 +966,11 @@ class RedGymEnv(Env):
             "got_hm01": 5 * int(self.read_bit(0xD803, 0)),
             "rubbed_captains_back": 5 * int(self.read_bit(0xD803, 1)),
             "start_menu": self.seen_start_menu * 0.1,
-            "pokemon_menu": self.seen_pokemon_menu * 0.1,
-            "stats_menu": self.seen_stats_menu * 0.1,
-            "bag_menu": self.seen_bag_menu * 0.1,
-            "cancel_bag_menu": self.seen_cancel_bag_menu * 0.1,
+            "pokemon_menu": self.seen_pokemon_menu * 0.01,
+            "stats_menu": self.seen_stats_menu * 0.01,
+            "bag_menu": self.seen_bag_menu * 0.01,
+            "cancel_bag_menu": self.seen_cancel_bag_menu * 0.01,
+            "blackout_check": self.blackout_check * 4
         }
 
         return state_scores
