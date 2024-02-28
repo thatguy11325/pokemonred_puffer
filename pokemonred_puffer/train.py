@@ -224,9 +224,9 @@ if __name__ == "__main__":
         "step_forgetting_factor": {
             "npc": 0.995,
             "hidden_objs": 0.95,
-            "coords": 0.995,
+            "coords": 0.9995,
             "map_ids": 0.995,
-            "explore": 0.995,
+            "explore": 0.9995,
             "start_menu": 0.998,
             "pokemon_menu": 0.998,
             "stats_menu": 0.998,
