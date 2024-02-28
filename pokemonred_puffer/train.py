@@ -222,7 +222,7 @@ if __name__ == "__main__":
         "explore_npc_weight": 1,  # 2.5
         "frame_stacks": parsed_args.frame_stacks,
         "step_forgetting_factor": {
-            "npc": 0.995,
+            "npc": 0.9995,
             "hidden_objs": 0.95,
             "coords": 0.9995,
             "map_ids": 0.995,
