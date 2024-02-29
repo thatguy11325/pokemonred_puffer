@@ -5,7 +5,6 @@ import pufferlib.emulation
 from pokemonred_puffer.environment import RedGymEnv
 from pokemonred_puffer.stream_wrapper import StreamWrapper
 
-
 def env_creator(name="pokemon_red"):
     return functools.partial(make, name)
 
