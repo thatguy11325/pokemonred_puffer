@@ -113,7 +113,8 @@ RESET_MAP_IDS = set(
 
 # TODO: Make global map usage a configuration parameter
 class RedGymEnv(Env):
-    g_env_id = 0
+    env_id = 0
+
     def __init__(self, config=None):
         self.s_path = config["session_path"]
         self.save_final_state = config["save_final_state"]
@@ -212,8 +213,8 @@ class RedGymEnv(Env):
             self.pyboy.set_emulation_speed(6)
 
         self.first = True
-        self.env_id = self.g_env_id
-        self.g_env_id += 1
+        self.env_id = RedGymEnv.env_id
+        RedGymEnv.env_id += 1
 
     def reset(self, seed: Optional[int] = None):
         # restart game, skipping credits
