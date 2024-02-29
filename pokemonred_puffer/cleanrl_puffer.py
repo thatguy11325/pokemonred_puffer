@@ -443,7 +443,7 @@ class CleanPuffeRL:
                     "reward/reward_var": reward_var,
                     "reward/reward_buffer_len": len(self.reward_buffer),
                 },
-                step=self.global_step
+                step=self.global_step,
             )
         if (
             self.taught_cut
@@ -494,6 +494,7 @@ class CleanPuffeRL:
                 self.max_stats[k] = np.max(v)
                 if self.max_stats["got_hm01"] > 0:
                     self.taught_cut = True
+                self.stats[f"Histogram/{k}"] = self.wandb.Histogram(v, num_bins=16)
             except:
                 continue
 
