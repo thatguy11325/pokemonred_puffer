@@ -264,6 +264,7 @@ class RedGymEnv(Env):
         self.party_size = 0
         self.step_count = 0
         self.blackout_check = 0
+        self.blackout_count = 0
 
         self.current_event_flags_set = {}
 
@@ -363,6 +364,7 @@ class RedGymEnv(Env):
             self.seen_coords_since_blackout.clear()
             self.seen_npcs_since_blackout.clear()
             self.seen_map_ids_since_blackout.clear()
+            self.blackout_count += 1
 
     def render(self, reduce_res=False):
         # (144, 160, 3)
@@ -800,6 +802,8 @@ class RedGymEnv(Env):
                 "cancel_bag_menu": self.seen_cancel_bag_menu,
                 "blackout_check": self.blackout_check,
                 "item_count": self.read_m(0xD31D),
+                "reset_count": self.reset_count,
+                "blackout_count": self.blackout_count,
             },
             "reward": self.get_game_state_reward(),
             "reward/reward_sum": sum(self.get_game_state_reward().values()),
