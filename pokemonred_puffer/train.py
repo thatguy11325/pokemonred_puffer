@@ -208,7 +208,7 @@ if __name__ == "__main__":
         "early_stop": False,
         "action_freq": 24,
         "init_state": parsed_args.state_path,
-        "max_steps": 300_000,
+        "max_steps": 1_000_000,
         "print_rewards": True,
         "save_video": parsed_args.save_video,
         "fast_video": parsed_args.fast_video,

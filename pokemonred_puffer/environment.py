@@ -105,8 +105,8 @@ RESET_MAP_IDS = set(
         0x9,  # Indigo Plateau
         0xA,  # Saffron City
         0xF,  # Route 4 (Mt Moon)
-        0x10, # Route 10 (Rock Tunnel)
-        0xE9, # Silph Co 9F (Heal station)
+        0x10,  # Route 10 (Rock Tunnel)
+        0xE9,  # Silph Co 9F (Heal station)
     ]
 )
 
@@ -243,7 +243,6 @@ class RedGymEnv(Env):
         for _ in range(seed):
             self.pyboy.tick()
 
-
         self.taught_cut = self.check_if_party_has_cut()
         self.base_event_flags = sum(
             self.bit_count(self.read_m(i))
@@ -301,26 +300,18 @@ class RedGymEnv(Env):
         self.seen_cancel_bag_menu = 0
 
     def reset_mem(self):
-        self.seen_coords.update(
-            (k, 0) for k, _ in self.seen_coords.items()
-        )
+        self.seen_coords.update((k, 0) for k, _ in self.seen_coords.items())
         self.seen_coords_since_blackout = set([])
         # self.seen_global_coords = np.zeros(GLOBAL_MAP_SHAPE)
-        self.seen_map_ids *= 0 
+        self.seen_map_ids *= 0
         self.seen_map_ids_since_blackout = set([])
 
-        self.seen_npcs.update(
-            (k, 0) for k, _ in self.seen_npcs.items()
-        )
+        self.seen_npcs.update((k, 0) for k, _ in self.seen_npcs.items())
         self.seen_npcs_since_blackout = set([])
 
-        self.seen_hidden_objs.update(
-            (k, 0) for k, _ in self.seen_hidden_objs.items()
-        )
+        self.seen_hidden_objs.update((k, 0) for k, _ in self.seen_hidden_objs.items())
 
-        self.cut_coords.update(
-            (k, 0) for k, _ in self.cut_coords.items()
-        )
+        self.cut_coords.update((k, 0) for k, _ in self.cut_coords.items())
         self.cut_state = deque(maxlen=3)
 
         self.seen_start_menu = 0
@@ -359,12 +350,12 @@ class RedGymEnv(Env):
         # Only penalize for blacking out due to battle, not due to poison
         if self.read_m(0xD057) == -1:
             for k in self.seen_coords_since_blackout:
-                self.seen_coords[k] *= 0.5
-                self.explore_map[local_to_global(*k)] *= 0.5
+                self.seen_coords[k] = 0.2
+                self.explore_map[local_to_global(*k)] = 0.2
             for k in self.seen_npcs_since_blackout:
-                self.seen_npcs[k] *= 0.5
+                self.seen_npcs[k] = 0.2
             for k in self.seen_map_ids_since_blackout:
-                self.seen_map_ids[k] *= 0.5
+                self.seen_map_ids[k] = 0.2
 
             self.seen_coords_since_blackout.clear()
             self.seen_npcs_since_blackout.clear()
@@ -580,7 +571,7 @@ class RedGymEnv(Env):
         if self.perfect_ivs:
             self.set_perfect_iv_dvs()
         self.taught_cut = self.check_if_party_has_cut()
-        # self.blackout()
+        self.blackout()
         self.update_blackout()
 
         info = {}
@@ -739,7 +730,7 @@ class RedGymEnv(Env):
                 if npc_candidates:
                     _, npc_id = min(npc_candidates, key=lambda x: x[0])
                     self.seen_npcs[(self.pyboy.get_memory_value(0xD35E), npc_id)] = 1
-                    # self.seen_npcs_since_blackout.add((self.pyboy.get_memory_value(0xD35E), npc_id))
+                    self.seen_npcs_since_blackout.add((self.pyboy.get_memory_value(0xD35E), npc_id))
 
             if self.check_if_in_start_menu():
                 self.seen_start_menu = 1
@@ -853,11 +844,11 @@ class RedGymEnv(Env):
     def update_seen_coords(self):
         x_pos, y_pos, map_n = self.get_game_coords()
         self.seen_coords[(x_pos, y_pos, map_n)] = 1
-        # self.seen_coords_since_blackout.add((x_pos, y_pos, map_n))
+        self.seen_coords_since_blackout.add((x_pos, y_pos, map_n))
         self.explore_map[local_to_global(y_pos, x_pos, map_n)] = 1
         # self.seen_global_coords[local_to_global(y_pos, x_pos, map_n)] = 1
         self.seen_map_ids[map_n] = 1
-        # self.seen_map_ids_since_blackout.add(map_n)
+        self.seen_map_ids_since_blackout.add(map_n)
 
     def get_explore_map(self):
         explore_map = np.zeros(GLOBAL_MAP_SHAPE)
@@ -945,15 +936,15 @@ class RedGymEnv(Env):
         state_scores = {
             "event": 4 * self.update_max_event_rew(),
             "explore_npcs": sum(self.seen_npcs.values()) * 0.001,
-            "seen_pokemon": sum(self.seen_pokemon) * 0.0000010,
-            "caught_pokemon": sum(self.caught_pokemon) * 0.0000010,
+            # "seen_pokemon": sum(self.seen_pokemon) * 0.0000010,
+            # "caught_pokemon": sum(self.caught_pokemon) * 0.0000010,
             "moves_obtained": sum(self.moves_obtained) * 0.00010,
             "explore_hidden_objs": sum(self.seen_hidden_objs.values()) * 0.02,
-            "level": self.get_levels_reward(),
+            # "level": self.get_levels_reward(),
             # "opponent_level": self.max_opponent_level,
             # "death_reward": self.died_count,
             "badge": self.get_badges() * 5,
-            "heal": self.total_healing_rew,
+            # "heal": self.total_healing_rew,
             "explore": sum(self.seen_coords.values()) * 0.01,
             "explore_maps": np.sum(self.seen_map_ids) * 0.0001,
             "taught_cut": 4 * int(self.check_if_party_has_cut()),
@@ -971,7 +962,7 @@ class RedGymEnv(Env):
             "stats_menu": self.seen_stats_menu * 0.001,
             "bag_menu": self.seen_bag_menu * 0.001,
             "cancel_bag_menu": self.seen_cancel_bag_menu * 0.001,
-            "blackout_check": self.blackout_check * 0.001
+            "blackout_check": self.blackout_check * 0.001,
         }
 
         return state_scores
