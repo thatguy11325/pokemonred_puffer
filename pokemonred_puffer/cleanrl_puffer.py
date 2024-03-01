@@ -7,6 +7,7 @@ from typing import Any, Callable
 import uuid
 from collections import defaultdict
 from datetime import timedelta
+import warnings
 
 import numpy as np
 import pufferlib
@@ -337,7 +338,7 @@ class CleanPuffeRL:
                         for policy, elo in self.policy_pool.ranker.ratings.items()
                     },
                 },
-                step=self.global_step
+                step=self.global_step,
             )
             self.log = False
 
@@ -496,7 +497,8 @@ class CleanPuffeRL:
                 self.max_stats[k] = np.max(v)
                 if self.max_stats["got_hm01"] > 0:
                     self.taught_cut = True
-            except:
+            except Exception as e:
+                warnings.warn(e)
                 continue
 
         if config.verbose:
