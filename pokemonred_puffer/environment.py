@@ -704,7 +704,6 @@ class RedGymEnv(Env):
 
         # check if the font is loaded
         if self.pyboy.get_memory_value(0xCFC4):
-            """
             # check if we are talking to a hidden object:
             player_direction = self.pyboy.get_memory_value(0xC109)
             player_y_tiles = self.pyboy.get_memory_value(0xD361)
@@ -748,7 +747,6 @@ class RedGymEnv(Env):
                     _, npc_id = min(npc_candidates, key=lambda x: x[0])
                     self.seen_npcs[(self.pyboy.get_memory_value(0xD35E), npc_id)] = 1
                     self.seen_npcs_since_blackout.add((self.pyboy.get_memory_value(0xD35E), npc_id))
-                """
 
             if self.check_if_in_start_menu():
                 self.seen_start_menu = 1
@@ -956,8 +954,8 @@ class RedGymEnv(Env):
         # https://github.com/pret/pokered/blob/91dc3c9f9c8fd529bb6e8307b58b96efa0bec67e/constants/event_constants.asm
         state_scores = {
             "event": 4 * self.update_max_event_rew(),
-            # "explore_npcs": sum(self.seen_npcs.values()) * 0.005,
-            # "seen_pokemon": sum(self.seen_pokemon) * 0.0000010,
+            "explore_npcs": sum(self.seen_npcs.values()) * 0.005,
+            "seen_pokemon": sum(self.seen_pokemon) * 0.0000010,
             # "caught_pokemon": sum(self.caught_pokemon) * 0.0000010,
             "moves_obtained": sum(self.moves_obtained) * 0.00010,
             # "explore_hidden_objs": sum(self.seen_hidden_objs.values()) * 0.02,
