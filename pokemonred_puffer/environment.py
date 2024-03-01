@@ -375,6 +375,8 @@ class RedGymEnv(Env):
     def render(self, reduce_res=True):
         # (144, 160, 3)
         game_pixels_render = self.screen.screen_ndarray()[:, :, 0:1]
+        if reduce_res:
+            game_pixels_render = game_pixels_render[::2, ::2, :]
         # place an overlay on top of the screen greying out places we haven't visited
         # first get our location
         player_x, player_y, map_n = self.get_game_coords()
@@ -403,6 +405,7 @@ class RedGymEnv(Env):
             cut_mask = np.random.randint(0, 255, game_pixels_render.shape, dtype=np.uint8)
         """
         # If not in battle, set the visited mask. There's no reason to process it when in battle
+        scale = 2 if reduce_res else 1
         if self.read_m(0xD057) == 0:
             for y in range(-72 // 16, 72 // 16):
                 for x in range(-80 // 16, 80 // 16):
@@ -422,8 +425,8 @@ class RedGymEnv(Env):
                     """
 
                     visited_mask[
-                        16 * y + 76 : 16 * y + 16 + 76,
-                        16 * x + 80 : 16 * x + 16 + 80,
+                        (16 * y + 76) // scale : (16 * y + 16 + 76) // scale,
+                        (16 * x + 80) // scale : (16 * x + 16 + 80) // scale,
                         :,
                     ] = int(
                         self.seen_coords.get(
@@ -466,15 +469,14 @@ class RedGymEnv(Env):
         ).astype(np.uint8)
         visited_mask = np.expand_dims(visited_mask, -1)
         """
-
         # game_pixels_render = np.concatenate([game_pixels_render, visited_mask, cut_mask], axis=-1)
         game_pixels_render = np.concatenate([game_pixels_render, visited_mask], axis=-1)
 
-        if reduce_res:
+        # if reduce_res:
             # game_pixels_render = (
             #     downscale_local_mean(game_pixels_render, (2, 2, 1))
             # ).astype(np.uint8)
-            game_pixels_render = game_pixels_render[::2, ::2, :]
+        #     game_pixels_render = game_pixels_render[::2, ::2, :]
         return game_pixels_render
 
     def _get_obs(self):
@@ -700,9 +702,9 @@ class RedGymEnv(Env):
                 self.cut_coords[coords] = 0.01
                 self.cut_tiles[self.cut_state[-1][0]] = 1
 
-        """
         # check if the font is loaded
         if self.pyboy.get_memory_value(0xCFC4):
+            """
             # check if we are talking to a hidden object:
             player_direction = self.pyboy.get_memory_value(0xC109)
             player_y_tiles = self.pyboy.get_memory_value(0xD361)
@@ -746,7 +748,7 @@ class RedGymEnv(Env):
                     _, npc_id = min(npc_candidates, key=lambda x: x[0])
                     self.seen_npcs[(self.pyboy.get_memory_value(0xD35E), npc_id)] = 1
                     self.seen_npcs_since_blackout.add((self.pyboy.get_memory_value(0xD35E), npc_id))
-            """
+                """
 
             if self.check_if_in_start_menu():
                 self.seen_start_menu = 1
