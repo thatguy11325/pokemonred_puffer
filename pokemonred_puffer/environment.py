@@ -943,7 +943,7 @@ class RedGymEnv(Env):
         # https://github.com/pret/pokered/blob/91dc3c9f9c8fd529bb6e8307b58b96efa0bec67e/constants/event_constants.asm
         state_scores = {
             "event": 4 * self.update_max_event_rew(),
-            "explore_npcs": sum(self.seen_npcs.values()) * 0.001,
+            "explore_npcs": sum(self.seen_npcs.values()) * 0.01,
             # "seen_pokemon": sum(self.seen_pokemon) * 0.0000010,
             # "caught_pokemon": sum(self.caught_pokemon) * 0.0000010,
             "moves_obtained": sum(self.moves_obtained) * 0.00010,
@@ -967,8 +967,8 @@ class RedGymEnv(Env):
             "rubbed_captains_back": 5 * int(self.read_bit(0xD803, 1)),
             "start_menu": self.seen_start_menu * 0.1,
             "pokemon_menu": self.seen_pokemon_menu * 0.001,
-            "stats_menu": self.seen_stats_menu * 0.001,
-            "bag_menu": self.seen_bag_menu * 0.001,
+            "stats_menu": self.seen_stats_menu * 0.01,
+            "bag_menu": self.seen_bag_menu * 0.01,
             "cancel_bag_menu": self.seen_cancel_bag_menu * 0.001,
             "blackout_check": self.blackout_check * 0.001,
         }
