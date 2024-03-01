@@ -336,7 +336,8 @@ class CleanPuffeRL:
                         f"skillrank/{policy}": elo
                         for policy, elo in self.policy_pool.ranker.ratings.items()
                     },
-                }
+                },
+                step=self.global_step
             )
             self.log = False
 
@@ -490,11 +491,11 @@ class CleanPuffeRL:
                 if self.wandb is not None:
                     self.stats["Media/aggregate_exploration_map"] = self.wandb.Image(overlay)
             try:  # TODO: Better checks on log data types
+                self.stats[f"Histogram/{k}"] = self.wandb.Histogram(v, num_bins=16)
                 self.stats[k] = np.mean(v)
                 self.max_stats[k] = np.max(v)
                 if self.max_stats["got_hm01"] > 0:
                     self.taught_cut = True
-                self.stats[f"Histogram/{k}"] = self.wandb.Histogram(v, num_bins=16)
             except:
                 continue
 
