@@ -3,6 +3,7 @@ import os
 import random
 import uuid
 from collections import deque
+from multiprocessing import shared_memory
 from pathlib import Path
 from typing import Optional
 
@@ -113,7 +114,7 @@ RESET_MAP_IDS = set(
 
 # TODO: Make global map usage a configuration parameter
 class RedGymEnv(Env):
-    env_id = 0
+    env_id = shared_memory.SharedMemory(create=True, size=1)
 
     def __init__(self, config=None):
         self.s_path = config["session_path"]
@@ -213,8 +214,8 @@ class RedGymEnv(Env):
             self.pyboy.set_emulation_speed(6)
 
         self.first = True
-        self.env_id = RedGymEnv.env_id
-        RedGymEnv.env_id += 1
+        self.env_id = RedGymEnv.env_id[0]
+        RedGymEnv.env_id[0] += 1
 
     def reset(self, seed: Optional[int] = None):
         # restart game, skipping credits
