@@ -1,3 +1,4 @@
+import array
 import json
 import os
 import random
@@ -216,7 +217,8 @@ class RedGymEnv(Env):
 
         self.first = True
         with RedGymEnv.lock:
-            self.env_id = RedGymEnv.env_id.buf[0]
+            a = array.array('b', RedGymEnv.env_id.buf[:1])
+            self.env_id = a
             RedGymEnv.env_id.buf[0] += 1
 
     def reset(self, seed: Optional[int] = None):

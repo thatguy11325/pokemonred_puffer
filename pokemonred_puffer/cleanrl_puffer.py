@@ -338,7 +338,6 @@ class CleanPuffeRL:
                         for policy, elo in self.policy_pool.ranker.ratings.items()
                     },
                 },
-                step=self.global_step,
             )
             self.log = False
 
@@ -445,7 +444,6 @@ class CleanPuffeRL:
                     "reward/reward_var": reward_var,
                     "reward/reward_buffer_len": len(self.reward_buffer),
                 },
-                step=self.global_step,
             )
         if (
             self.taught_cut
