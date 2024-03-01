@@ -495,10 +495,7 @@ class CleanPuffeRL:
                 self.stats[f"Histogram/{k}"] = self.wandb.Histogram(v, num_bins=16)
                 self.stats[k] = np.mean(v)
                 self.max_stats[k] = np.max(v)
-                if self.max_stats["got_hm01"] > 0:
-                    self.taught_cut = True
-            except Exception as e:
-                warnings.warn(e)
+            except: 
                 continue
 
         if config.verbose:
