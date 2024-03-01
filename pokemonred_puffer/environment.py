@@ -297,6 +297,7 @@ class RedGymEnv(Env):
         self.seen_hidden_objs = {}
 
         self.cut_coords = {}
+        self.cut_tiles = set([])
         self.cut_state = deque(maxlen=3)
 
         self.seen_start_menu = 0
@@ -688,10 +689,13 @@ class RedGymEnv(Env):
             )
             if tuple(list(self.cut_state)[1:]) in CUT_SEQ:
                 self.cut_coords[coords] = 10
+                self.cut_tiles[self.cut_state[-1][0]] = 1
             elif self.cut_state == CUT_GRASS_SEQ:
                 self.cut_coords[coords] = 0.01
+                self.cut_tiles[self.cut_state[-1][0]] = 1
             elif deque([(-1, *elem[1:]) for elem in self.cut_state]) == CUT_FAIL_SEQ:
                 self.cut_coords[coords] = 0.01
+                self.cut_tiles[self.cut_state[-1][0]] = 1
 
         # check if the font is loaded
         if self.pyboy.get_memory_value(0xCFC4):
@@ -797,6 +801,7 @@ class RedGymEnv(Env):
                 "rubbed_captains_back": int(self.read_bit(0xD803, 1)),
                 "taught_cut": int(self.check_if_party_has_cut()),
                 "cut_coords": sum(self.cut_coords.values()),
+                "cut_tiles": len(self.cut_tiles),
                 "start_menu": self.seen_start_menu,
                 "pokemon_menu": self.seen_pokemon_menu,
                 "stats_menu": self.seen_stats_menu,
@@ -958,6 +963,7 @@ class RedGymEnv(Env):
             "explore_maps": np.sum(self.seen_map_ids) * 0.0001,
             "taught_cut": 4 * int(self.check_if_party_has_cut()),
             "cut_coords": sum(self.cut_coords.values()) * 1.0,
+            "cut_tiles": len(self.cut_tiles) * 1.0,
             "met_bill": 5 * int(self.read_bit(0xD7F1, 0)),
             "used_cell_separator_on_bill": 5 * int(self.read_bit(0xD7F2, 3)),
             "ss_ticket": 5 * int(self.read_bit(0xD7F2, 4)),
