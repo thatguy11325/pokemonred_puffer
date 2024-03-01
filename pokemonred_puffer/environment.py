@@ -181,7 +181,8 @@ class RedGymEnv(Env):
             event_names = json.load(f)
         self.event_names = event_names
 
-        self.screen_output_shape = (144, 160, 3 * self.frame_stacks)
+        # self.screen_output_shape = (144, 160, 3 * self.frame_stacks)
+        self.screen_output_shape = (72, 80, 3 * self.frame_stacks)
         self.coords_pad = 12
 
         # Set these in ALL subclasses
@@ -371,7 +372,7 @@ class RedGymEnv(Env):
             self.seen_map_ids_since_blackout.clear()
             self.blackout_count += 1
 
-    def render(self, reduce_res=False):
+    def render(self, reduce_res=True):
         # (144, 160, 3)
         game_pixels_render = self.screen.screen_ndarray()[:, :, 0:1]
         # place an overlay on top of the screen greying out places we haven't visited
@@ -699,6 +700,7 @@ class RedGymEnv(Env):
                 self.cut_coords[coords] = 0.01
                 self.cut_tiles[self.cut_state[-1][0]] = 1
 
+        """
         # check if the font is loaded
         if self.pyboy.get_memory_value(0xCFC4):
             # check if we are talking to a hidden object:
@@ -744,6 +746,7 @@ class RedGymEnv(Env):
                     _, npc_id = min(npc_candidates, key=lambda x: x[0])
                     self.seen_npcs[(self.pyboy.get_memory_value(0xD35E), npc_id)] = 1
                     self.seen_npcs_since_blackout.add((self.pyboy.get_memory_value(0xD35E), npc_id))
+            """
 
             if self.check_if_in_start_menu():
                 self.seen_start_menu = 1
@@ -951,11 +954,11 @@ class RedGymEnv(Env):
         # https://github.com/pret/pokered/blob/91dc3c9f9c8fd529bb6e8307b58b96efa0bec67e/constants/event_constants.asm
         state_scores = {
             "event": 4 * self.update_max_event_rew(),
-            "explore_npcs": sum(self.seen_npcs.values()) * 0.005,
+            # "explore_npcs": sum(self.seen_npcs.values()) * 0.005,
             # "seen_pokemon": sum(self.seen_pokemon) * 0.0000010,
             # "caught_pokemon": sum(self.caught_pokemon) * 0.0000010,
             "moves_obtained": sum(self.moves_obtained) * 0.00010,
-            "explore_hidden_objs": sum(self.seen_hidden_objs.values()) * 0.02,
+            # "explore_hidden_objs": sum(self.seen_hidden_objs.values()) * 0.02,
             # "level": self.get_levels_reward(),
             # "opponent_level": self.max_opponent_level,
             # "death_reward": self.died_count,
@@ -975,10 +978,10 @@ class RedGymEnv(Env):
             "got_hm01": 5 * int(self.read_bit(0xD803, 0)),
             "rubbed_captains_back": 5 * int(self.read_bit(0xD803, 1)),
             "start_menu": self.seen_start_menu * 0.1,
-            "pokemon_menu": self.seen_pokemon_menu * 0.001,
-            "stats_menu": self.seen_stats_menu * 0.01,
-            "bag_menu": self.seen_bag_menu * 0.001,
-            "cancel_bag_menu": self.seen_cancel_bag_menu * 0.01,
+            "pokemon_menu": self.seen_pokemon_menu * 0.1,
+            "stats_menu": self.seen_stats_menu * 0.1,
+            "bag_menu": self.seen_bag_menu * 0.1,
+            "cancel_bag_menu": self.seen_cancel_bag_menu * 0.1,
             "blackout_check": self.blackout_check * 0.001,
         }
 
