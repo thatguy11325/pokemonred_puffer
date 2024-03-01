@@ -360,12 +360,12 @@ class RedGymEnv(Env):
         # Only penalize for blacking out due to battle, not due to poison
         if self.read_m(0xD057) == -1:
             for k in self.seen_coords_since_blackout:
-                self.seen_coords[k] = 0.2
-                self.explore_map[local_to_global(*k)] = 0.2
+                self.seen_coords[k] *= 0.75
+                self.explore_map[local_to_global(*k)] *= 0.75
             for k in self.seen_npcs_since_blackout:
-                self.seen_npcs[k] = 0.2
+                self.seen_npcs[k] *= 0.75
             for k in self.seen_map_ids_since_blackout:
-                self.seen_map_ids[k] = 0.2
+                self.seen_map_ids[k] *= 0.75
 
             self.seen_coords_since_blackout.clear()
             self.seen_npcs_since_blackout.clear()
