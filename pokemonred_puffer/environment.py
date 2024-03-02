@@ -374,12 +374,12 @@ class RedGymEnv(Env):
         # Debounce is not really needed except for accurate blackout count reporting
         if self.blackout_debounce and self.read_m(0xCF0B) == 0x01:
             for k in self.seen_coords_since_blackout:
-                self.seen_coords[k] = 0.5
-                self.explore_map[local_to_global(k[1], k[0], k[2])] = 0.5
+                self.seen_coords[k] *= 0.80
+                self.explore_map[local_to_global(k[1], k[0], k[2])] *= 0.80
             for k in self.seen_npcs_since_blackout:
-                self.seen_npcs[k] = 0.5
+                self.seen_npcs[k] *= 0.80
             for k in self.seen_map_ids_since_blackout:
-                self.seen_map_ids[k] = 0.5
+                self.seen_map_ids[k] *= 0.80
 
             self.seen_coords_since_blackout.clear()
             self.seen_npcs_since_blackout.clear()
@@ -978,14 +978,14 @@ class RedGymEnv(Env):
             "seen_pokemon": sum(self.seen_pokemon) * 0.0000010,
             # "caught_pokemon": sum(self.caught_pokemon) * 0.0000010,
             "moves_obtained": sum(self.moves_obtained) * 0.00010,
-            # "explore_hidden_objs": sum(self.seen_hidden_objs.values()) * 0.02,
+            "explore_hidden_objs": sum(self.seen_hidden_objs.values()) * 0.02,
             # "level": self.get_levels_reward(),
             # "opponent_level": self.max_opponent_level,
             # "death_reward": self.died_count,
             "badge": self.get_badges() * 5,
             # "heal": self.total_healing_rew,
-            # "explore": sum(self.seen_coords.values()) * 0.01,
-            # "explore_maps": np.sum(self.seen_map_ids) * 0.0001,
+            "explore": sum(self.seen_coords.values()) * 0.01,
+            "explore_maps": np.sum(self.seen_map_ids) * 0.0001,
             "taught_cut": 4 * int(self.check_if_party_has_cut()),
             "cut_coords": sum(self.cut_coords.values()) * 1.0,
             "cut_tiles": len(self.cut_tiles) * 1.0,
