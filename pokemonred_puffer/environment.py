@@ -141,6 +141,7 @@ class RedGymEnv(Env):
         self.step_forgetting_factor = config["step_forgetting_factor"]
         self.forgetting_frequency = config["forgetting_frequency"]
         self.perfect_ivs = config["perfect_ivs"]
+        self.reduce_res = config["reduce_res"]
         self.s_path.mkdir(exist_ok=True)
         self.full_frame_writer = None
         self.model_frame_writer = None
@@ -181,8 +182,10 @@ class RedGymEnv(Env):
             event_names = json.load(f)
         self.event_names = event_names
 
-        # self.screen_output_shape = (144, 160, 3 * self.frame_stacks)
-        self.screen_output_shape = (72, 80, 3 * self.frame_stacks)
+        if self.reduce_res:
+            self.screen_output_shape = (72, 80, 3 * self.frame_stacks)
+        else:
+            self.screen_output_shape = (144, 160, 3 * self.frame_stacks)
         self.coords_pad = 12
 
         # Set these in ALL subclasses
@@ -368,6 +371,7 @@ class RedGymEnv(Env):
 
     def blackout(self):
         # Only penalize for blacking out due to battle, not due to poison
+        # Debounce is not really needed except for accurate blackout count reporting
         if self.blackout_debounce and self.read_m(0xCF0B) == 0x01:
             for k in self.seen_coords_since_blackout:
                 self.seen_coords[k] = 0.5
@@ -385,10 +389,10 @@ class RedGymEnv(Env):
         elif self.read_m(0xD057) == 0:
             self.blackout_debounce = True
 
-    def render(self, reduce_res=True):
+    def render(self):
         # (144, 160, 3)
         game_pixels_render = self.screen.screen_ndarray()[:, :, 0:1]
-        if reduce_res:
+        if self.reduce_res:
             game_pixels_render = game_pixels_render[::2, ::2, :]
         # place an overlay on top of the screen greying out places we haven't visited
         # first get our location
@@ -418,7 +422,7 @@ class RedGymEnv(Env):
             cut_mask = np.random.randint(0, 255, game_pixels_render.shape, dtype=np.uint8)
         """
         # If not in battle, set the visited mask. There's no reason to process it when in battle
-        scale = 2 if reduce_res else 1
+        scale = 2 if self.reduce_res else 1
         if self.read_m(0xD057) == 0:
             for y in range(-72 // 16, 72 // 16):
                 for x in range(-80 // 16, 80 // 16):
@@ -870,8 +874,8 @@ class RedGymEnv(Env):
         self.map_frame_writer.__enter__()
 
     def add_video_frame(self):
-        self.full_frame_writer.add_image(self.render(reduce_res=False)[:, :, 0])
-        self.model_frame_writer.add_image(self.render(reduce_res=True)[:, :, 0])
+        self.full_frame_writer.add_image(self.render()[:, :, 0])
+        self.model_frame_writer.add_image(self.render()[:, :, 0])
 
     def get_game_coords(self):
         return (self.read_m(0xD362), self.read_m(0xD361), self.read_m(0xD35E))
