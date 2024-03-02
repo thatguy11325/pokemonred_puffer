@@ -59,7 +59,7 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
 
         self.encode_linear = nn.Sequential(
             pufferlib.pytorch.layer_init(
-                nn.Linear(
+                nn.LazyLinear(
                     screen_flat_size + 4,
                     hidden_size,
                 ),
