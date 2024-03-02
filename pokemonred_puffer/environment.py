@@ -578,7 +578,13 @@ class RedGymEnv(Env):
     def update_blackout(self):
         cur_map_id = self.read_m(0xD35E)
         if cur_map_id in RESET_MAP_IDS:
-            self.blackout_check = int(cur_map_id == self.read_m(0xD719))
+            blackout_check = int(cur_map_id == self.read_m(0xD719))
+            if blackout_check and not self.blackout_check:
+                self.seen_coords_since_blackout.clear()
+                self.seen_npcs_since_blackout.clear()
+                self.seen_map_ids_since_blackout.clear()
+
+                self.blackout_check = blackout_check
 
     def step(self, action):
         if self.save_video and self.step_count == 0:
