@@ -358,7 +358,7 @@ class RedGymEnv(Env):
 
     def blackout(self):
         # Only penalize for blacking out due to battle, not due to poison
-        if self.read_m(0xcf0b) == 0x01:
+        if self.read_m(0xCF0B) == 0x01:
             for k in self.seen_coords_since_blackout:
                 self.seen_coords[k] *= 0.5
                 self.explore_map[local_to_global(*k)] *= 0.5
@@ -473,9 +473,9 @@ class RedGymEnv(Env):
         game_pixels_render = np.concatenate([game_pixels_render, visited_mask], axis=-1)
 
         # if reduce_res:
-            # game_pixels_render = (
-            #     downscale_local_mean(game_pixels_render, (2, 2, 1))
-            # ).astype(np.uint8)
+        # game_pixels_render = (
+        #     downscale_local_mean(game_pixels_render, (2, 2, 1))
+        # ).astype(np.uint8)
         #     game_pixels_render = game_pixels_render[::2, ::2, :]
         return game_pixels_render
 
@@ -671,97 +671,100 @@ class RedGymEnv(Env):
         # Cut check
         # 0xCFC6 - wTileInFrontOfPlayer
         # 0xCFCB - wUpdateSpritesEnabled
-        if self.taught_cut:
-            player_direction = self.pyboy.get_memory_value(0xC109)
-            x, y, map_id = self.get_game_coords()  # x, y, map_id
-            if player_direction == 0:  # down
-                coords = (x, y + 1, map_id)
-            if player_direction == 4:
-                coords = (x, y - 1, map_id)
-            if player_direction == 8:
-                coords = (x - 1, y, map_id)
-            if player_direction == 0xC:
-                coords = (x + 1, y, map_id)
-            self.cut_state.append(
-                (
-                    self.pyboy.get_memory_value(0xCFC6),
-                    self.pyboy.get_memory_value(0xCFCB),
-                    self.pyboy.get_memory_value(0xCD6A),
-                    self.pyboy.get_memory_value(0xD367),
-                    self.pyboy.get_memory_value(0xD125),
-                    self.pyboy.get_memory_value(0xCD3D),
-                )
-            )
-            if tuple(list(self.cut_state)[1:]) in CUT_SEQ:
-                self.cut_coords[coords] = 10
-                self.cut_tiles[self.cut_state[-1][0]] = 1
-            elif self.cut_state == CUT_GRASS_SEQ:
-                self.cut_coords[coords] = 0.01
-                self.cut_tiles[self.cut_state[-1][0]] = 1
-            elif deque([(-1, *elem[1:]) for elem in self.cut_state]) == CUT_FAIL_SEQ:
-                self.cut_coords[coords] = 0.01
-                self.cut_tiles[self.cut_state[-1][0]] = 1
-
-        # check if the font is loaded
-        if self.pyboy.get_memory_value(0xCFC4):
-            # check if we are talking to a hidden object:
-            player_direction = self.pyboy.get_memory_value(0xC109)
-            player_y_tiles = self.pyboy.get_memory_value(0xD361)
-            player_x_tiles = self.pyboy.get_memory_value(0xD362)
-            if (
-                self.pyboy.get_memory_value(0xCD3D) != 0x0
-                and self.pyboy.get_memory_value(0xCD3E) != 0x0
-            ):
-                # add hidden object to seen hidden objects
-                self.seen_hidden_objs[
+        if self.read_m(0xD057) == 0:
+            if self.taught_cut:
+                player_direction = self.pyboy.get_memory_value(0xC109)
+                x, y, map_id = self.get_game_coords()  # x, y, map_id
+                if player_direction == 0:  # down
+                    coords = (x, y + 1, map_id)
+                if player_direction == 4:
+                    coords = (x, y - 1, map_id)
+                if player_direction == 8:
+                    coords = (x - 1, y, map_id)
+                if player_direction == 0xC:
+                    coords = (x + 1, y, map_id)
+                self.cut_state.append(
                     (
-                        self.pyboy.get_memory_value(0xD35E),
-                        self.pyboy.get_memory_value(0xCD3F),
+                        self.pyboy.get_memory_value(0xCFC6),
+                        self.pyboy.get_memory_value(0xCFCB),
+                        self.pyboy.get_memory_value(0xCD6A),
+                        self.pyboy.get_memory_value(0xD367),
+                        self.pyboy.get_memory_value(0xD125),
+                        self.pyboy.get_memory_value(0xCD3D),
                     )
-                ] = 1
-            elif any(
-                self.find_neighboring_sign(
-                    sign_id, player_direction, player_x_tiles, player_y_tiles
                 )
-                for sign_id in range(self.pyboy.get_memory_value(0xD4B0))
-            ):
-                pass
-            else:
-                # get information for player
-                player_y = self.pyboy.get_memory_value(0xC104)
-                player_x = self.pyboy.get_memory_value(0xC106)
-                # get the npc who is closest to the player and facing them
-                # we go through all npcs because there are npcs like
-                # nurse joy who can be across a desk and still talk to you
+                if tuple(list(self.cut_state)[1:]) in CUT_SEQ:
+                    self.cut_coords[coords] = 10
+                    self.cut_tiles[self.cut_state[-1][0]] = 1
+                elif self.cut_state == CUT_GRASS_SEQ:
+                    self.cut_coords[coords] = 0.01
+                    self.cut_tiles[self.cut_state[-1][0]] = 1
+                elif deque([(-1, *elem[1:]) for elem in self.cut_state]) == CUT_FAIL_SEQ:
+                    self.cut_coords[coords] = 0.01
+                    self.cut_tiles[self.cut_state[-1][0]] = 1
 
-                # npc_id 0 is the player
-                npc_distances = (
-                    (
-                        self.find_neighboring_npc(npc_id, player_direction, player_x, player_y),
-                        npc_id,
+            # check if the font is loaded
+            if self.pyboy.get_memory_value(0xCFC4):
+                # check if we are talking to a hidden object:
+                player_direction = self.pyboy.get_memory_value(0xC109)
+                player_y_tiles = self.pyboy.get_memory_value(0xD361)
+                player_x_tiles = self.pyboy.get_memory_value(0xD362)
+                if (
+                    self.pyboy.get_memory_value(0xCD3D) != 0x0
+                    and self.pyboy.get_memory_value(0xCD3E) != 0x0
+                ):
+                    # add hidden object to seen hidden objects
+                    self.seen_hidden_objs[
+                        (
+                            self.pyboy.get_memory_value(0xD35E),
+                            self.pyboy.get_memory_value(0xCD3F),
+                        )
+                    ] = 1
+                elif any(
+                    self.find_neighboring_sign(
+                        sign_id, player_direction, player_x_tiles, player_y_tiles
                     )
-                    for npc_id in range(1, self.pyboy.get_memory_value(0xD4E1))
-                )
-                npc_candidates = [x for x in npc_distances if x[0]]
-                if npc_candidates:
-                    _, npc_id = min(npc_candidates, key=lambda x: x[0])
-                    self.seen_npcs[(self.pyboy.get_memory_value(0xD35E), npc_id)] = 1
-                    self.seen_npcs_since_blackout.add((self.pyboy.get_memory_value(0xD35E), npc_id))
+                    for sign_id in range(self.pyboy.get_memory_value(0xD4B0))
+                ):
+                    pass
+                else:
+                    # get information for player
+                    player_y = self.pyboy.get_memory_value(0xC104)
+                    player_x = self.pyboy.get_memory_value(0xC106)
+                    # get the npc who is closest to the player and facing them
+                    # we go through all npcs because there are npcs like
+                    # nurse joy who can be across a desk and still talk to you
 
-            if self.check_if_in_start_menu():
-                self.seen_start_menu = 1
+                    # npc_id 0 is the player
+                    npc_distances = (
+                        (
+                            self.find_neighboring_npc(npc_id, player_direction, player_x, player_y),
+                            npc_id,
+                        )
+                        for npc_id in range(1, self.pyboy.get_memory_value(0xD4E1))
+                    )
+                    npc_candidates = [x for x in npc_distances if x[0]]
+                    if npc_candidates:
+                        _, npc_id = min(npc_candidates, key=lambda x: x[0])
+                        self.seen_npcs[(self.pyboy.get_memory_value(0xD35E), npc_id)] = 1
+                        self.seen_npcs_since_blackout.add(
+                            (self.pyboy.get_memory_value(0xD35E), npc_id)
+                        )
 
-            if self.check_if_in_pokemon_menu():
-                self.seen_pokemon_menu = 1
+                if self.check_if_in_start_menu():
+                    self.seen_start_menu = 1
 
-            if self.check_if_in_stats_menu():
-                self.seen_stats_menu = 1
+                if self.check_if_in_pokemon_menu():
+                    self.seen_pokemon_menu = 1
 
-            if self.check_if_in_bag_menu():
-                self.seen_bag_menu = 1
+                if self.check_if_in_stats_menu():
+                    self.seen_stats_menu = 1
 
-            if self.check_if_cancel_bag_menu(action):
-                self.seen_cancel_bag_menu = 1
+                if self.check_if_in_bag_menu():
+                    self.seen_bag_menu = 1
+
+                if self.check_if_cancel_bag_menu(action):
+                    self.seen_cancel_bag_menu = 1
 
         if self.save_video and self.fast_video:
             self.add_video_frame()
