@@ -218,16 +218,16 @@ class RedGymEnv(Env):
         self.first = True
         with RedGymEnv.lock:
             env_id = (
-                int(RedGymEnv.env_id.buf[0])
-                << 24 + int(RedGymEnv.env_id.buf[1])
-                << 16 + int(RedGymEnv.env_id.buf[2])
-                << 8 + int(RedGymEnv.env_id.buf[3])
+                (int(RedGymEnv.env_id.buf[0]) << 24)
+                + (int(RedGymEnv.env_id.buf[1]) << 16)
+                + (int(RedGymEnv.env_id.buf[2]) << 8)
+                + (int(RedGymEnv.env_id.buf[3]))
             ) + 1
+            self.env_id = env_id
             RedGymEnv.env_id.buf[0] = (env_id >> 24) & 0xFF
             RedGymEnv.env_id.buf[1] = (env_id >> 16) & 0xFF
             RedGymEnv.env_id.buf[2] = (env_id >> 8) & 0xFF
             RedGymEnv.env_id.buf[3] = (env_id) & 0xFF
-        self.env_id = env_id
 
     def reset(self, seed: Optional[int] = None):
         # restart game, skipping credits
@@ -370,12 +370,12 @@ class RedGymEnv(Env):
         # Only penalize for blacking out due to battle, not due to poison
         if self.blackout_debounce and self.read_m(0xCF0B) == 0x01:
             for k in self.seen_coords_since_blackout:
-                self.seen_coords[k] *= 0.5
-                self.explore_map[local_to_global(*k)] *= 0.5
+                self.seen_coords[k] = 0.5
+                self.explore_map[local_to_global(*k)] = 0.5
             for k in self.seen_npcs_since_blackout:
-                self.seen_npcs[k] *= 0.5
+                self.seen_npcs[k] = 0.5
             for k in self.seen_map_ids_since_blackout:
-                self.seen_map_ids[k] *= 0.5
+                self.seen_map_ids[k] = 0.5
 
             self.seen_coords_since_blackout.clear()
             self.seen_npcs_since_blackout.clear()
@@ -980,7 +980,7 @@ class RedGymEnv(Env):
             # "death_reward": self.died_count,
             "badge": self.get_badges() * 5,
             # "heal": self.total_healing_rew,
-            # "explore": sum(self.seen_coords.values()) * 0.01,
+            "explore": sum(self.seen_coords.values()) * 0.01,
             "explore_maps": np.sum(self.seen_map_ids) * 0.0001,
             "taught_cut": 4 * int(self.check_if_party_has_cut()),
             "cut_coords": sum(self.cut_coords.values()) * 1.0,
