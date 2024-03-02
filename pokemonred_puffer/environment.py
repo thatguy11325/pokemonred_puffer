@@ -375,7 +375,7 @@ class RedGymEnv(Env):
         if self.blackout_debounce and self.read_m(0xCF0B) == 0x01:
             for k in self.seen_coords_since_blackout:
                 self.seen_coords[k] = 0.5
-                self.explore_map[local_to_global(*k)] = 0.5
+                self.explore_map[local_to_global(k[1], k[0], k[2])] = 0.5
             for k in self.seen_npcs_since_blackout:
                 self.seen_npcs[k] = 0.5
             for k in self.seen_map_ids_since_blackout:
