@@ -270,6 +270,7 @@ class RedGymEnv(Env):
         self.step_count = 0
         self.blackout_check = 0
         self.blackout_count = 0
+        self.blackout_debounce = True
 
         self.current_event_flags_set = {}
 
@@ -358,7 +359,7 @@ class RedGymEnv(Env):
 
     def blackout(self):
         # Only penalize for blacking out due to battle, not due to poison
-        if self.read_m(0xCF0B) == 0x01:
+        if self.blackout_debounce and self.read_m(0xCF0B) == 0x01:
             for k in self.seen_coords_since_blackout:
                 self.seen_coords[k] *= 0.5
                 self.explore_map[local_to_global(*k)] *= 0.5
@@ -371,6 +372,9 @@ class RedGymEnv(Env):
             self.seen_npcs_since_blackout.clear()
             self.seen_map_ids_since_blackout.clear()
             self.blackout_count += 1
+            self.blackout_debounce = False
+        elif self.read_m(0xD057) == 0:
+            self.blackout_debounce = True
 
     def render(self, reduce_res=True):
         # (144, 160, 3)
