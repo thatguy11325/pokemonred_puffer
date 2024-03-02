@@ -114,7 +114,7 @@ RESET_MAP_IDS = set(
 
 # TODO: Make global map usage a configuration parameter
 class RedGymEnv(Env):
-    env_id = shared_memory.SharedMemory(create=True, size=1)
+    env_id = shared_memory.SharedMemory(create=True, size=4)
     lock = Lock()
 
     def __init__(self, config=None):
@@ -217,8 +217,17 @@ class RedGymEnv(Env):
 
         self.first = True
         with RedGymEnv.lock:
-            self.env_id = RedGymEnv.env_id.buf[0]
-            RedGymEnv.env_id.buf[0] += 1
+            env_id = (
+                int(RedGymEnv.env_id.buf[0])
+                << 24 + int(RedGymEnv.env_id.buf[1])
+                << 16 + int(RedGymEnv.env_id.buf[2])
+                << 8 + int(RedGymEnv.env_id.buf[3])
+            ) + 1
+            RedGymEnv.env_id.buf[0] = (env_id >> 24) & 0xFF
+            RedGymEnv.env_id.buf[1] = (env_id >> 16) & 0xFF
+            RedGymEnv.env_id.buf[2] = (env_id >> 8) & 0xFF
+            RedGymEnv.env_id.buf[3] = (env_id) & 0xFF
+        self.env_id = env_id
 
     def reset(self, seed: Optional[int] = None):
         # restart game, skipping credits
