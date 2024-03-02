@@ -194,6 +194,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--stream-wrapper", action="store_true", default=False, help="Enable stream wrapper"
     )
+    parser.add_argument(
+        "--reduce-res", action="store_true", default=False, help="Run with reduced resolution observations"
+
+    )
 
     clean_parser = argparse.ArgumentParser(parents=[parser])
     args = parser.parse_known_args()[0].__dict__
@@ -236,6 +240,7 @@ if __name__ == "__main__":
         "forgetting_frequency": 10,
         "perfect_ivs": parsed_args.perfect_ivs,
         "stream_wrapper": parsed_args.stream_wrapper,
+        "reduce_res": parsed_args.reduce_res,
     }
 
     env_module = importlib.import_module(f"pokemonred_puffer")
