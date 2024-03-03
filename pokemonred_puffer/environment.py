@@ -374,12 +374,14 @@ class RedGymEnv(Env):
         # Debounce is not really needed except for accurate blackout count reporting
         if self.blackout_debounce and self.read_m(0xCF0B) == 0x01:
             for k in self.seen_coords_since_blackout:
-                self.seen_coords[k] *= 0.80
-                self.explore_map[local_to_global(k[1], k[0], k[2])] *= 0.80
+                self.seen_coords[k] *= self.step_forgetting_factor["coords"] ** 5
+                self.explore_map[local_to_global(k[1], k[0], k[2])] *= (
+                    self.step_forgetting_factor["explore"] ** 5
+                )
             for k in self.seen_npcs_since_blackout:
-                self.seen_npcs[k] *= 0.80
+                self.seen_npcs[k] *= self.step_forgetting_factor["npc"] ** 5
             for k in self.seen_map_ids_since_blackout:
-                self.seen_map_ids[k] *= 0.80
+                self.seen_map_ids[k] *= self.step_forgetting_factor["map_ids"] ** 5
 
             self.seen_coords_since_blackout.clear()
             self.seen_npcs_since_blackout.clear()
