@@ -343,38 +343,39 @@ class RedGymEnv(Env):
         self.seen_bag_menu = 0
         self.seen_cancel_bag_menu = 0
 
-    def step_forget_explore(self):
+    def step_forget_explore(self, power: int = 1):
         self.seen_coords.update(
-            (k, max(0.15, v * self.step_forgetting_factor["coords"]))
+            (k, max(0.15, v * (self.step_forgetting_factor["coords"])) ** power)
             for k, v in self.seen_coords.items()
         )
         # self.seen_global_coords *= self.step_forgetting_factor["coords"]
-        self.seen_map_ids *= self.step_forgetting_factor["map_ids"]
+        self.seen_map_ids *= self.step_forgetting_factor["map_ids"] ** power
         self.seen_npcs.update(
-            (k, max(0.15, v * self.step_forgetting_factor["npc"]))
+            (k, max(0.15, v * (self.step_forgetting_factor["npc"] ** power)))
             for k, v in self.seen_npcs.items()
         )
         # self.seen_hidden_objs.update(
         #     (k, max(0.15, v * self.step_forgetting_factor["hidden_objs"]))
         #     for k, v in self.seen_hidden_objs.items()
         # )
-        self.explore_map *= self.step_forgetting_factor["explore"]
+        self.explore_map *= self.step_forgetting_factor["explore"] ** power
         self.explore_map[self.explore_map > 0] = np.clip(
             self.explore_map[self.explore_map > 0], 0.15, 1
         )
 
-        self.seen_start_menu *= self.step_forgetting_factor["start_menu"]
-        self.seen_pokemon_menu *= self.step_forgetting_factor["pokemon_menu"]
-        self.seen_stats_menu *= self.step_forgetting_factor["stats_menu"]
-        self.seen_bag_menu *= self.step_forgetting_factor["bag_menu"]
-        self.seen_cancel_bag_menu *= self.step_forgetting_factor["cancel_bag_menu"]
+        self.seen_start_menu *= self.step_forgetting_factor["start_menu"] ** power
+        self.seen_pokemon_menu *= self.step_forgetting_factor["pokemon_menu"] ** power
+        self.seen_stats_menu *= self.step_forgetting_factor["stats_menu"] ** power
+        self.seen_bag_menu *= self.step_forgetting_factor["bag_menu"] ** power
+        self.seen_cancel_bag_menu *= self.step_forgetting_factor["cancel_bag_menu"] ** power
 
     def blackout(self):
         # Only penalize for blacking out due to battle, not due to poison
         # Debounce is not really needed except for accurate blackout count reporting
         if self.blackout_debounce and self.read_m(0xCF0B) == 0x01:
+            """
             for k in self.seen_coords_since_blackout:
-                self.seen_coords[k] *= self.step_forgetting_factor["coords"] ** 5
+                self.seen_coords[k] *= self.step_forgetting_factor["coords"] ** 1
                 self.explore_map[local_to_global(k[1], k[0], k[2])] *= (
                     self.step_forgetting_factor["explore"] ** 5
                 )
@@ -386,6 +387,7 @@ class RedGymEnv(Env):
             self.seen_coords_since_blackout.clear()
             self.seen_npcs_since_blackout.clear()
             self.seen_map_ids_since_blackout.clear()
+            """
             self.blackout_count += 1
             self.blackout_debounce = False
         elif self.read_m(0xD057) == 0:
