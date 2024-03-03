@@ -363,11 +363,12 @@ class RedGymEnv(Env):
             self.explore_map[self.explore_map > 0], 0.15, 1
         )
 
-        self.seen_start_menu *= self.step_forgetting_factor["start_menu"] ** power
-        self.seen_pokemon_menu *= self.step_forgetting_factor["pokemon_menu"] ** power
-        self.seen_stats_menu *= self.step_forgetting_factor["stats_menu"] ** power
-        self.seen_bag_menu *= self.step_forgetting_factor["bag_menu"] ** power
-        self.seen_cancel_bag_menu *= self.step_forgetting_factor["cancel_bag_menu"] ** power
+        if self.read_m(0xD057) == 0:
+            self.seen_start_menu *= self.step_forgetting_factor["start_menu"] ** power
+            self.seen_pokemon_menu *= self.step_forgetting_factor["pokemon_menu"] ** power
+            self.seen_stats_menu *= self.step_forgetting_factor["stats_menu"] ** power
+            self.seen_bag_menu *= self.step_forgetting_factor["bag_menu"] ** power
+            self.seen_cancel_bag_menu *= self.step_forgetting_factor["cancel_bag_menu"] ** power
 
     def blackout(self):
         # Only penalize for blacking out due to battle, not due to poison
