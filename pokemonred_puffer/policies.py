@@ -21,7 +21,7 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
         env,
         screen_framestack: int = 3,
         global_map_frame_stack: int = 1,
-        screen_flat_size: int = 1920,
+        screen_flat_size: int = 1925,
         global_map_flat_size: int = 1600,
         input_size: int = 512,
         framestack: int = 1,
@@ -89,10 +89,10 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
         return self.encode_linear(
             torch.cat(
                 (
-                    output
-                    + [one_hot(observations["direction"].long(), 4).float().squeeze(1)]
-                    + [observations["reset_map_id"].float().squeeze(1)]
-                    + [one_hot(observations["battle_type"].long(), 4).float().squeeze(1)]
+                    *output,
+                    one_hot(observations["direction"].long(), 4).float().squeeze(1),
+                    observations["reset_map_id"].float() / 255.0,
+                    one_hot(observations["battle_type"].long(), 4).float().squeeze(1),
                 ),
                 dim=-1,
             )
