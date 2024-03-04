@@ -88,7 +88,12 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
             output.append(network(observation.float() / 255.0))
         return self.encode_linear(
             torch.cat(
-                output + [one_hot(observations["direction"].long(), 4).float().squeeze(1)],
+                (
+                    output
+                    + [one_hot(observations["direction"].long(), 4).float().squeeze(1)]
+                    + [observations["reset_map_id"].float().squeeze(1)]
+                    + [one_hot(observations["battle_type"].long(), 4).float().squeeze(1)]
+                ),
                 dim=-1,
             )
         ), None
