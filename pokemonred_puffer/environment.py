@@ -200,7 +200,8 @@ class RedGymEnv(Env):
                 ),
                 # Discrete is more apt, but pufferlib is slower at processing Discrete
                 "direction": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
-                "d": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
+                "reset_map_id": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
+                "battle_type": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
             }
         )
 
@@ -518,7 +519,8 @@ class RedGymEnv(Env):
         return {
             "screen": screen,
             "direction": np.array(self.pyboy.get_memory_value(0xC109) // 4, dtype=np.uint8),
-            "d": np.zeros(1, dtype=np.uint8),
+            "reset_map_id": np.array(self.pyboy.get_memory_value(0xD719), dtype=np.uint8),
+            "battle_type": np.array(self.pyboy.get_memory_value(0xD057) + 1, dtype=np.uint8),
         }
 
     def set_perfect_iv_dvs(self):
