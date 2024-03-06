@@ -1010,12 +1010,12 @@ class RedGymEnv(Env):
             "left_bills_house_after_helping": 5 * int(self.read_bit(0xD7F2, 7)),
             "got_hm01": 5 * int(self.read_bit(0xD803, 0)),
             "rubbed_captains_back": 5 * int(self.read_bit(0xD803, 1)),
-            "start_menu": self.seen_start_menu * 0.1,
+            "start_menu": self.seen_start_menu * 0.01,
             "pokemon_menu": self.seen_pokemon_menu * 0.1,
             "stats_menu": self.seen_stats_menu * 0.1,
             "bag_menu": self.seen_bag_menu * 0.1,
-            "cancel_bag_menu": self.seen_cancel_bag_menu * 0.1,
-            "blackout_check": self.blackout_check * 0.001,
+            # "cancel_bag_menu": self.seen_cancel_bag_menu * 0.1,
+            # "blackout_check": self.blackout_check * 0.001,
         }
 
         return state_scores
