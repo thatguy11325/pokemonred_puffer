@@ -781,20 +781,21 @@ class RedGymEnv(Env):
                             (self.pyboy.get_memory_value(0xD35E), npc_id)
                         )
 
-                if self.check_if_in_start_menu():
-                    self.seen_start_menu = 1
+                if int(self.read_bit(0xD803, 0)):
+                    if self.check_if_in_start_menu():
+                        self.seen_start_menu = 1
 
-                if self.check_if_in_pokemon_menu():
-                    self.seen_pokemon_menu = 1
+                    if self.check_if_in_pokemon_menu():
+                        self.seen_pokemon_menu = 1
 
-                if self.check_if_in_stats_menu():
-                    self.seen_stats_menu = 1
+                    if self.check_if_in_stats_menu():
+                        self.seen_stats_menu = 1
 
-                if self.check_if_in_bag_menu():
-                    self.seen_bag_menu = 1
+                    if self.check_if_in_bag_menu():
+                        self.seen_bag_menu = 1
 
-                if self.check_if_cancel_bag_menu(action):
-                    self.seen_cancel_bag_menu = 1
+                    if self.check_if_cancel_bag_menu(action):
+                        self.seen_cancel_bag_menu = 1
 
         if self.save_video and self.fast_video:
             self.add_video_frame()
