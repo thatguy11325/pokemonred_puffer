@@ -183,9 +183,9 @@ class RedGymEnv(Env):
         self.event_names = event_names
 
         if self.reduce_res:
-            self.screen_output_shape = (72, 80, 3 * self.frame_stacks)
+            self.screen_output_shape = (72, 80, 2 * self.frame_stacks)
         else:
-            self.screen_output_shape = (144, 160, 3 * self.frame_stacks)
+            self.screen_output_shape = (144, 160, 2 * self.frame_stacks)
         self.coords_pad = 12
 
         # Set these in ALL subclasses
@@ -400,6 +400,7 @@ class RedGymEnv(Env):
         game_pixels_render = self.screen.screen_ndarray()[:, :, 0:1]
         if self.reduce_res:
             game_pixels_render = game_pixels_render[::2, ::2, :]
+        return game_pixels_render
         # place an overlay on top of the screen greying out places we haven't visited
         # first get our location
         player_x, player_y, map_n = self.get_game_coords()
@@ -619,7 +620,7 @@ class RedGymEnv(Env):
 
         info = {}
         # TODO: Make log frequency a configuration parameter
-        if self.step_count % 20000 == 0:
+        if self.step_count % 2000 == 0:
             info = self.agent_stats(action)
 
         obs = self._get_obs()
@@ -641,8 +642,12 @@ class RedGymEnv(Env):
         """
 
         self.step_count += 1
+        reset = (
+            self.step_count > self.max_steps or
+            self.caught_pokemon[6] == 1  # squirtle
+        )
 
-        return obs, new_reward, self.step_count > self.max_steps, False, info
+        return obs, new_reward, reset, False, info
         # return obs, new_reward, False, False, info
 
     def find_neighboring_sign(self, sign_id, player_direction, player_x, player_y) -> bool:
@@ -957,10 +962,10 @@ class RedGymEnv(Env):
             x for x in [self.read_m(addr) for addr in PARTY_LEVEL_ADDRS[:party_size]] if x > 0
         ]
         self.max_level_sum = max(self.max_level_sum, sum(party_levels))
-        if self.max_level_sum < 30:
+        if self.max_level_sum < 15:
             return self.max_level_sum
         else:
-            return 30 + (self.max_level_sum - 30) / 4
+            return 15 + (self.max_level_sum - 15) / 4
         # return 1.0 / (1 + 1000 * abs(max(party_levels) - self.max_opponent_level))
 
     def get_badges(self):
@@ -988,12 +993,12 @@ class RedGymEnv(Env):
         # https://github.com/pret/pokered/blob/91dc3c9f9c8fd529bb6e8307b58b96efa0bec67e/constants/event_constants.asm
         state_scores = {
             "event": 4 * self.update_max_event_rew(),
-            "explore_npcs": sum(self.seen_npcs.values()) * 0.005,
-            "seen_pokemon": sum(self.seen_pokemon) * 0.0000010,
+            "explore_npcs": sum(self.seen_npcs.values()) * 0.02,
+            # "seen_pokemon": sum(self.seen_pokemon) * 0.0000010,
             # "caught_pokemon": sum(self.caught_pokemon) * 0.0000010,
-            "moves_obtained": sum(self.moves_obtained) * 0.00010,
+            "moves_obtained": sum(self.moves_obtained) * 0.000010,
             "explore_hidden_objs": sum(self.seen_hidden_objs.values()) * 0.02,
-            # "level": self.get_levels_reward(),
+            "level": self.get_levels_reward(),
             # "opponent_level": self.max_opponent_level,
             # "death_reward": self.died_count,
             "badge": self.get_badges() * 5,
@@ -1058,7 +1063,7 @@ class RedGymEnv(Env):
             if self.pyboy.get_memory_value(i) != 0:
                 for j in range(4):
                     move_id = self.pyboy.get_memory_value(i + j + 8)
-                    if move_id != 0 and move_id in TM_HM_MOVES:
+                    if move_id != 0: # and move_id in TM_HM_MOVES:
                         self.moves_obtained[move_id] = 1
         """
         # Scan current box (since the box doesn't auto increment in pokemon red)
