@@ -202,7 +202,7 @@ class RedGymEnv(Env):
                 "direction": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
                 "reset_map_id": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
                 "battle_type": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
-                "cut_in_party": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8)
+                "cut_in_party": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
             }
         )
 
@@ -322,7 +322,7 @@ class RedGymEnv(Env):
         self.seen_pokemon_menu = 0
         self.seen_stats_menu = 0
         self.seen_bag_menu = 0
-        self.seen_cancel_bag_menu = 0
+        self.seen_action_bag_menu = 0
 
     def reset_mem(self):
         self.seen_coords.update((k, 0) for k, _ in self.seen_coords.items())
@@ -343,7 +343,7 @@ class RedGymEnv(Env):
         self.seen_pokemon_menu = 0
         self.seen_stats_menu = 0
         self.seen_bag_menu = 0
-        self.seen_cancel_bag_menu = 0
+        self.seen_action_bag_menu = 0
 
     def step_forget_explore(self, power: int = 1):
         self.seen_coords.update(
@@ -370,7 +370,7 @@ class RedGymEnv(Env):
             self.seen_pokemon_menu *= self.step_forgetting_factor["pokemon_menu"] ** power
             self.seen_stats_menu *= self.step_forgetting_factor["stats_menu"] ** power
             self.seen_bag_menu *= self.step_forgetting_factor["bag_menu"] ** power
-            self.seen_cancel_bag_menu *= self.step_forgetting_factor["cancel_bag_menu"] ** power
+            self.seen_action_bag_menu *= self.step_forgetting_factor["action_bag_menu"] ** power
 
     def blackout(self):
         # Only penalize for blacking out due to battle, not due to poison
@@ -522,7 +522,7 @@ class RedGymEnv(Env):
             "direction": np.array(self.pyboy.get_memory_value(0xC109) // 4, dtype=np.uint8),
             "reset_map_id": np.array(self.pyboy.get_memory_value(0xD719), dtype=np.uint8),
             "battle_type": np.array(self.pyboy.get_memory_value(0xD057) + 1, dtype=np.uint8),
-            "cut_in_party": np.array(self.check_if_party_has_cut(), dtype=np.uint8)
+            "cut_in_party": np.array(self.check_if_party_has_cut(), dtype=np.uint8),
         }
 
     def set_perfect_iv_dvs(self):
@@ -571,15 +571,8 @@ class RedGymEnv(Env):
             and self.read_m(0xCF94) == 3
         )
 
-    def check_if_cancel_bag_menu(self, action) -> bool:
-        return (
-            action == WindowEvent.PRESS_BUTTON_A
-            and self.read_m(0xD057) == 0
-            and self.read_m(0xCF13) == 0
-            # and self.read_m(0xFF8C) == 6
-            and self.read_m(0xCF94) == 3
-            and self.read_m(0xD31D) == self.read_m(0xCC36) + self.read_m(0xCC26)
-        )
+    def check_if_action_in_bag_menu(self, action) -> bool:
+        return action == WindowEvent.PRESS_BUTTON_A and self.check_if_in_back_menu()
 
     def check_if_in_overworld(self) -> bool:
         return self.read_m(0xD057) == 0 and self.read_m(0xCF13) == 0 and self.read_m(0xFF8C) == 0
@@ -644,7 +637,7 @@ class RedGymEnv(Env):
 
         self.step_count += 1
         reset = (
-            self.step_count > self.max_steps # or
+            self.step_count > self.max_steps  # or
             # self.caught_pokemon[6] == 1  # squirtle
         )
 
@@ -800,8 +793,8 @@ class RedGymEnv(Env):
                     if self.check_if_in_bag_menu():
                         self.seen_bag_menu = 1
 
-                    if self.check_if_cancel_bag_menu(action):
-                        self.seen_cancel_bag_menu = 1
+                    if self.check_if_action_in_bag_menu(action):
+                        self.seen_action_bag_menu = 1
 
         if self.save_video and self.fast_video:
             self.add_video_frame()
@@ -851,7 +844,7 @@ class RedGymEnv(Env):
                 "pokemon_menu": self.seen_pokemon_menu,
                 "stats_menu": self.seen_stats_menu,
                 "bag_menu": self.seen_bag_menu,
-                "cancel_bag_menu": self.seen_cancel_bag_menu,
+                "action_bag_menu": self.seen_action_bag_menu,
                 "blackout_check": self.blackout_check,
                 "item_count": self.read_m(0xD31D),
                 "reset_count": self.reset_count,
@@ -997,7 +990,7 @@ class RedGymEnv(Env):
             "explore_npcs": sum(self.seen_npcs.values()) * 0.02,
             # "seen_pokemon": sum(self.seen_pokemon) * 0.0000010,
             # "caught_pokemon": sum(self.caught_pokemon) * 0.0000010,
-            "moves_obtained": sum(self.moves_obtained) * 0.000010,
+            "moves_obtained": sum(self.moves_obtained) * 0.00010,
             "explore_hidden_objs": sum(self.seen_hidden_objs.values()) * 0.02,
             "level": self.get_levels_reward(),
             # "opponent_level": self.max_opponent_level,
@@ -1021,7 +1014,7 @@ class RedGymEnv(Env):
             "pokemon_menu": self.seen_pokemon_menu * 0.1,
             "stats_menu": self.seen_stats_menu * 0.1,
             "bag_menu": self.seen_bag_menu * 0.1,
-            # "cancel_bag_menu": self.seen_cancel_bag_menu * 0.1,
+            # "action_bag_menu": self.seen_action_bag_menu * 0.1,
             # "blackout_check": self.blackout_check * 0.001,
         }
 
@@ -1064,7 +1057,7 @@ class RedGymEnv(Env):
             if self.pyboy.get_memory_value(i) != 0:
                 for j in range(4):
                     move_id = self.pyboy.get_memory_value(i + j + 8)
-                    if move_id != 0: # and move_id in TM_HM_MOVES:
+                    if move_id != 0:  # and move_id in TM_HM_MOVES:
                         self.moves_obtained[move_id] = 1
         """
         # Scan current box (since the box doesn't auto increment in pokemon red)
