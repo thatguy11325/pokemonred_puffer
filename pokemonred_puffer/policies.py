@@ -21,7 +21,7 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
         env,
         screen_framestack: int = 3,
         global_map_frame_stack: int = 1,
-        screen_flat_size: int = 1925,
+        screen_flat_size: int = 14341,
         global_map_flat_size: int = 1600,
         input_size: int = 512,
         framestack: int = 1,
