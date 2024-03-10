@@ -91,8 +91,9 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
                 (
                     *output,
                     one_hot(observations["direction"].long(), 4).float().squeeze(1),
-                    observations["reset_map_id"].float() / 255.0,
+                    one_hot(observations["reset_map_id"].long(), 255).float().squeeze(1),
                     one_hot(observations["battle_type"].long(), 4).float().squeeze(1),
+                    observations["cut_in_party"].float()
                 ),
                 dim=-1,
             )
