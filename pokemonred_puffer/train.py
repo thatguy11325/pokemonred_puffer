@@ -235,7 +235,7 @@ if __name__ == "__main__":
             "pokemon_menu": 0.998,
             "stats_menu": 0.998,
             "bag_menu": 0.998,
-            "cancel_bag_menu": 0.998,
+            "action_bag_menu": 0.998,
         },
         "forgetting_frequency": 10,
         "perfect_ivs": parsed_args.perfect_ivs,
