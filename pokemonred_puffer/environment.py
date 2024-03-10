@@ -183,9 +183,9 @@ class RedGymEnv(Env):
         self.event_names = event_names
 
         if self.reduce_res:
-            self.screen_output_shape = (72, 80, 2 * self.frame_stacks)
+            self.screen_output_shape = (72, 80, 3 * self.frame_stacks)
         else:
-            self.screen_output_shape = (144, 160, 2 * self.frame_stacks)
+            self.screen_output_shape = (144, 160, 3 * self.frame_stacks)
         self.coords_pad = 12
 
         # Set these in ALL subclasses
