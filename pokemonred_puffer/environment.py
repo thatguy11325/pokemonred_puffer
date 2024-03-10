@@ -644,8 +644,8 @@ class RedGymEnv(Env):
 
         self.step_count += 1
         reset = (
-            self.step_count > self.max_steps or
-            self.caught_pokemon[6] == 1  # squirtle
+            self.step_count > self.max_steps # or
+            # self.caught_pokemon[6] == 1  # squirtle
         )
 
         return obs, new_reward, reset, False, info
