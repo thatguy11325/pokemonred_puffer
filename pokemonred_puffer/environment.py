@@ -202,6 +202,7 @@ class RedGymEnv(Env):
                 "direction": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
                 "reset_map_id": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
                 "battle_type": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
+                "cut_in_party": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8)
             }
         )
 
@@ -400,7 +401,6 @@ class RedGymEnv(Env):
         game_pixels_render = self.screen.screen_ndarray()[:, :, 0:1]
         if self.reduce_res:
             game_pixels_render = game_pixels_render[::2, ::2, :]
-        return game_pixels_render
         # place an overlay on top of the screen greying out places we haven't visited
         # first get our location
         player_x, player_y, map_n = self.get_game_coords()
@@ -522,6 +522,7 @@ class RedGymEnv(Env):
             "direction": np.array(self.pyboy.get_memory_value(0xC109) // 4, dtype=np.uint8),
             "reset_map_id": np.array(self.pyboy.get_memory_value(0xD719), dtype=np.uint8),
             "battle_type": np.array(self.pyboy.get_memory_value(0xD057) + 1, dtype=np.uint8),
+            "cut_in_party": np.array(self.check_if_party_has_cut(), dtype=np.uint8)
         }
 
     def set_perfect_iv_dvs(self):
@@ -1004,7 +1005,7 @@ class RedGymEnv(Env):
             "badge": self.get_badges() * 5,
             # "heal": self.total_healing_rew,
             "explore": sum(self.seen_coords.values()) * 0.01,
-            "explore_maps": np.sum(self.seen_map_ids) * 0.0001,
+            # "explore_maps": np.sum(self.seen_map_ids) * 0.0001,
             "taught_cut": 4 * int(self.check_if_party_has_cut()),
             "cut_coords": sum(self.cut_coords.values()) * 1.0,
             "cut_tiles": len(self.cut_tiles) * 1.0,
