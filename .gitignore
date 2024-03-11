@@ -168,3 +168,4 @@ cython_debug/
 session_*
 experiments
 runs
+video
