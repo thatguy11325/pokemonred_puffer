@@ -117,9 +117,9 @@ def setup_agent(
         else:
             policy = pufferlib.frameworks.cleanrl.Policy(policy)
 
+        policy = policy.to(args.train.device, non_blocking=True)
         if args.train.device == "cuda" and args.train.compile:
             torch.set_float32_matmul_precision(args.train.float32_matmul_precision)
-            policy = policy.to(args.train.device, non_blocking=True)
             policy.get_value = torch.compile(policy.get_value, mode=args.train.compile_mode)
             policy.get_action_and_value = torch.compile(
                 policy.get_action_and_value, mode=args.train.compile_mode

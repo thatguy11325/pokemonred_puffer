@@ -31,10 +31,10 @@ class Performance:
     total_agent_steps = 0
     epoch_time = 0
     epoch_sps = 0
-    evaluation_time = 0
-    evaluation_sps = 0
-    evaluation_memory = 0
-    evaluation_pytorch_memory = 0
+    eval_time = 0
+    eval_sps = 0
+    eval_memory = 0
+    eval_pytorch_memory = 0
     env_time = 0
     env_sps = 0
     inference_time = 0
@@ -727,6 +727,7 @@ class CleanPuffeRL:
         return self
 
     def __exit__(self, *args):
-        print("Done training. Saving data...")
+        print("Done training. Saving checkpoint...")
+        self.save_checkpoint()
         self.close()
         print("Run complete")
