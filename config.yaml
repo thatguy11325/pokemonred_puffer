@@ -14,9 +14,12 @@ debug:
     num_envs: 1
     envs_per_worker: 1
     envs_per_batch: 1
-    batch_size: 2048
-    total_timesteps: 10000
-    checkpoint_interval: 3
+    batch_size: 128
+    batch_rows: 32
+    bptt_horizon: 4
+    total_timesteps: 1000
+    save_checkpoint: True
+    checkpoint_interval: 4
     verbose: True
     env_pool: False
 
@@ -68,6 +71,7 @@ train:
 
   verbose: True
   data_dir: runs
+  save_checkpoint: False
   checkpoint_interval: 200
   cpu_offload: True
   pool_kernel: [0]

@@ -15,6 +15,7 @@ dependencies = [
     "einops",
     "opencv-python",
     "numpy",
+    "pettingzoo",
     "pufferlib[cleanrl,pokemon_red]",
     "torch>=2.1",
     "torchvision",
