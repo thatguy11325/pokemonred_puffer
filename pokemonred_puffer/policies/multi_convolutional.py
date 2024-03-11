@@ -1,7 +1,8 @@
-import pufferlib.models
 import torch
-from pufferlib.emulation import unpack_batched_obs
 from torch import nn
+
+import pufferlib.models
+from pufferlib.emulation import unpack_batched_obs
 
 unpack_batched_obs = torch.compiler.disable(unpack_batched_obs)
 
@@ -14,14 +15,17 @@ def one_hot(tensor, num_classes):
         torch.int64
     )
 
+class RecurrentMultiConvolutionalWrapper(pufferlib.models.RecurrentWrapper):
+    def __init__(self, env, policy, input_size=512, hidden_size=512, num_layers=1):
+        super().__init__(env, policy, input_size, hidden_size, num_layers)
 
-class MultiConvolutionPolicy(pufferlib.models.Policy):
+class MultiConvolutionalPolicy(pufferlib.models.Policy):
     def __init__(
         self,
         env,
         screen_framestack: int = 3,
         global_map_frame_stack: int = 1,
-        screen_flat_size: int = 14341,
+        screen_flat_size: int = 2184,  # 14341,
         global_map_flat_size: int = 1600,
         input_size: int = 512,
         framestack: int = 1,
@@ -60,7 +64,7 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
         self.encode_linear = nn.Sequential(
             pufferlib.pytorch.layer_init(
                 nn.Linear(
-                    screen_flat_size + 4,
+                    screen_flat_size,
                     hidden_size,
                 ),
             ),
@@ -85,7 +89,7 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
                 observation = observation.permute(0, 3, 1, 2)
             if self.downsample > 1:
                 observation = observation[:, :, :: self.downsample, :: self.downsample]
-            output.append(network(observation.float() / 255.0))
+            output.append(network(observation.float() / 255.0).squeeze(1))
         return self.encode_linear(
             torch.cat(
                 (
@@ -93,7 +97,7 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
                     one_hot(observations["direction"].long(), 4).float().squeeze(1),
                     one_hot(observations["reset_map_id"].long(), 255).float().squeeze(1),
                     one_hot(observations["battle_type"].long(), 4).float().squeeze(1),
-                    observations["cut_in_party"].float()
+                    observations["cut_in_party"].float(),
                 ),
                 dim=-1,
             )
@@ -103,23 +107,3 @@ class MultiConvolutionPolicy(pufferlib.models.Policy):
         action = self.actor(flat_hidden)
         value = self.value_fn(flat_hidden)
         return action, value
-
-
-class Recurrent(pufferlib.models.RecurrentWrapper):
-    def __init__(self, env, policy, input_size=512, hidden_size=512, num_layers=1):
-        super().__init__(env, policy, input_size, hidden_size, num_layers)
-
-
-class Policy(pufferlib.models.Convolutional):
-    def __init__(
-        self, env, input_size=512, hidden_size=512, output_size=512, framestack=3, flat_size=14336
-    ):
-        super().__init__(
-            env=env,
-            input_size=input_size,
-            hidden_size=hidden_size,
-            output_size=output_size,
-            framestack=framestack,
-            flat_size=flat_size,
-            channels_last=True,
-        )
