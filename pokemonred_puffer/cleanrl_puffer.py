@@ -466,7 +466,7 @@ class CleanPuffeRL:
 
         perf = self.performance
         perf.total_uptime = int(time.time() - self.start_time)
-        perf.total_agent_steps = self.global_step
+        perf.total_agent_steps = padded_steps_collected
         perf.env_time = env_profiler.elapsed
         perf.env_sps = int(agent_steps_collected / env_profiler.elapsed)
         perf.inference_time = inference_profiler.elapsed
