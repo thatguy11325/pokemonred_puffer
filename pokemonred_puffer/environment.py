@@ -1,19 +1,21 @@
+from abc import abstractmethod
 import json
 import os
 import random
-import uuid
 from collections import deque
 from multiprocessing import Lock, shared_memory
 from pathlib import Path
 from typing import Optional
+import uuid
 
 import mediapy as media
 import numpy as np
-from skimage.transform import resize
 from gymnasium import Env, spaces
 from pyboy import PyBoy
 from pyboy.utils import WindowEvent
+from skimage.transform import resize
 
+import pufferlib
 from pokemonred_puffer.global_map import GLOBAL_MAP_SHAPE, local_to_global
 
 EVENT_FLAGS_START = 0xD747
@@ -111,87 +113,81 @@ RESET_MAP_IDS = set(
     ]
 )
 
+VALID_ACTIONS = [
+    WindowEvent.PRESS_ARROW_DOWN,
+    WindowEvent.PRESS_ARROW_LEFT,
+    WindowEvent.PRESS_ARROW_RIGHT,
+    WindowEvent.PRESS_ARROW_UP,
+    WindowEvent.PRESS_BUTTON_A,
+    WindowEvent.PRESS_BUTTON_B,
+    WindowEvent.PRESS_BUTTON_START,
+]
+
+RELEASE_ACTIONS = [
+    WindowEvent.RELEASE_ARROW_DOWN,
+    WindowEvent.RELEASE_ARROW_LEFT,
+    WindowEvent.RELEASE_ARROW_RIGHT,
+    WindowEvent.RELEASE_ARROW_UP,
+    WindowEvent.RELEASE_BUTTON_A,
+    WindowEvent.RELEASE_BUTTON_B,
+    WindowEvent.RELEASE_BUTTON_START,
+]
+
+ACTION_SPACE = spaces.Discrete(len(VALID_ACTIONS))
+
 
 # TODO: Make global map usage a configuration parameter
 class RedGymEnv(Env):
     env_id = shared_memory.SharedMemory(create=True, size=4)
     lock = Lock()
 
-    def __init__(self, config=None):
-        self.s_path = config["session_path"]
-        self.save_final_state = config["save_final_state"]
-        self.print_rewards = config["print_rewards"]
-        self.headless = config["headless"]
-        self.init_state = config["init_state"]
-        self.act_freq = config["action_freq"]
-        self.max_steps = config["max_steps"]
-        self.save_video = config["save_video"]
-        self.fast_video = config["fast_video"]
-        self.frame_stacks = config["frame_stacks"]
-        self.explore_weight = 1 if "explore_weight" not in config else config["explore_weight"]
-        self.explore_npc_weight = (
-            1 if "explore_npc_weight" not in config else config["explore_npc_weight"]
-        )
-        self.explore_hidden_obj_weight = (
-            1 if "explore_hidden_obj_weight" not in config else config["explore_hidden_obj_weight"]
-        )
-        self.instance_id = (
-            str(uuid.uuid4())[:8] if "instance_id" not in config else config["instance_id"]
-        )
-        self.step_forgetting_factor = config["step_forgetting_factor"]
-        self.forgetting_frequency = config["forgetting_frequency"]
-        self.perfect_ivs = config["perfect_ivs"]
-        self.reduce_res = config["reduce_res"]
-        self.s_path.mkdir(exist_ok=True)
-        self.full_frame_writer = None
-        self.model_frame_writer = None
-        self.map_frame_writer = None
-        self.reset_count = 0
-        self.all_runs = []
+    def __init__(self, env_config: pufferlib.namespace):
+        # TODO: Dont use pufferlib.namespace. It seems to confuse __init__
+        self.video_dir = Path(env_config.video_dir)
+        self.session_path = Path(env_config.session_path)
+        self.video_path = self.video_dir / self.session_path
+        self.save_final_state = env_config.save_final_state
+        self.print_rewards = env_config.print_rewards
+        self.headless = env_config.headless
+        self.state_dir = Path(env_config.state_dir)
+        self.init_state = env_config.init_state
+        self.init_state_name = self.init_state
+        self.init_state_path = self.state_dir / f"{self.init_state_name}.state"
+        self.action_freq = env_config.action_freq
+        self.max_steps = env_config.max_steps
+        self.save_video = env_config.save_video
+        self.fast_video = env_config.fast_video
+        self.frame_stacks = env_config.frame_stacks
+        self.perfect_ivs = env_config.perfect_ivs
+        self.reduce_res = env_config.reduce_res
+        self.gb_path = env_config.gb_path
+        self.action_space = ACTION_SPACE
 
-        self.essential_map_locations = {
-            v: i for i, v in enumerate([40, 0, 12, 1, 13, 51, 2, 54, 14, 59, 60, 61, 15, 3, 65])
-        }
-
-        # Set this in SOME subclasses
-        self.metadata = {"render.modes": []}
-        self.reward_range = (0, 15000)
-
-        self.valid_actions = [
-            WindowEvent.PRESS_ARROW_DOWN,
-            WindowEvent.PRESS_ARROW_LEFT,
-            WindowEvent.PRESS_ARROW_RIGHT,
-            WindowEvent.PRESS_ARROW_UP,
-            WindowEvent.PRESS_BUTTON_A,
-            WindowEvent.PRESS_BUTTON_B,
-            WindowEvent.PRESS_BUTTON_START,
-        ]
-
-        self.release_actions = [
-            WindowEvent.RELEASE_ARROW_DOWN,
-            WindowEvent.RELEASE_ARROW_LEFT,
-            WindowEvent.RELEASE_ARROW_RIGHT,
-            WindowEvent.RELEASE_ARROW_UP,
-            WindowEvent.RELEASE_BUTTON_A,
-            WindowEvent.RELEASE_BUTTON_B,
-            WindowEvent.RELEASE_BUTTON_START,
-        ]
-
-        # load event names (parsed from https://github.com/pret/pokered/blob/91dc3c9f9c8fd529bb6e8307b58b96efa0bec67e/constants/event_constants.asm)
-        with open(os.path.join(os.path.dirname(__file__), "events.json")) as f:
-            event_names = json.load(f)
-        self.event_names = event_names
-
+        # Obs space-related. TODO: avoid hardcoding?
         if self.reduce_res:
             self.screen_output_shape = (72, 80, 3 * self.frame_stacks)
         else:
             self.screen_output_shape = (144, 160, 3 * self.frame_stacks)
         self.coords_pad = 12
-
-        # Set these in ALL subclasses
-        self.action_space = spaces.Discrete(len(self.valid_actions))
-
         self.enc_freqs = 8
+
+        # NOTE: Used for saving video
+        if env_config.save_video:
+            self.instance_id = str(uuid.uuid4())[:8]
+            self.video_dir.mkdir(exist_ok=True)
+            self.full_frame_writer = None
+            self.model_frame_writer = None
+            self.map_frame_writer = None
+        self.reset_count = 0
+        self.all_runs = []
+
+        # Set this in SOME subclasses
+        self.metadata = {"render.modes": []}
+        self.reward_range = (0, 15000)
+
+        self.essential_map_locations = {
+            v: i for i, v in enumerate([40, 0, 12, 1, 13, 51, 2, 54, 14, 59, 60, 61, 15, 3, 65])
+        }
 
         self.observation_space = spaces.Dict(
             {
@@ -206,19 +202,15 @@ class RedGymEnv(Env):
             }
         )
 
-        head = "headless" if config["headless"] else "SDL2"
-
         self.pyboy = PyBoy(
-            config["gb_path"],
+            env_config.gb_path,
             debugging=False,
             disable_input=False,
-            window_type=head,
+            window_type="headless" if self.headless else "SDL2",
         )
-
-        self.screen = self.pyboy.botsupport_manager().screen()
-
-        if not config["headless"]:
+        if not self.headless:
             self.pyboy.set_emulation_speed(6)
+        self.screen = self.pyboy.botsupport_manager().screen()
 
         self.first = True
         with RedGymEnv.lock:
@@ -256,7 +248,7 @@ class RedGymEnv(Env):
             self.reset_mem()
             self.reset_count += 1
 
-        with open(self.init_state, "rb") as f:
+        with open(self.init_state_path, "rb") as f:
             self.pyboy.load_state(f)
 
         # lazy random seed setting
@@ -288,7 +280,7 @@ class RedGymEnv(Env):
 
         self.current_event_flags_set = {}
 
-        self.action_hist = np.zeros(len(self.valid_actions))
+        self.action_hist = np.zeros(len(VALID_ACTIONS))
 
         # experiment!
         # self.max_steps += 128
@@ -326,13 +318,9 @@ class RedGymEnv(Env):
 
     def reset_mem(self):
         self.seen_coords.update((k, 0) for k, _ in self.seen_coords.items())
-        self.seen_coords_since_blackout = set([])
-        # self.seen_global_coords = np.zeros(GLOBAL_MAP_SHAPE)
         self.seen_map_ids *= 0
-        self.seen_map_ids_since_blackout = set([])
 
         self.seen_npcs.update((k, 0) for k, _ in self.seen_npcs.items())
-        self.seen_npcs_since_blackout = set([])
 
         self.seen_hidden_objs.update((k, 0) for k, _ in self.seen_hidden_objs.items())
 
@@ -345,52 +333,8 @@ class RedGymEnv(Env):
         self.seen_bag_menu = 0
         self.seen_action_bag_menu = 0
 
-    def step_forget_explore(self, power: int = 1):
-        self.seen_coords.update(
-            (k, max(0.15, v * (self.step_forgetting_factor["coords"])) ** power)
-            for k, v in self.seen_coords.items()
-        )
-        # self.seen_global_coords *= self.step_forgetting_factor["coords"]
-        self.seen_map_ids *= self.step_forgetting_factor["map_ids"] ** power
-        self.seen_npcs.update(
-            (k, max(0.15, v * (self.step_forgetting_factor["npc"] ** power)))
-            for k, v in self.seen_npcs.items()
-        )
-        # self.seen_hidden_objs.update(
-        #     (k, max(0.15, v * self.step_forgetting_factor["hidden_objs"]))
-        #     for k, v in self.seen_hidden_objs.items()
-        # )
-        self.explore_map *= self.step_forgetting_factor["explore"] ** power
-        self.explore_map[self.explore_map > 0] = np.clip(
-            self.explore_map[self.explore_map > 0], 0.15, 1
-        )
-
-        if self.read_m(0xD057) == 0:
-            self.seen_start_menu *= self.step_forgetting_factor["start_menu"] ** power
-            self.seen_pokemon_menu *= self.step_forgetting_factor["pokemon_menu"] ** power
-            self.seen_stats_menu *= self.step_forgetting_factor["stats_menu"] ** power
-            self.seen_bag_menu *= self.step_forgetting_factor["bag_menu"] ** power
-            self.seen_action_bag_menu *= self.step_forgetting_factor["action_bag_menu"] ** power
-
     def blackout(self):
-        # Only penalize for blacking out due to battle, not due to poison
-        # Debounce is not really needed except for accurate blackout count reporting
         if self.blackout_debounce and self.read_m(0xCF0B) == 0x01:
-            """
-            for k in self.seen_coords_since_blackout:
-                self.seen_coords[k] *= self.step_forgetting_factor["coords"] ** 1
-                self.explore_map[local_to_global(k[1], k[0], k[2])] *= (
-                    self.step_forgetting_factor["explore"] ** 5
-                )
-            for k in self.seen_npcs_since_blackout:
-                self.seen_npcs[k] *= self.step_forgetting_factor["npc"] ** 5
-            for k in self.seen_map_ids_since_blackout:
-                self.seen_map_ids[k] *= self.step_forgetting_factor["map_ids"] ** 5
-
-            self.seen_coords_since_blackout.clear()
-            self.seen_npcs_since_blackout.clear()
-            self.seen_map_ids_since_blackout.clear()
-            """
             self.blackout_count += 1
             self.blackout_debounce = False
         elif self.read_m(0xD057) == 0:
@@ -404,17 +348,6 @@ class RedGymEnv(Env):
         # place an overlay on top of the screen greying out places we haven't visited
         # first get our location
         player_x, player_y, map_n = self.get_game_coords()
-
-        """
-        map_height = self.read_m(0xD524)
-        map_width = self.read_m(0xD525)
-        print(
-            self.read_m(0xC6EF),
-            self.read_m(0xD524),
-            self.read_m(0xD525),
-            player_y,
-            player_x,
-        """
 
         # player is centered at 68, 72 in pixel units
         # 68 -> player y, 72 -> player x
@@ -496,11 +429,6 @@ class RedGymEnv(Env):
         # game_pixels_render = np.concatenate([game_pixels_render, visited_mask, cut_mask], axis=-1)
         game_pixels_render = np.concatenate([game_pixels_render, visited_mask], axis=-1)
 
-        # if reduce_res:
-        # game_pixels_render = (
-        #     downscale_local_mean(game_pixels_render, (2, 2, 1))
-        # ).astype(np.uint8)
-        #     game_pixels_render = game_pixels_render[::2, ::2, :]
         return game_pixels_render
 
     def _get_obs(self):
@@ -592,11 +520,7 @@ class RedGymEnv(Env):
         if self.save_video and self.step_count == 0:
             self.start_video()
 
-        if self.step_count % self.forgetting_frequency == 0:
-            self.step_forget_explore()
-
         self.run_action_on_emulator(action)
-        # self.update_recent_actions(action)
         self.update_seen_coords()
         self.update_heal_reward()
         self.update_pokedex()
@@ -619,22 +543,6 @@ class RedGymEnv(Env):
 
         obs = self._get_obs()
 
-        # create a map of all event flags set, with names where possible
-        # if step_limit_reached:
-        """
-        if self.step_count % 100 == 0:
-            for address in range(event_flags_start, event_flags_end):
-                val = self.read_m(address)
-                for idx, bit in enumerate(f"{val:08b}"):
-                    if bit == "1":
-                        # TODO this currently seems to be broken!
-                        key = f"0x{address:X}-{idx}"
-                        if key in self.event_names.keys():
-                            self.current_event_flags_set[key] = self.event_names[key]
-                        else:
-                            print(f"could not find key: {key}")
-        """
-
         self.step_count += 1
         reset = (
             self.step_count > self.max_steps  # or
@@ -642,7 +550,6 @@ class RedGymEnv(Env):
         )
 
         return obs, new_reward, reset, False, info
-        # return obs, new_reward, False, False, info
 
     def find_neighboring_sign(self, sign_id, player_direction, player_x, player_y) -> bool:
         sign_y = self.pyboy.get_memory_value(0xD4B1 + (2 * sign_id))
@@ -680,19 +587,19 @@ class RedGymEnv(Env):
         self.action_hist[action] += 1
 
         # press button then release after some steps
-        self.pyboy.send_input(self.valid_actions[action])
+        self.pyboy.send_input(VALID_ACTIONS[action])
         # disable rendering when we don't need it
         if not self.save_video and self.headless:
             self.pyboy._rendering(False)
-        for i in range(self.act_freq):
+        for i in range(self.action_freq):
             # release action, so they are stateless
-            if i == 8 and action < len(self.release_actions):
+            if i == 8 and action < len(RELEASE_ACTIONS):
                 # release button
-                self.pyboy.send_input(self.release_actions[action])
+                self.pyboy.send_input(RELEASE_ACTIONS[action])
 
             if self.save_video and not self.fast_video:
                 self.add_video_frame()
-            if i == self.act_freq - 1:
+            if i == self.action_freq - 1:
                 # rendering must be enabled on the tick before frame is needed
                 self.pyboy._rendering(True)
             self.pyboy.tick()
@@ -800,15 +707,10 @@ class RedGymEnv(Env):
             self.add_video_frame()
 
     def agent_stats(self, action):
-        x_pos, y_pos, map_n = self.get_game_coords()
         levels = [self.read_m(a) for a in [0xD18C, 0xD1B8, 0xD1E4, 0xD210, 0xD23C, 0xD268]]
         return {
             "stats": {
                 "step": self.step_count + self.reset_count * self.max_steps,
-                "x": x_pos,
-                "y": y_pos,
-                "map": map_n,
-                "map_location": self.get_map_location(map_n),
                 "max_map_progress": self.max_map_progress,
                 "last_action": action,
                 "pcount": self.read_m(0xD163),
@@ -950,75 +852,15 @@ class RedGymEnv(Env):
             for bit in f"{self.read_m(i):08b}"
         ]
 
-    def get_levels_reward(self):
-        party_size = self.read_m(PARTY_SIZE)
-        party_levels = [
-            x for x in [self.read_m(addr) for addr in PARTY_LEVEL_ADDRS[:party_size]] if x > 0
-        ]
-        self.max_level_sum = max(self.max_level_sum, sum(party_levels))
-        if self.max_level_sum < 15:
-            return self.max_level_sum
-        else:
-            return 15 + (self.max_level_sum - 15) / 4
-        # return 1.0 / (1 + 1000 * abs(max(party_levels) - self.max_opponent_level))
-
     def get_badges(self):
         return self.bit_count(self.read_m(0xD356))
 
     def read_party(self):
         return [self.read_m(addr) for addr in [0xD164, 0xD165, 0xD166, 0xD167, 0xD168, 0xD169]]
 
-    def get_all_events_reward(self):
-        # adds up all event flags, exclude museum ticket
-        return max(
-            sum(
-                [
-                    self.bit_count(self.read_m(i))
-                    for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
-                ]
-            )
-            - self.base_event_flags
-            - int(self.read_bit(*MUSEUM_TICKET)),
-            0,
-        )
-
-    def get_game_state_reward(self, print_stats=False):
-        # addresses from https://datacrystal.romhacking.net/wiki/Pok%C3%A9mon_Red/Blue:RAM_map
-        # https://github.com/pret/pokered/blob/91dc3c9f9c8fd529bb6e8307b58b96efa0bec67e/constants/event_constants.asm
-        state_scores = {
-            "event": 4 * self.update_max_event_rew(),
-            "explore_npcs": sum(self.seen_npcs.values()) * 0.02,
-            # "seen_pokemon": sum(self.seen_pokemon) * 0.0000010,
-            # "caught_pokemon": sum(self.caught_pokemon) * 0.0000010,
-            "moves_obtained": sum(self.moves_obtained) * 0.00010,
-            "explore_hidden_objs": sum(self.seen_hidden_objs.values()) * 0.02,
-            "level": self.get_levels_reward(),
-            # "opponent_level": self.max_opponent_level,
-            # "death_reward": self.died_count,
-            "badge": self.get_badges() * 5,
-            # "heal": self.total_healing_rew,
-            "explore": sum(self.seen_coords.values()) * 0.01,
-            # "explore_maps": np.sum(self.seen_map_ids) * 0.0001,
-            "taught_cut": 4 * int(self.check_if_party_has_cut()),
-            "cut_coords": sum(self.cut_coords.values()) * 1.0,
-            "cut_tiles": len(self.cut_tiles) * 1.0,
-            "met_bill": 5 * int(self.read_bit(0xD7F1, 0)),
-            "used_cell_separator_on_bill": 5 * int(self.read_bit(0xD7F2, 3)),
-            "ss_ticket": 5 * int(self.read_bit(0xD7F2, 4)),
-            "met_bill_2": 5 * int(self.read_bit(0xD7F2, 5)),
-            "bill_said_use_cell_separator": 5 * int(self.read_bit(0xD7F2, 6)),
-            "left_bills_house_after_helping": 5 * int(self.read_bit(0xD7F2, 7)),
-            "got_hm01": 5 * int(self.read_bit(0xD803, 0)),
-            "rubbed_captains_back": 5 * int(self.read_bit(0xD803, 1)),
-            "start_menu": self.seen_start_menu * 0.01,
-            "pokemon_menu": self.seen_pokemon_menu * 0.1,
-            "stats_menu": self.seen_stats_menu * 0.1,
-            "bag_menu": self.seen_bag_menu * 0.1,
-            # "action_bag_menu": self.seen_action_bag_menu * 0.1,
-            # "blackout_check": self.blackout_check * 0.001,
-        }
-
-        return state_scores
+    @abstractmethod
+    def get_game_state_reward(self):
+        raise NotImplementedError()
 
     def update_max_op_level(self):
         # opp_base_level = 5
@@ -1028,11 +870,6 @@ class RedGymEnv(Env):
         )
         self.max_opponent_level = max(self.max_opponent_level, opponent_level)
         return self.max_opponent_level
-
-    def update_max_event_rew(self):
-        cur_rew = self.get_all_events_reward()
-        self.max_event_rew = max(cur_rew, self.max_event_rew)
-        return self.max_event_rew
 
     def update_heal_reward(self):
         cur_health = self.read_hp_fraction()
@@ -1085,13 +922,8 @@ class RedGymEnv(Env):
     def read_hp(self, start):
         return 256 * self.read_m(start) + self.read_m(start + 1)
 
-    # built-in since python 3.10
     def bit_count(self, bits):
-        return bin(bits).count("1")
-        # return bits.bit_count()
-
-    def fourier_encode(self, val):
-        return np.sin(val * 2 ** np.arange(self.enc_freqs))
+        return bits.bit_count()
 
     def update_map_progress(self):
         map_idx = self.read_m(0xD35E)
@@ -1102,110 +934,3 @@ class RedGymEnv(Env):
             return self.essential_map_locations[map_idx]
         else:
             return -1
-
-    def get_map_location(self, map_idx):
-        map_locations = {
-            0: {"name": "Pallet Town", "coordinates": np.array([70, 7])},
-            1: {"name": "Viridian City", "coordinates": np.array([60, 79])},
-            2: {"name": "Pewter City", "coordinates": np.array([60, 187])},
-            3: {"name": "Cerulean City", "coordinates": np.array([240, 205])},
-            62: {
-                "name": "Invaded house (Cerulean City)",
-                "coordinates": np.array([290, 227]),
-            },
-            63: {
-                "name": "trade house (Cerulean City)",
-                "coordinates": np.array([290, 212]),
-            },
-            64: {
-                "name": "Pokémon Center (Cerulean City)",
-                "coordinates": np.array([290, 197]),
-            },
-            65: {
-                "name": "Pokémon Gym (Cerulean City)",
-                "coordinates": np.array([290, 182]),
-            },
-            66: {
-                "name": "Bike Shop (Cerulean City)",
-                "coordinates": np.array([290, 167]),
-            },
-            67: {
-                "name": "Poké Mart (Cerulean City)",
-                "coordinates": np.array([290, 152]),
-            },
-            35: {"name": "Route 24", "coordinates": np.array([250, 235])},
-            36: {"name": "Route 25", "coordinates": np.array([270, 267])},
-            12: {"name": "Route 1", "coordinates": np.array([70, 43])},
-            13: {"name": "Route 2", "coordinates": np.array([70, 151])},
-            14: {"name": "Route 3", "coordinates": np.array([100, 179])},
-            15: {"name": "Route 4", "coordinates": np.array([150, 197])},
-            33: {"name": "Route 22", "coordinates": np.array([20, 71])},
-            37: {"name": "Red house first", "coordinates": np.array([61, 9])},
-            38: {"name": "Red house second", "coordinates": np.array([61, 0])},
-            39: {"name": "Blues house", "coordinates": np.array([91, 9])},
-            40: {"name": "oaks lab", "coordinates": np.array([91, 1])},
-            41: {
-                "name": "Pokémon Center (Viridian City)",
-                "coordinates": np.array([100, 54]),
-            },
-            42: {
-                "name": "Poké Mart (Viridian City)",
-                "coordinates": np.array([100, 62]),
-            },
-            43: {"name": "School (Viridian City)", "coordinates": np.array([100, 79])},
-            44: {"name": "House 1 (Viridian City)", "coordinates": np.array([100, 71])},
-            47: {
-                "name": "Gate (Viridian City/Pewter City) (Route 2)",
-                "coordinates": np.array([91, 143]),
-            },
-            49: {"name": "Gate (Route 2)", "coordinates": np.array([91, 115])},
-            50: {
-                "name": "Gate (Route 2/Viridian Forest) (Route 2)",
-                "coordinates": np.array([91, 115]),
-            },
-            51: {"name": "viridian forest", "coordinates": np.array([35, 144])},
-            52: {"name": "Pewter Museum (floor 1)", "coordinates": np.array([60, 196])},
-            53: {"name": "Pewter Museum (floor 2)", "coordinates": np.array([60, 205])},
-            54: {
-                "name": "Pokémon Gym (Pewter City)",
-                "coordinates": np.array([49, 176]),
-            },
-            55: {
-                "name": "House with disobedient Nidoran♂ (Pewter City)",
-                "coordinates": np.array([51, 184]),
-            },
-            56: {"name": "Poké Mart (Pewter City)", "coordinates": np.array([40, 170])},
-            57: {
-                "name": "House with two Trainers (Pewter City)",
-                "coordinates": np.array([51, 184]),
-            },
-            58: {
-                "name": "Pokémon Center (Pewter City)",
-                "coordinates": np.array([45, 161]),
-            },
-            59: {
-                "name": "Mt. Moon (Route 3 entrance)",
-                "coordinates": np.array([153, 234]),
-            },
-            60: {"name": "Mt. Moon Corridors", "coordinates": np.array([168, 253])},
-            61: {"name": "Mt. Moon Level 2", "coordinates": np.array([197, 253])},
-            68: {
-                "name": "Pokémon Center (Route 3)",
-                "coordinates": np.array([135, 197]),
-            },
-            193: {
-                "name": "Badges check gate (Route 22)",
-                "coordinates": np.array([0, 87]),
-            },  # TODO this coord is guessed, needs to be updated
-            230: {
-                "name": "Badge Man House (Cerulean City)",
-                "coordinates": np.array([290, 137]),
-            },
-        }
-        if map_idx in map_locations.keys():
-            return map_locations[map_idx]
-        else:
-            return {
-                "name": "Unknown",
-                "coordinates": np.array([80, 0]),
-            }  # TODO once all maps are added this case won't be needed
