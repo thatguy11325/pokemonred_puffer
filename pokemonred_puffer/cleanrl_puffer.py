@@ -200,6 +200,7 @@ class CleanPuffeRL:
         self.start_time = time.time()
         seed_everything(config.seed, config.torch_deterministic)
         self.total_updates = config.total_timesteps // config.batch_size
+        self.total_agent_steps = 0
 
         self.device = config.device
 
@@ -456,7 +457,7 @@ class CleanPuffeRL:
 
         eval_profiler.stop()
 
-        # self.global_step += padded_steps_collected
+        self.total_agent_steps += padded_steps_collected
         new_step = np.mean(self.infos["learner"]["stats/step"])
         if new_step > self.global_step:
             self.global_step = new_step
@@ -466,7 +467,7 @@ class CleanPuffeRL:
 
         perf = self.performance
         perf.total_uptime = int(time.time() - self.start_time)
-        perf.total_agent_steps = padded_steps_collected
+        perf.total_agent_steps = self.total_agent_steps
         perf.env_time = env_profiler.elapsed
         perf.env_sps = int(agent_steps_collected / env_profiler.elapsed)
         perf.inference_time = inference_profiler.elapsed
@@ -666,8 +667,9 @@ class CleanPuffeRL:
 
         self.update += 1
         self.lr_update += 1
-        # if self.update % config.checkpoint_interval == 0 or self.done_training():
-        #     self.save_checkpoint()
+
+        if self.update % config.checkpoint_interval == 0 or self.done_training():
+            self.save_checkpoint()
 
     def close(self):
         self.pool.close()
@@ -683,6 +685,9 @@ class CleanPuffeRL:
         """
 
     def save_checkpoint(self):
+        if self.config.save_checkpoint is False:
+            return
+
         path = os.path.join(self.config.data_dir, self.exp_name)
         if not os.path.exists(path):
             os.makedirs(path)
@@ -711,6 +716,8 @@ class CleanPuffeRL:
         torch.save(state, state_path + ".tmp")
         os.rename(state_path + ".tmp", state_path)
 
+        print(f"Model saved to {model_path}")
+
         return model_path
 
     def calculate_loss(self, pg_loss, entropy_loss, v_loss):
@@ -727,7 +734,7 @@ class CleanPuffeRL:
         return self
 
     def __exit__(self, *args):
-        print("Done training. Saving checkpoint...")
+        print("Done training.")
         self.save_checkpoint()
         self.close()
         print("Run complete")
