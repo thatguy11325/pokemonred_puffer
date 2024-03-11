@@ -32,7 +32,7 @@ env:
   save_video: False
   fast_video: False
   frame_stacks: 1
-  perfect_ivs: False
+  perfect_ivs: True
   reduce_res: True
 
 train:

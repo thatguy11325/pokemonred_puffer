@@ -28,7 +28,7 @@ def load_from_config(
     with open(yaml_path) as f:
         config = yaml.safe_load(f)
 
-    default_keys = ["env", "train", "policies", "rewards", "wrappers"]
+    default_keys = ["env", "train", "policies", "rewards", "wrappers", "wandb"]
     defaults = {key: config.get(key, {}) for key in default_keys}
 
     # Package and subpackage (environment) configs
@@ -157,10 +157,10 @@ def init_wandb(args, resume=True):
             "env": args.env,
             "reward_module": args.reward_name,
             "policy_module": args.policy_name,
-            "reward": args.reward,
-            "policy": args.policy,
-            "wrappers": args.wrappers,
-            "recurrent": args.recurrent,
+            "reward": args.rewards[args.reward_name],
+            "policy": args.policies[args.policy_name],
+            "wrappers": args.wrappers[args.wrappers_name],
+            "recurrent": "recurrent" in args.policies[args.policy_name],
         },
         "name": args.exp_name,
         "monitor_gym": True,
