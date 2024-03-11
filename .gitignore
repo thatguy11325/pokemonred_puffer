@@ -159,8 +159,13 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+# Visual Studio Code
+.vscode/
+
 # Emulator files
 *.gb
 # local session files
 session_*
 experiments
+runs
+video
