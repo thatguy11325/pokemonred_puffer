@@ -169,3 +169,4 @@ session_*
 experiments
 runs
 video
+wandb
