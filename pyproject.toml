@@ -13,10 +13,10 @@ classifiers = [
 ]
 dependencies = [
     "einops",
-    "opencv-python",
     "numpy",
+    "opencv-python",
     "pettingzoo",
-    "pufferlib[cleanrl,pokemon_red]",
+    "pufferlib[pokemon_red]==0.7.2",
     "torch>=2.1",
     "torchvision",
     "wandb",
