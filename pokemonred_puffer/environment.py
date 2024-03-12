@@ -507,7 +507,7 @@ class RedGymEnv(Env):
         )
 
     def check_if_action_in_bag_menu(self, action) -> bool:
-        return action == WindowEvent.PRESS_BUTTON_A and self.check_if_in_back_menu()
+        return action == WindowEvent.PRESS_BUTTON_A and self.check_if_in_bag_menu()
 
     def check_if_in_overworld(self) -> bool:
         return self.read_m(0xD057) == 0 and self.read_m(0xCF13) == 0 and self.read_m(0xFF8C) == 0
