@@ -20,6 +20,8 @@ debug:
     total_timesteps: 1000
     save_checkpoint: True
     checkpoint_interval: 4
+    save_overlay: True
+    overlay_interval: 4
     verbose: True
     env_pool: False
 
@@ -73,6 +75,8 @@ train:
   data_dir: runs
   save_checkpoint: False
   checkpoint_interval: 200
+  save_overlay: True
+  overlay_interval: 200
   cpu_offload: True
   pool_kernel: [0]
 

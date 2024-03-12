@@ -27,6 +27,9 @@ dependencies = [
 where = ["."]
 exclude = ["tests"]
 
+[tool.setuptools.package-data]
+"*" = ["*.json", "*.png"]
+
 [project.optional-dependencies]
 monitoring = [
     "nvitop"

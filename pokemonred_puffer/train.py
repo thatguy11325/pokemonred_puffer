@@ -62,14 +62,14 @@ def load_from_config(
 
 def make_env_creator(
     wrapper_classes: list[tuple[str, ModuleType]],
-    reward_class: ModuleType,
+    reward_class: RedGymEnv,
 ) -> Callable[[pufferlib.namespace, pufferlib.namespace], pufferlib.emulation.GymnasiumPufferEnv]:
     def env_creator(
         env_config: pufferlib.namespace,
         wrappers_config: list[dict[str, Any]],
         reward_config: pufferlib.namespace,
     ) -> pufferlib.emulation.GymnasiumPufferEnv:
-        env = reward_class(RedGymEnv(env_config), reward_config)
+        env = reward_class(env_config, reward_config)
         for cfg, (_, wrapper_class) in zip(wrappers_config, wrapper_classes):
             env = wrapper_class(env, pufferlib.namespace(**[x for x in cfg.values()][0]))
         return pufferlib.emulation.GymnasiumPufferEnv(
