@@ -204,7 +204,7 @@ if __name__ == "__main__":
         "-p",
         "--policy-name",
         default="multi_convolutional.MultiConvolutionalPolicy",
-        help="Policy module to use in policies",
+        help="Policy module to use in policies.",
     )
     parser.add_argument(
         "-r",
