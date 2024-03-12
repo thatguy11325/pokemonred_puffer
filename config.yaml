@@ -33,7 +33,7 @@ env:
   state_dir: pyboy_states
   init_state: Bulbasaur
   action_freq: 24
-  max_steps: 100_000_000
+  max_steps: 1_000_000
   save_video: False
   fast_video: False
   frame_stacks: 1
