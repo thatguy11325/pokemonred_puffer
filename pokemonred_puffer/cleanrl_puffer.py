@@ -445,6 +445,14 @@ class CleanPuffeRL:
             self.ent_coef = self.config.ent_coef * 1.25
         else:
             self.ent_coef = self.config.ent_coef
+        if self.log and self.wandb is not None:
+            self.wandb.log(
+                {
+                    "stats/ent_coef": self.ent_coef,
+                    "stats/ent_coef_len": len(self.events_avg),
+                },
+            )
+
         eval_profiler.stop()
 
         self.total_agent_steps += padded_steps_collected
