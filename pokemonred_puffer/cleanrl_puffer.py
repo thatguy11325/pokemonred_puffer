@@ -7,7 +7,6 @@ from typing import Any, Callable
 import uuid
 from collections import defaultdict
 from datetime import timedelta
-import warnings
 
 import numpy as np
 import pufferlib
@@ -145,7 +144,7 @@ def print_dashboard(stats, init_performance, performance):
         elif "time" in k:
             try:
                 v = f"{v:.2f} s"
-            except:
+            except:  # noqa
                 pass
 
         first_word, *rest_words = k.split("_")
@@ -343,7 +342,6 @@ class CleanPuffeRL:
             self.log = False
 
         self.policy_pool.update_policies()
-        performance = defaultdict(list)
         env_profiler = pufferlib.utils.Profiler()
         inference_profiler = pufferlib.utils.Profiler()
         eval_profiler = pufferlib.utils.Profiler(memory=True, pytorch_memory=True).start()
@@ -492,7 +490,7 @@ class CleanPuffeRL:
                 self.stats[f"Histogram/{k}"] = self.wandb.Histogram(v, num_bins=16)
                 self.stats[k] = np.mean(v)
                 self.max_stats[k] = np.max(v)
-            except: 
+            except:  # noqa
                 continue
 
         if config.verbose:
@@ -549,7 +547,7 @@ class CleanPuffeRL:
         self.b_obs = b_obs = torch.Tensor(self.obs_ary[b_idxs])
         b_actions = torch.Tensor(self.actions_ary[b_idxs]).to(self.device, non_blocking=True)
         b_logprobs = torch.Tensor(self.logprobs_ary[b_idxs]).to(self.device, non_blocking=True)
-        b_dones = torch.Tensor(self.dones_ary[b_idxs]).to(self.device, non_blocking=True)
+        # b_dones = torch.Tensor(self.dones_ary[b_idxs]).to(self.device, non_blocking=True)
         b_values = torch.Tensor(self.values_ary[b_idxs]).to(self.device, non_blocking=True)
         b_advantages = advantages.reshape(
             config.batch_rows, num_minibatches, config.bptt_horizon

@@ -75,3 +75,14 @@ To add rewards, add a new class to the `rewards` directory. Then update the `rew
 ### Adding Policies
 
 To add policies, add a new class to the `policies` directory. Then update the `policies` section of `config.yaml`. A policy section is keyed by the class path. It is assumed that a recurrent policy will live in the same module as the policy it wraps.
+
+## Development
+
+This repo uses [pre-commit](https://pre-commit.com/) to enforce formatting and linting. For development, please install this repo with:
+
+```sh
+pip3 install -e '.[dev]'
+pre-commit install
+```
+
+For any changes, please submit a PR.

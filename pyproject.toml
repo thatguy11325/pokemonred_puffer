@@ -35,6 +35,7 @@ monitoring = [
     "nvitop"
 ]
 dev = [
+    "pre-commit",
     "ruff"
 ]
 
