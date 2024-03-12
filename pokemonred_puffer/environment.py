@@ -1,12 +1,11 @@
 from abc import abstractmethod
-import json
-import os
+from typing import Optional
+import uuid
 import random
 from collections import deque
 from multiprocessing import Lock, shared_memory
 from pathlib import Path
-from typing import Optional
-import uuid
+import functools
 
 import mediapy as media
 import numpy as np
@@ -161,7 +160,6 @@ class RedGymEnv(Env):
         self.perfect_ivs = env_config.perfect_ivs
         self.reduce_res = env_config.reduce_res
         self.gb_path = env_config.gb_path
-        self.action_space = ACTION_SPACE
 
         # Obs space-related. TODO: avoid hardcoding?
         if self.reduce_res:
@@ -189,19 +187,6 @@ class RedGymEnv(Env):
             v: i for i, v in enumerate([40, 0, 12, 1, 13, 51, 2, 54, 14, 59, 60, 61, 15, 3, 65])
         }
 
-        self.observation_space = spaces.Dict(
-            {
-                "screen": spaces.Box(
-                    low=0, high=255, shape=self.screen_output_shape, dtype=np.uint8
-                ),
-                # Discrete is more apt, but pufferlib is slower at processing Discrete
-                "direction": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
-                "reset_map_id": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
-                "battle_type": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
-                "cut_in_party": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
-            }
-        )
-
         self.pyboy = PyBoy(
             env_config.gb_path,
             debugging=False,
@@ -225,6 +210,25 @@ class RedGymEnv(Env):
             RedGymEnv.env_id.buf[1] = (env_id >> 16) & 0xFF
             RedGymEnv.env_id.buf[2] = (env_id >> 8) & 0xFF
             RedGymEnv.env_id.buf[3] = (env_id) & 0xFF
+
+    @functools.cached_property
+    def observation_space(self):
+        return spaces.Dict(
+            {
+                "screen": spaces.Box(
+                    low=0, high=255, shape=self.screen_output_shape, dtype=np.uint8
+                ),
+                # Discrete is more apt, but pufferlib is slower at processing Discrete
+                "direction": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
+                "reset_map_id": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
+                "battle_type": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
+                "cut_in_party": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
+            }
+        )
+
+    @functools.cached_property
+    def action_space(self):
+        return ACTION_SPACE
 
     def reset(self, seed: Optional[int] = None):
         # restart game, skipping credits
@@ -431,7 +435,7 @@ class RedGymEnv(Env):
 
         return game_pixels_render
 
-    def _get_obs(self):
+    def _get_screen_obs(self):
         screen = self.render()
         screen = np.concatenate(
             [
@@ -445,8 +449,11 @@ class RedGymEnv(Env):
         )
 
         self.update_recent_screens(screen)
+        return screen
+
+    def _get_obs(self):
         return {
-            "screen": screen,
+            "screen": self._get_screen_obs(),
             "direction": np.array(self.pyboy.get_memory_value(0xC109) // 4, dtype=np.uint8),
             "reset_map_id": np.array(self.pyboy.get_memory_value(0xD719), dtype=np.uint8),
             "battle_type": np.array(self.pyboy.get_memory_value(0xD057) + 1, dtype=np.uint8),
