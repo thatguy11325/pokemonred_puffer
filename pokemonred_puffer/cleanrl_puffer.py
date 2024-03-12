@@ -1,25 +1,23 @@
-import math
 import os
 import random
 import time
-from collections import deque
+import uuid
+from collections import defaultdict, deque
+from datetime import timedelta
 from types import SimpleNamespace
 from typing import Any, Callable
-import uuid
-from collections import defaultdict
-from datetime import timedelta
 
 import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
 import pufferlib
 import pufferlib.emulation
 import pufferlib.frameworks.cleanrl
 import pufferlib.policy_pool
 import pufferlib.utils
 import pufferlib.vectorization
-import torch
-import torch.nn as nn
-import torch.optim as optim
-
 from pokemonred_puffer.eval import make_pokemon_red_overlay
 from pokemonred_puffer.global_map import GLOBAL_MAP_SHAPE
 
@@ -440,7 +438,7 @@ class CleanPuffeRL:
         self.events_avg.append(np.mean(self.infos["learner"]["stats/event"]))
         if (
             len(self.events_avg) == self.events_avg.maxlen
-            and math.abs(self.events_avg[-1] - self.events_avg[0]) < 3
+            and abs(self.events_avg[-1] - self.events_avg[0]) < 3
         ):
             self.ent_coef = self.config.ent_coef * 1.25
         else:
