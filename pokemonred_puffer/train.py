@@ -70,7 +70,7 @@ def make_env_creator(
         reward_config: pufferlib.namespace,
     ) -> pufferlib.emulation.GymnasiumPufferEnv:
         env = reward_class(env_config, reward_config)
-        for cfg, (_, wrapper_class) in zip(wrappers_config, wrapper_classes.items()):
+        for cfg, (_, wrapper_class) in zip(wrappers_config, wrapper_classes):
             env = wrapper_class(env, pufferlib.namespace(**[x for x in cfg.values()][0]))
         return pufferlib.emulation.GymnasiumPufferEnv(
             env=env, postprocessor_cls=pufferlib.emulation.BasicPostprocessor
