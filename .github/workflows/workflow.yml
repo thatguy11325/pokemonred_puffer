@@ -1,0 +1,32 @@
+name: tox
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: test ${{ matrix.py }} - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - Ubuntu
+          - Windows
+          - MacOs
+        py:
+          - "3.10"
+    steps:
+      - name: Setup python for test ${{ matrix.py }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.py }}
+      - uses: actions/checkout@v3
+      - name: Upgrade pip
+        run: python -m pip install -U pip
+      - name: Install
+        run: python -m pip install -e '.[dev]'
+      - name: Check formatting
+        run: ruff format pokemonred_puffer
+      - name: Check lint
+        run: ruff check pokemonred_puffer
