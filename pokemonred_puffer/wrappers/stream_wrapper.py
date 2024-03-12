@@ -58,13 +58,13 @@ class StreamWrapper(gym.Wrapper):
         if self.websocket is not None:
             try:
                 await self.websocket.send(message)
-            except websockets.exceptions.WebSocketException as e:
+            except websockets.exceptions.WebSocketException:
                 self.websocket = None
 
     async def establish_wc_connection(self):
         try:
             self.websocket = await websockets.connect(self.ws_address)
-        except:
+        except:  # noqa
             self.websocket = None
 
     def reset(self, *args, **kwargs):
