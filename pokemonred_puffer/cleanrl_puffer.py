@@ -479,15 +479,13 @@ class CleanPuffeRL:
         self.stats = {}
         self.max_stats = {}
         for k, v in self.infos["learner"].items():
-            if "Task_eval_fn" in k:
-                # Temporary hack for NMMO competition
-                continue
-            if "pokemon_exploration_map" in k:
-                # self.exploration_map_agg[env_id, :, :] = v
-                # overlay = make_pokemon_red_overlay(self.exploration_map_agg)
-                overlay = make_pokemon_red_overlay(np.stack(v, axis=0))
-                if self.wandb is not None:
-                    self.stats["Media/aggregate_exploration_map"] = self.wandb.Image(overlay)
+            if "pokemon_exploration_map" in k and config.save_overlay is True:
+                if self.update % config.overlay_interval == 0:
+                    # self.exploration_map_agg[env_id, :, :] = v
+                    # overlay = make_pokemon_red_overlay(self.exploration_map_agg)
+                    overlay = make_pokemon_red_overlay(np.stack(v, axis=0))
+                    if self.wandb is not None:
+                        self.stats["Media/aggregate_exploration_map"] = self.wandb.Image(overlay)
             try:  # TODO: Better checks on log data types
                 self.stats[f"Histogram/{k}"] = self.wandb.Histogram(v, num_bins=16)
                 self.stats[k] = np.mean(v)

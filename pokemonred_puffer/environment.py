@@ -268,7 +268,7 @@ class RedGymEnv(Env):
         self.max_level_rew = 0
         self.max_level_sum = 0
         self.last_health = 1
-        self.total_healing_rew = 0
+        self.total_heal_health = 0
         self.died_count = 0
         self.party_size = 0
         self.step_count = 0
@@ -429,7 +429,7 @@ class RedGymEnv(Env):
 
         return game_pixels_render
 
-    def _get_obs(self):
+    def _get_screen_obs(self):
         screen = self.render()
         screen = np.concatenate(
             [
@@ -443,8 +443,11 @@ class RedGymEnv(Env):
         )
 
         self.update_recent_screens(screen)
+        return screen
+
+    def _get_obs(self):
         return {
-            "screen": screen,
+            "screen": self._get_screen_obs(),
             "direction": np.array(self.pyboy.get_memory_value(0xC109) // 4, dtype=np.uint8),
             "reset_map_id": np.array(self.pyboy.get_memory_value(0xD719), dtype=np.uint8),
             "battle_type": np.array(self.pyboy.get_memory_value(0xD057) + 1, dtype=np.uint8),
@@ -520,7 +523,7 @@ class RedGymEnv(Env):
 
         self.run_action_on_emulator(action)
         self.update_seen_coords()
-        self.update_heal_reward()
+        self.update_health()
         self.update_pokedex()
         self.update_tm_hm_moves_obtained()
         self.party_size = self.read_m(0xD163)
@@ -723,7 +726,7 @@ class RedGymEnv(Env):
                 "deaths": self.died_count,
                 "badge": self.get_badges(),
                 "event": self.progress_reward["event"],
-                "healr": self.total_healing_rew,
+                "healr": self.total_heal_health,
                 "action_hist": self.action_hist,
                 "caught_pokemon": int(sum(self.caught_pokemon)),
                 "seen_pokemon": int(sum(self.seen_pokemon)),
@@ -869,12 +872,12 @@ class RedGymEnv(Env):
         self.max_opponent_level = max(self.max_opponent_level, opponent_level)
         return self.max_opponent_level
 
-    def update_heal_reward(self):
+    def update_health(self):
         cur_health = self.read_hp_fraction()
         # if health increased and party size did not change
         if cur_health > self.last_health and self.read_m(0xD163) == self.party_size:
             if self.last_health > 0:
-                self.total_healing_rew += cur_health - self.last_health
+                self.total_heal_health += cur_health - self.last_health
             else:
                 self.died_count += 1
 
