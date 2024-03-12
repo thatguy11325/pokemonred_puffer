@@ -70,9 +70,8 @@ def make_env_creator(
         reward_config: pufferlib.namespace,
     ) -> pufferlib.emulation.GymnasiumPufferEnv:
         env = reward_class(RedGymEnv(env_config), reward_config)
-        flattened_wrappers_config = {k: v for d in wrappers_config for k, v in d.items()}
-        for wrapper_name, wrapper_class in wrapper_classes:
-            env = wrapper_class(env, pufferlib.namespace(**flattened_wrappers_config[wrapper_name]))
+        for cfg, (_, wrapper_class) in zip(wrappers_config, wrapper_classes):
+            env = wrapper_class(env, pufferlib.namespace(**[x for x in cfg.values()][0]))
         return pufferlib.emulation.GymnasiumPufferEnv(
             env=env, postprocessor_cls=pufferlib.emulation.BasicPostprocessor
         )
