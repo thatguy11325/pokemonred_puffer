@@ -61,7 +61,7 @@ def load_from_config(
 
 
 def make_env_creator(
-    wrapper_classes: dict[str, ModuleType],
+    wrapper_classes: list[tuple[str, ModuleType]],
     reward_class: ModuleType,
 ) -> Callable[[pufferlib.namespace, pufferlib.namespace], pufferlib.emulation.GymnasiumPufferEnv]:
     def env_creator(
@@ -71,7 +71,7 @@ def make_env_creator(
     ) -> pufferlib.emulation.GymnasiumPufferEnv:
         env = reward_class(RedGymEnv(env_config), reward_config)
         flattened_wrappers_config = {k: v for d in wrappers_config for k, v in d.items()}
-        for wrapper_name, wrapper_class in wrapper_classes.items():
+        for wrapper_name, wrapper_class in wrapper_classes:
             env = wrapper_class(env, pufferlib.namespace(**flattened_wrappers_config[wrapper_name]))
         return pufferlib.emulation.GymnasiumPufferEnv(
             env=env, postprocessor_cls=pufferlib.emulation.BasicPostprocessor
@@ -87,14 +87,17 @@ def setup_agent(
     policy_name: str,
 ) -> Callable[[pufferlib.namespace, pufferlib.namespace], pufferlib.emulation.GymnasiumPufferEnv]:
     # TODO: Make this less dependent on the name of this repo and its file structure
-    wrapper_classes = {
-        k: getattr(
-            importlib.import_module(f"pokemonred_puffer.wrappers.{k.split('.')[0]}"),
-            k.split(".")[1],
+    wrapper_classes = [
+        (
+            k,
+            getattr(
+                importlib.import_module(f"pokemonred_puffer.wrappers.{k.split('.')[0]}"),
+                k.split(".")[1],
+            ),
         )
         for wrapper_dicts in wrappers
         for k in wrapper_dicts.keys()
-    }
+    ]
     reward_module, reward_class_name = reward_name.split(".")
     reward_class = getattr(
         importlib.import_module(f"pokemonred_puffer.rewards.{reward_module}"), reward_class_name
