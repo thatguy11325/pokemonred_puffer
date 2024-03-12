@@ -320,7 +320,7 @@ class CleanPuffeRL:
         self.infos = {}
         self.log = False
         self.ent_coef = self.config.ent_coef
-        self.events_avg = deque([0] * 500, maxlen=500)
+        self.events_avg = deque(maxlen=500)
 
     @pufferlib.utils.profile
     def evaluate(self):
@@ -438,7 +438,10 @@ class CleanPuffeRL:
                 self.pool.send(actions)
 
         self.events_avg.append(np.mean(self.infos["learner"]["stats/event"]))
-        if math.abs(self.events_avg[-1] - self.events_avg[0]) < 3:
+        if (
+            len(self.events_avg) == self.events_avg.maxlen
+            and math.abs(self.events_avg[-1] - self.events_avg[0]) < 3
+        ):
             self.ent_coef = self.config.ent_coef * 1.25
         else:
             self.ent_coef = self.config.ent_coef
