@@ -97,7 +97,7 @@ wrappers:
           action_bag_menu: 0.998
         forgetting_frequency: 10
   
-  finite-coords:
+  finite_coords:
     - stream_wrapper.StreamWrapper:
         user: thatguy
     - exploration.MaxLengthWrapper:
