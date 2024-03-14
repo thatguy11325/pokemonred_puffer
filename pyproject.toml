@@ -16,6 +16,7 @@ dependencies = [
     "numpy",
     "opencv-python",
     "pettingzoo",
+    "git+https://github.com/Baekalfen/PyBoy@v2.0.0",
     "pufferlib[pokemon_red]==0.7.2",
     "torch>=2.1",
     "torchvision",
