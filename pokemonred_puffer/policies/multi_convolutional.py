@@ -103,7 +103,7 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
                     observations["x"].float(),
                     observations["y"].float(),
                     one_hot(observations["map_id"].long(), 0xF7).float().squeeze(1),
-                    one_hot(observation["badges"].long(), 8).float().squeeze(1),
+                    one_hot(observations["badges"].long(), 8).float().squeeze(1),
                 ),
                 dim=-1,
             )
