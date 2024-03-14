@@ -34,7 +34,7 @@ class BaselineRewardEnv(RedGymEnv):
             # "death_reward": self.died_count,
             "badge": self.get_badges() * 5,
             # "heal": self.total_healing_rew,
-            "explore": sum(self.seen_coords.values()) * 0.01,
+            "explore": sum(self.seen_coords.values()) * 0.012,
             # "explore_maps": np.sum(self.seen_map_ids) * 0.0001,
             "taught_cut": 4 * int(self.check_if_party_has_cut()),
             "cut_coords": sum(self.cut_coords.values()) * 1.0,
@@ -51,7 +51,7 @@ class BaselineRewardEnv(RedGymEnv):
             "pokemon_menu": self.seen_pokemon_menu * 0.1,
             "stats_menu": self.seen_stats_menu * 0.1,
             "bag_menu": self.seen_bag_menu * 0.1,
-            # "action_bag_menu": self.seen_action_bag_menu * 0.1,
+            "action_bag_menu": self.seen_action_bag_menu * 0.1,
             # "blackout_check": self.blackout_check * 0.001,
         }
 
