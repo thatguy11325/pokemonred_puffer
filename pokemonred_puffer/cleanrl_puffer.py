@@ -311,14 +311,13 @@ class CleanPuffeRL:
         self.losses = Losses()
         self.performance = Performance()
 
-        self.reward_buffer = deque(maxlen=1_000)
         self.exploration_map_agg = np.zeros((config.num_envs, *GLOBAL_MAP_SHAPE), dtype=np.float32)
         self.taught_cut = False
 
         self.infos = {}
         self.log = False
         self.ent_coef = self.config.ent_coef
-        self.events_avg = deque(maxlen=500)
+        self.events_avg = deque(maxlen=self.config.events_maxlen)
 
     @pufferlib.utils.profile
     def evaluate(self):
@@ -435,22 +434,6 @@ class CleanPuffeRL:
             with env_profiler:
                 self.pool.send(actions)
 
-        self.events_avg.append(np.mean(self.infos["learner"]["stats/event"]))
-        if (
-            len(self.events_avg) == self.events_avg.maxlen
-            and abs(self.events_avg[-1] - self.events_avg[0]) < 3
-        ):
-            self.ent_coef = self.config.ent_coef * 1.25
-        else:
-            self.ent_coef = self.config.ent_coef
-        if self.log and self.wandb is not None:
-            self.wandb.log(
-                {
-                    "stats/ent_coef": self.ent_coef,
-                    "stats/ent_coef_len": len(self.events_avg),
-                },
-            )
-
         eval_profiler.stop()
 
         self.total_agent_steps += padded_steps_collected
@@ -460,6 +443,22 @@ class CleanPuffeRL:
             self.log = True
         self.reward = torch.mean(self.rewards).float().item()
         self.SPS = int(padded_steps_collected / eval_profiler.elapsed)
+        self.events_avg.append(np.mean(self.infos["learner"]["stats/event"]))
+
+        if (
+            len(self.events_avg) == self.events_avg.maxlen
+            and abs(self.events_avg[-1] - self.events_avg[0]) < 3
+        ):
+            self.ent_coef = self.config.ent_coef_adj
+        else:
+            self.ent_coef = self.config.ent_coef
+        if self.log and self.wandb is not None:
+            self.wandb.log(
+                {
+                    "stats/ent_coef": self.ent_coef,
+                    "stats/ent_coef_len": len(self.events_avg),
+                },
+            )
 
         perf = self.performance
         perf.total_uptime = int(time.time() - self.start_time)

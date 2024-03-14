@@ -904,7 +904,7 @@ class RedGymEnv(Env):
             if self.pyboy.get_memory_value(i) != 0:
                 for j in range(4):
                     move_id = self.pyboy.get_memory_value(i + j + 8)
-                    if move_id != 0:  # and move_id in TM_HM_MOVES:
+                    if move_id != 0 and move_id in TM_HM_MOVES:
                         self.moves_obtained[move_id] = 1
         """
         # Scan current box (since the box doesn't auto increment in pokemon red)
