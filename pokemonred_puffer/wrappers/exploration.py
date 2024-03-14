@@ -4,6 +4,7 @@ import numpy as np
 
 import pufferlib
 from pokemonred_puffer.environment import RedGymEnv
+from pokemonred_puffer.global_map import local_to_global
 
 
 class LRUCache:
@@ -23,7 +24,7 @@ class LRUCache:
         self.cache[key] = 1
         self.cache.move_to_end(key)
         if len(self.cache) > self.capacity:
-            return self.cache.popitem(last=False)
+            return self.cache.popitem(last=False)[0]
 
     def clear(self):
         self.cache.clear()
@@ -80,14 +81,14 @@ class MaxLengthWrapper(gym.Wrapper):
         self.cache = LRUCache(capacity=self.capacity)
 
     def step(self, action):
+        step = self.env.step(action)
         player_x, player_y, map_n = self.env.unwrapped.get_game_coords()
         # Walrus operator does not support tuple unpacking
         if coord := self.cache.put((player_x, player_y, map_n)):
             x, y, n = coord
             del self.env.unwrapped.seen_coords[(x, y, n)]
-            self.env.unwrapped.explore_map[self.env.unwrapped.local_to_global(y, x, n)] = 0
-
-        return self.env.step(action)
+            self.env.unwrapped.explore_map[local_to_global(y, x, n)] = 0
+        return step
 
     def reset(self, *args, **kwargs):
         self.cache.clear()

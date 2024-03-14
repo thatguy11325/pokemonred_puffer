@@ -29,7 +29,7 @@ class BaselineRewardEnv(RedGymEnv):
             # "caught_pokemon": sum(self.caught_pokemon) * 0.0000010,
             "moves_obtained": sum(self.moves_obtained) * 0.00010,
             "explore_hidden_objs": sum(self.seen_hidden_objs.values()) * 0.02,
-            "level": self.get_levels_reward(),
+            # "level": self.get_levels_reward(),
             # "opponent_level": self.max_opponent_level,
             # "death_reward": self.died_count,
             "badge": self.get_badges() * 5,
