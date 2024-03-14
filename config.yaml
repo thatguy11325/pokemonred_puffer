@@ -84,7 +84,7 @@ wrappers:
   baseline:
     - stream_wrapper.StreamWrapper:
         user: thatguy
-    - decay_exploration.DecayWrapper:
+    - exploration.DecayWrapper:
         step_forgetting_factor:
           npc: 0.995
           coords: 0.9995
@@ -96,6 +96,12 @@ wrappers:
           bag_menu: 0.998
           action_bag_menu: 0.998
         forgetting_frequency: 10
+  
+  finite-coords:
+    - stream_wrapper.StreamWrapper:
+        user: thatguy
+    - exploration.MaxLengthWrapper:
+        capacity: 1750
 
 rewards:
   baseline.BaselineRewardEnv:

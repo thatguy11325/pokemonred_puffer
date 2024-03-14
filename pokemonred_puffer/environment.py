@@ -194,9 +194,13 @@ class RedGymEnv(Env):
                 ),
                 # Discrete is more apt, but pufferlib is slower at processing Discrete
                 "direction": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
-                "reset_map_id": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
+                "reset_map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
                 "battle_type": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
                 "cut_in_party": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
+                "x": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
+                "y": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
+                "map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
+                "badges": spaces.Box(low=0, high=8, shape=(1,), dtype=np.uint8),
             }
         )
 
@@ -446,12 +450,17 @@ class RedGymEnv(Env):
         return screen
 
     def _get_obs(self):
+        player_x, player_y, map_n = self.get_game_coords()
         return {
             "screen": self._get_screen_obs(),
             "direction": np.array(self.pyboy.get_memory_value(0xC109) // 4, dtype=np.uint8),
             "reset_map_id": np.array(self.pyboy.get_memory_value(0xD719), dtype=np.uint8),
             "battle_type": np.array(self.pyboy.get_memory_value(0xD057) + 1, dtype=np.uint8),
             "cut_in_party": np.array(self.check_if_party_has_cut(), dtype=np.uint8),
+            "x": np.array(player_x, dtype=np.uint8),
+            "y": np.array(player_y, dtype=np.uint8),
+            "map_id": np.array(map_n, dtype=np.uint8),
+            "badges": np.array(self.get_badges(), dtype=np.uint8),
         }
 
     def set_perfect_iv_dvs(self):
