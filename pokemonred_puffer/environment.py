@@ -481,13 +481,19 @@ class RedGymEnv(Env):
             coords = (x - 1, y, map_id)
         if player_direction == 0xC:
             coords = (x + 1, y, map_id)
-        self.cut_coords[coords] = 10 if context else 0.01
-        self.cut_tiles[coords] = 1
+        if context:
+            if self.pyboy.memory[self.pyboy.symbol_lookup("wTileInFrontOfPlayer")] in [0x3D, 0x50]:
+                self.cut_coords[coords] = 10
+            else:
+                self.cut_coords[coords] = 0.01
+        else:
+            self.cut_coords[coords] = 0.01
 
     def check_if_party_has_cut(self) -> bool:
         party_size = self.read_m(self.pyboy.symbol_lookup("wPartyCount"))
         for i in range(party_size):
-            bank, addr = self.pyboy.symbol_lookup(f"wPartyMon{i}Moves")
+            # PRET 1-indexes
+            bank, addr = self.pyboy.symbol_lookup(f"wPartyMon{i+1}Moves")
             if 15 in self.pyboy.memory[bank, addr : addr + 4]:
                 self.pyboy.hook_register(None, "UsedCut.nothingToCut", self.cut_hook, context=True)
                 self.pyboy.hook_register(None, "UsedCut.canCut", self.cut_hook, context=False)
