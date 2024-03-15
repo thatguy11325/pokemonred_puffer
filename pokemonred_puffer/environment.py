@@ -468,12 +468,30 @@ class RedGymEnv(Env):
             for m in range(12):  # Number of offsets for IV/DV
                 self.pyboy.memory[i + 17 + m] = 0xFF
 
+    def cut_hook(self, context):
+        player_direction = self.pyboy.memory[
+            self.pyboy.symbol_lookup("wSpritePlayerStateData1FacingDirection")
+        ]
+        x, y, map_id = self.get_game_coords()  # x, y, map_id
+        if player_direction == 0:  # down
+            coords = (x, y + 1, map_id)
+        if player_direction == 4:
+            coords = (x, y - 1, map_id)
+        if player_direction == 8:
+            coords = (x - 1, y, map_id)
+        if player_direction == 0xC:
+            coords = (x + 1, y, map_id)
+        self.cut_coords[coords] = 10 if context else 0.01
+        self.cut_tiles[coords] = 1
+
     def check_if_party_has_cut(self) -> bool:
-        party_size = self.read_m(PARTY_SIZE)
-        for i in [0xD16B, 0xD197, 0xD1C3, 0xD1EF, 0xD21B, 0xD247][:party_size]:
-            for m in range(4):
-                if self.pyboy.memory[i + 8 + m] == 15:
-                    return True
+        party_size = self.read_m(self.pyboy.symbol_lookup("wPartyCount"))
+        for i in range(party_size):
+            bank, addr = self.pyboy.symbol_lookup(f"wPartyMon{i}Moves")
+            if 15 in self.pyboy.memory[bank, addr : addr + 4]:
+                self.pyboy.hook_register(None, "UsedCut.nothingToCut", self.cut_hook, context=True)
+                self.pyboy.hook_register(None, "UsedCut.canCut", self.cut_hook, context=False)
+                return True
         return False
 
     def check_if_in_start_menu(self) -> bool:
@@ -608,34 +626,6 @@ class RedGymEnv(Env):
         if self.read_m(0xD057) == 0:
             if self.taught_cut:
                 player_direction = self.pyboy.memory[0xC109]
-                x, y, map_id = self.get_game_coords()  # x, y, map_id
-                if player_direction == 0:  # down
-                    coords = (x, y + 1, map_id)
-                if player_direction == 4:
-                    coords = (x, y - 1, map_id)
-                if player_direction == 8:
-                    coords = (x - 1, y, map_id)
-                if player_direction == 0xC:
-                    coords = (x + 1, y, map_id)
-                self.cut_state.append(
-                    (
-                        self.pyboy.memory[0xCFC6],
-                        self.pyboy.memory[0xCFCB],
-                        self.pyboy.memory[0xCD6A],
-                        self.pyboy.memory[0xD367],
-                        self.pyboy.memory[0xD125],
-                        self.pyboy.memory[0xCD3D],
-                    )
-                )
-                if tuple(list(self.cut_state)[1:]) in CUT_SEQ:
-                    self.cut_coords[coords] = 10
-                    self.cut_tiles[self.cut_state[-1][0]] = 1
-                elif self.cut_state == CUT_GRASS_SEQ:
-                    self.cut_coords[coords] = 0.01
-                    self.cut_tiles[self.cut_state[-1][0]] = 1
-                elif deque([(-1, *elem[1:]) for elem in self.cut_state]) == CUT_FAIL_SEQ:
-                    self.cut_coords[coords] = 0.01
-                    self.cut_tiles[self.cut_state[-1][0]] = 1
 
             # check if the font is loaded
             if self.pyboy.memory[0xCFC4]:
@@ -831,10 +821,10 @@ class RedGymEnv(Env):
         self.total_reward = new_total
         return new_step
 
-    def read_m(self, addr):
+    def read_m(self, addr: str | int):
         return self.pyboy.memory[addr]
 
-    def read_bit(self, addr, bit: int) -> bool:
+    def read_bit(self, addr: str | int, bit: int) -> bool:
         # add padding so zero will read '0b100000000' instead of '0b0'
         return bin(256 + self.read_m(addr))[-bit - 1] == "1"
 
