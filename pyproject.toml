@@ -13,30 +13,24 @@ classifiers = [
 ]
 dependencies = [
     "einops",
-    "numpy",
     "opencv-python",
-    "pettingzoo",
-    "git+https://github.com/Baekalfen/PyBoy@v2.0.0",
-    "pufferlib[pokemon_red]==0.7.2",
+    "numpy",
+    "pyboy @ git+https://github.com/Baekalfen/PyBoy@v2.0.0",
+    "pufferlib[cleanrl]",
     "torch>=2.1",
     "torchvision",
-    "wandb",
-    "websockets",
+    "wandb"
 ]
 
 [tool.setuptools.packages.find]
 where = ["."]
 exclude = ["tests"]
 
-[tool.setuptools.package-data]
-"*" = ["*.json", "*.png"]
-
 [project.optional-dependencies]
 monitoring = [
     "nvitop"
 ]
 dev = [
-    "pre-commit",
     "ruff"
 ]
 
