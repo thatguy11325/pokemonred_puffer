@@ -256,8 +256,7 @@ class RedGymEnv(Env):
         # lazy random seed setting
         if not seed:
             seed = random.randint(0, 4096)
-        for _ in range(seed):
-            self.pyboy.tick()
+        self.pyboy.tick(seed, render=False)
 
         self.taught_cut = self.check_if_party_has_cut()
         self.base_event_flags = sum(
@@ -595,24 +594,13 @@ class RedGymEnv(Env):
 
     def run_action_on_emulator(self, action):
         self.action_hist[action] += 1
-
         # press button then release after some steps
+        # TODO: Add video saving logic
         self.pyboy.send_input(VALID_ACTIONS[action])
-        # disable rendering when we don't need it
-        if not self.save_video and self.headless:
-            self.pyboy._rendering(False)
-        for i in range(self.action_freq):
-            # release action, so they are stateless
-            if i == 8 and action < len(RELEASE_ACTIONS):
-                # release button
-                self.pyboy.send_input(RELEASE_ACTIONS[action])
-
-            if self.save_video and not self.fast_video:
-                self.add_video_frame()
-            if i == self.action_freq - 1:
-                # rendering must be enabled on the tick before frame is needed
-                self.pyboy._rendering(True)
-            self.pyboy.tick()
+        self.pyboy.tick(8, render=False)
+        if action < len(RELEASE_ACTIONS):
+            self.pyboy.send_input(RELEASE_ACTIONS[action])
+        self.pyboy.tick(self.action_freq - 8, render=True)
 
         # Cut check
         # 0xCFC6 - wTileInFrontOfPlayer
