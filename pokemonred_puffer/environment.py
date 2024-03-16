@@ -309,7 +309,7 @@ class RedGymEnv(Env):
         self.seen_hidden_objs = {}
 
         self.cut_coords = {}
-        self.cut_tiles = set([])
+        self.cut_tiles = {}
         self.cut_state = deque(maxlen=3)
 
         self.seen_start_menu = 0
@@ -480,7 +480,7 @@ class RedGymEnv(Env):
     def check_if_bulbasaur_in_party(self) -> bool:
         party_size = self.read_m(PARTY_SIZE)
         for i in [0xD16B, 0xD197, 0xD1C3, 0xD1EF, 0xD21B, 0xD247][:party_size]:
-            if self.pyboy.get_memory_value(i) in [1, 2, 3]:
+            if self.pyboy.get_memory_value(i) in [0x99, 0x9A, 0x09]:
                 return True
         return False
 
