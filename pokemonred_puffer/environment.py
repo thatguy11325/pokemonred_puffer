@@ -477,6 +477,13 @@ class RedGymEnv(Env):
                     return True
         return False
 
+    def check_if_bulbasaur_in_party(self) -> bool:
+        party_size = self.read_m(PARTY_SIZE)
+        for i in [0xD16B, 0xD197, 0xD1C3, 0xD1EF, 0xD21B, 0xD247][:party_size]:
+            if self.pyboy.get_memory_value(i) in [1, 2, 3]:
+                return True
+        return False
+
     def check_if_in_start_menu(self) -> bool:
         return (
             self.read_m(0xD057) == 0
@@ -761,6 +768,7 @@ class RedGymEnv(Env):
                 "item_count": self.read_m(0xD31D),
                 "reset_count": self.reset_count,
                 "blackout_count": self.blackout_count,
+                "bulbasaur_in_party": self.check_if_bulbasaur_in_party(),
             },
             "reward": self.get_game_state_reward(),
             "reward/reward_sum": sum(self.get_game_state_reward().values()),
