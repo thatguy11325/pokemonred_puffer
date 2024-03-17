@@ -199,7 +199,7 @@ class RedGymEnv(Env):
             env_config.gb_path,
             debug=False,
             no_input=False,
-            window_type="headless" if self.headless else "SDL2",
+            window="headless" if self.headless else "SDL2",
             log_level="CRITICAL",
             symbols=os.path.join(os.path.dirname(__file__), "pokered.sym"),
         )

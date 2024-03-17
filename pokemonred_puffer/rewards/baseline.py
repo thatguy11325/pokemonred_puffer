@@ -63,7 +63,7 @@ class BaselineRewardEnv(RedGymEnv):
         return max(
             sum(
                 [
-                    self.bit_count(self.read_m(i))
+                    self.read_m(i).bit_count()
                     for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
                 ]
             )
