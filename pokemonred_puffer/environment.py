@@ -818,7 +818,7 @@ class RedGymEnv(Env):
         explore_map = np.zeros(GLOBAL_MAP_SHAPE)
         for (x, y, map_n), v in self.seen_coords.items():
             gy, gx = local_to_global(y, x, map_n)
-            if gy >= explore_map.shape[0] or gx >= explore_map.shape[1]:
+            if gy >= explore_map.shape[0] or gy < 0 or gx >= explore_map.shape[1] or gx < 0:
                 print(f"coord out of bounds! global: ({gx}, {gy}) game: ({x}, {y}, {map_n})")
             else:
                 explore_map[gy, gx] = v
