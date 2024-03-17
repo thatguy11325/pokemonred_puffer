@@ -719,9 +719,7 @@ class RedGymEnv(Env):
     def read_short(self, addr: str | int) -> int:
         if isinstance(addr, str):
             _, addr = self.pyboy.symbol_lookup(addr)
-            data = self.pyboy.memory[addr : addr + 1]
-        else:
-            data = self.pyboy.memory[addr : addr + 1]
+        data = self.pyboy.memory[addr : addr + 2]
         return data[0] << 8 + data[1]
 
     def read_bit(self, addr: str | int, bit: int) -> bool:
