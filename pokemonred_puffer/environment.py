@@ -526,12 +526,12 @@ class RedGymEnv(Env):
 
     def hidden_object_hook(self, *args, **kwargs):
         hidden_object_id = self.pyboy.memory[self.pyboy.symbol_lookup("wHiddenObjectIndex")[1]]
-        map_id = self.pyboy.memor[self.pyboy.symbol_lookup("wCurMap")[1]]
+        map_id = self.pyboy.memory[self.pyboy.symbol_lookup("wCurMap")[1]]
         self.seen_hidden_objects[(map_id, hidden_object_id)] = 1
 
     def sprite_hook(self, *args, **kwargs):
         sprite_id = self.pyboy.memory[self.pyboy.symbol_lookup("hSpriteIndexOrTextID")[1]]
-        map_id = self.pyboy.memor[self.pyboy.symbol_lookup("wCurMap")[1]]
+        map_id = self.pyboy.memory[self.pyboy.symbol_lookup("wCurMap")[1]]
         self.seen_npcs[(map_id, sprite_id)] = 1
 
     def start_menu_hook(self, *args, **kwargs):
