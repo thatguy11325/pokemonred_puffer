@@ -780,7 +780,7 @@ class RedGymEnv(Env):
         # Scan party
         for i in range(self.read_m("wPartyCount")):
             _, addr = self.pyboy.symbol_lookup(f"wPartyMon{i+1}Moves")
-            for move_id in self.pyboy.memory[addr : addr + 4] in TM_HM_MOVES:
+            for move_id in self.pyboy.memory[addr : addr + 4]:
                 if move_id in TM_HM_MOVES:
                     self.moves_obtained[move_id] = 1
         """
