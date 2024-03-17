@@ -197,9 +197,10 @@ class RedGymEnv(Env):
 
         self.pyboy = PyBoy(
             env_config.gb_path,
-            debugging=False,
-            disable_input=False,
+            debug=False,
+            no_input=False,
             window_type="headless" if self.headless else "SDL2",
+            log_level="CRITICAL",
             symbols=os.path.join(os.path.dirname(__file__), "pokered.sym"),
         )
         self.register_hooks()
@@ -465,15 +466,15 @@ class RedGymEnv(Env):
     def set_perfect_iv_dvs(self):
         party_size = self.read_m("wPartyCount")
         for i in range(party_size):
-            bank, addr = self.pyboy.symbol_lookup(f"wPartyMon{i+1}Species")
-            self.pyboy.memory[bank, addr + 17 : addr + 17 + 12] = 0xFF
+            _, addr = self.pyboy.symbol_lookup(f"wPartyMon{i+1}Species")
+            self.pyboy.memory[addr + 17 : addr + 17 + 12] = 0xFF
 
     def check_if_party_has_cut(self) -> bool:
-        party_size = self.read_m(self.pyboy.symbol_lookup("wPartyCount"))
+        party_size = self.read_m("wPartyCount")
         for i in range(party_size):
             # PRET 1-indexes
-            bank, addr = self.pyboy.symbol_lookup(f"wPartyMon{i+1}Moves")
-            if 15 in self.pyboy.memory[bank, addr : addr + 4]:
+            _, addr = self.pyboy.symbol_lookup(f"wPartyMon{i+1}Moves")
+            if 15 in self.pyboy.memory[addr : addr + 4]:
                 return True
         return False
 
@@ -526,13 +527,13 @@ class RedGymEnv(Env):
             self.add_video_frame()
 
     def hidden_object_hook(self, *args, **kwargs):
-        hidden_object_id = self.pyboy.memory[self.pyboy.symbol_lookup("wHiddenObjectIndex")]
-        map_id = self.pyboy.memor[self.pyboy.symbol_lookup("wCurMap")]
+        hidden_object_id = self.pyboy.memory[self.pyboy.symbol_lookup("wHiddenObjectIndex")[1]]
+        map_id = self.pyboy.memor[self.pyboy.symbol_lookup("wCurMap")[1]]
         self.seen_hidden_objects[(map_id, hidden_object_id)] = 1
 
     def sprite_hook(self, *args, **kwargs):
-        sprite_id = self.pyboy.memory[self.pyboy.symbol_lookup("hSpriteIndexOrTextID")]
-        map_id = self.pyboy.memor[self.pyboy.symbol_lookup("wCurMap")]
+        sprite_id = self.pyboy.memory[self.pyboy.symbol_lookup("hSpriteIndexOrTextID")[1]]
+        map_id = self.pyboy.memor[self.pyboy.symbol_lookup("wCurMap")[1]]
         self.seen_npcs[(map_id, sprite_id)] = 1
 
     def start_menu_hook(self, *args, **kwargs):
@@ -558,7 +559,7 @@ class RedGymEnv(Env):
 
     def cut_hook(self, context):
         player_direction = self.pyboy.memory[
-            self.pyboy.symbol_lookup("wSpritePlayerStateData1FacingDirection")
+            self.pyboy.symbol_lookup("wSpritePlayerStateData1FacingDirection")[1]
         ]
         x, y, map_id = self.get_game_coords()  # x, y, map_id
         if player_direction == 0:  # down
@@ -570,7 +571,10 @@ class RedGymEnv(Env):
         if player_direction == 0xC:
             coords = (x + 1, y, map_id)
         if context:
-            if self.pyboy.memory[self.pyboy.symbol_lookup("wTileInFrontOfPlayer")] in [0x3D, 0x50]:
+            if self.pyboy.memory[self.pyboy.symbol_lookup("wTileInFrontOfPlayer")[1]] in [
+                0x3D,
+                0x50,
+            ]:
                 self.cut_coords[coords] = 10
             else:
                 self.cut_coords[coords] = 0.01
@@ -709,13 +713,13 @@ class RedGymEnv(Env):
 
     def read_m(self, addr: str | int) -> int:
         if isinstance(addr, str):
-            return self.pyboy.memory[self.pyboy.symbol_lookup(addr)]
+            return self.pyboy.memory[self.pyboy.symbol_lookup(addr)[1]]
         return self.pyboy.memory[addr]
 
     def read_short(self, addr: str | int) -> int:
         if isinstance(addr, str):
-            bank, addr = self.pyboy.symbol_lookup(addr)
-            data = self.pyboy.memory[bank, addr : addr + 1]
+            _, addr = self.pyboy.symbol_lookup(addr)
+            data = self.pyboy.memory[addr : addr + 1]
         else:
             data = self.pyboy.memory[addr : addr + 1]
         return data[0] << 8 + data[1]
@@ -726,16 +730,16 @@ class RedGymEnv(Env):
         return bool(self.read_m(addr) & 1 << (7 - bit))
 
     def read_event_bits(self):
-        bank, addr = self.pyboy.symbol_lookup("wEventFlags")
-        return self.pyboy.memory[bank, addr : addr + EVENTS_FLAGS_LENGTH]
+        _, addr = self.pyboy.symbol_lookup("wEventFlags")
+        return self.pyboy.memory[addr : addr + EVENTS_FLAGS_LENGTH]
 
     def get_badges(self):
         return self.read_m("wObtainedBadges").bit_count()
 
     def read_party(self):
-        bank, addr = self.pyboy.symbol_lookup("wPartySpecies")
-        party_length = self.pyboy.memory[self.pyboy.symbol_lookup("wPartyCount")]
-        return self.pyboy.memory[bank, addr : addr + party_length]
+        _, addr = self.pyboy.symbol_lookup("wPartySpecies")
+        party_length = self.pyboy.memory[self.pyboy.symbol_lookup("wPartyCount")[1]]
+        return self.pyboy.memory[addr : addr + party_length]
 
     @abstractmethod
     def get_game_state_reward(self):
@@ -777,8 +781,8 @@ class RedGymEnv(Env):
         # TODO: Make a hook
         # Scan party
         for i in range(self.read_m("wPartyCount")):
-            bank, addr = self.pyboy.symbol_lookup(f"wPartyMon{i+1}Moves")
-            for move_id in self.pyboy.memory[bank, addr : addr + 4] in TM_HM_MOVES:
+            _, addr = self.pyboy.symbol_lookup(f"wPartyMon{i+1}Moves")
+            for move_id in self.pyboy.memory[addr : addr + 4] in TM_HM_MOVES:
                 if move_id in TM_HM_MOVES:
                     self.moves_obtained[move_id] = 1
         """

@@ -64,7 +64,7 @@ class DecayWrapper(gym.Wrapper):
             self.env.unwrapped.explore_map[self.env.unwrapped.explore_map > 0], 0.15, 1
         )
 
-        if self.env.unwrapped.read_m(0xD057) == 0:
+        if self.env.unwrapped.read_m("wIsInBattle") == 0:
             self.env.unwrapped.seen_start_menu *= self.step_forgetting_factor["start_menu"]
             self.env.unwrapped.seen_pokemon_menu *= self.step_forgetting_factor["pokemon_menu"]
             self.env.unwrapped.seen_stats_menu *= self.step_forgetting_factor["stats_menu"]
