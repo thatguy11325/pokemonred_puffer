@@ -33,7 +33,7 @@ env:
   state_dir: pyboy_states
   init_state: Bulbasaur
   action_freq: 24
-  max_steps: 100_000_000
+  max_steps: 20480
   save_video: False
   fast_video: False
   frame_stacks: 1
@@ -48,9 +48,9 @@ train:
   compile_mode: "reduce-overhead"
   float32_matmul_precision: "high"
   total_timesteps: 100_000_000_000
-  batch_size: 32768
-  learning_rate: 2.5e-4
-  anneal_lr: True
+  batch_size: 65536
+  learning_rate: 2.0e-4
+  anneal_lr: False
   gamma: 0.998
   gae_lambda: 0.95
   num_minibatches: 4
@@ -66,9 +66,9 @@ train:
   bptt_horizon: 16 #8
   vf_clip_coef: 0.12 # 0.1
 
-  num_envs: 150
-  envs_per_worker: 2
-  envs_per_batch: 60
+  num_envs: 96
+  envs_per_worker: 1
+  envs_per_batch: 32
   env_pool: True
 
   verbose: True

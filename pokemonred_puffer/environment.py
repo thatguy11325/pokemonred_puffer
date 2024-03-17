@@ -240,6 +240,14 @@ class RedGymEnv(Env):
             self.explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
             self.init_mem()
             self.reset_count = 0
+            with open(self.init_state_path, "rb") as f:
+                self.pyboy.load_state(f)
+
+            # lazy random seed setting
+            if not seed:
+                seed = random.randint(0, 4096)
+            for _ in range(seed):
+                self.pyboy.tick()
         else:
             self.recent_screens.clear()
             self.recent_actions.clear()
@@ -249,15 +257,6 @@ class RedGymEnv(Env):
             self.explore_map *= 0
             self.reset_mem()
             self.reset_count += 1
-
-        with open(self.init_state_path, "rb") as f:
-            self.pyboy.load_state(f)
-
-        # lazy random seed setting
-        if not seed:
-            seed = random.randint(0, 4096)
-        for _ in range(seed):
-            self.pyboy.tick()
 
         self.taught_cut = self.check_if_party_has_cut()
         self.base_event_flags = sum(
@@ -298,13 +297,10 @@ class RedGymEnv(Env):
         # Maybe I should preallocate a giant matrix for all map ids
         # All map ids have the same size, right?
         self.seen_coords = {}
-        self.seen_coords_since_blackout = set([])
         # self.seen_global_coords = np.zeros(GLOBAL_MAP_SHAPE)
         self.seen_map_ids = np.zeros(256)
-        self.seen_map_ids_since_blackout = set([])
 
         self.seen_npcs = {}
-        self.seen_npcs_since_blackout = set([])
 
         self.seen_hidden_objs = {}
 
@@ -527,10 +523,6 @@ class RedGymEnv(Env):
         if cur_map_id in RESET_MAP_IDS:
             blackout_check = int(cur_map_id == self.read_m(0xD719))
             if blackout_check and not self.blackout_check:
-                self.seen_coords_since_blackout.clear()
-                self.seen_npcs_since_blackout.clear()
-                self.seen_map_ids_since_blackout.clear()
-
                 self.blackout_check = blackout_check
 
     def step(self, action):
@@ -700,9 +692,6 @@ class RedGymEnv(Env):
                     if npc_candidates:
                         _, npc_id = min(npc_candidates, key=lambda x: x[0])
                         self.seen_npcs[(self.pyboy.get_memory_value(0xD35E), npc_id)] = 1
-                        self.seen_npcs_since_blackout.add(
-                            (self.pyboy.get_memory_value(0xD35E), npc_id)
-                        )
 
                 if int(self.read_bit(0xD803, 0)):
                     if self.check_if_in_start_menu():
@@ -816,11 +805,9 @@ class RedGymEnv(Env):
     def update_seen_coords(self):
         x_pos, y_pos, map_n = self.get_game_coords()
         self.seen_coords[(x_pos, y_pos, map_n)] = 1
-        self.seen_coords_since_blackout.add((x_pos, y_pos, map_n))
         self.explore_map[local_to_global(y_pos, x_pos, map_n)] = 1
         # self.seen_global_coords[local_to_global(y_pos, x_pos, map_n)] = 1
         self.seen_map_ids[map_n] = 1
-        self.seen_map_ids_since_blackout.add(map_n)
 
     def get_explore_map(self):
         explore_map = np.zeros(GLOBAL_MAP_SHAPE)
