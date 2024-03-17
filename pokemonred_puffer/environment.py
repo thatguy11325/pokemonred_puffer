@@ -495,8 +495,6 @@ class RedGymEnv(Env):
         if self.perfect_ivs:
             self.set_perfect_iv_dvs()
         self.taught_cut = self.check_if_party_has_cut()
-        self.blackout()
-        self.update_blackout()
 
         info = {}
         # TODO: Make log frequency a configuration parameter
