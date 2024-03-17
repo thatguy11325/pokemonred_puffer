@@ -2,8 +2,6 @@ import pufferlib
 from pokemonred_puffer.environment import (
     EVENT_FLAGS_START,
     EVENTS_FLAGS_LENGTH,
-    PARTY_LEVEL_ADDRS,
-    PARTY_SIZE,
     RedGymEnv,
 )
 
@@ -75,10 +73,8 @@ class BaselineRewardEnv(RedGymEnv):
         )
 
     def get_levels_reward(self):
-        party_size = self.read_m(PARTY_SIZE)
-        party_levels = [
-            x for x in [self.read_m(addr) for addr in PARTY_LEVEL_ADDRS[:party_size]] if x > 0
-        ]
+        party_size = self.read_m("wPartyCount")
+        party_levels = [self.read_m(f"wPartyMon{i+1}Level") for i in range(party_size)]
         self.max_level_sum = max(self.max_level_sum, sum(party_levels))
         if self.max_level_sum < 15:
             return self.max_level_sum

@@ -7,9 +7,6 @@ import websockets
 import pufferlib
 from pokemonred_puffer.environment import RedGymEnv
 
-X_POS_ADDRESS, Y_POS_ADDRESS = 0xD362, 0xD361
-MAP_N_ADDRESS = 0xD35E
-
 
 class StreamWrapper(gym.Wrapper):
     def __init__(self, env: RedGymEnv, config: pufferlib.namespace):
@@ -34,9 +31,9 @@ class StreamWrapper(gym.Wrapper):
             raise Exception("Could not find emulator!")
 
     def step(self, action):
-        x_pos = self.emulator.get_memory_value(X_POS_ADDRESS)
-        y_pos = self.emulator.get_memory_value(Y_POS_ADDRESS)
-        map_n = self.emulator.get_memory_value(MAP_N_ADDRESS)
+        x_pos = self.env.unwrapped.read_m("wXCoord")
+        y_pos = self.env.unwrapped.read_m("wYCoord")
+        map_n = self.env.unwrapped.read_m("wCurMap")
         self.coord_list.append([x_pos, y_pos, map_n])
 
         if self.steam_step_counter >= self.upload_interval:
