@@ -25,6 +25,7 @@ dependencies = [
 [tool.setuptools.packages.find]
 where = ["."]
 exclude = ["tests"]
+include = ["pokered.sym"]
 
 [project.optional-dependencies]
 monitoring = [
