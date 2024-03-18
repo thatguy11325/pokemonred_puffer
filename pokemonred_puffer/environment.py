@@ -508,7 +508,7 @@ class RedGymEnv(Env):
         # press button then release after some steps
         # TODO: Add video saving logic
         self.pyboy.button(VALID_ACTIONS_STR[action], delay=8)
-        self.pyboy.tick(24, render=True)
+        self.pyboy.tick(self.action_freq, render=True)
 
         if self.save_video and self.fast_video:
             self.add_video_frame()
