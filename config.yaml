@@ -109,6 +109,8 @@ wrappers:
 rewards:
   baseline.BaselineRewardEnv:
     reward:
+  teach_cut_v1.TeachCutEnv:
+    reward:
 
 policies:
   multi_convolutional.MultiConvolutionalPolicy:
