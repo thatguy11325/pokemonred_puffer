@@ -112,15 +112,7 @@ VALID_ACTIONS = [
     WindowEvent.PRESS_BUTTON_START,
 ]
 
-RELEASE_ACTIONS = [
-    WindowEvent.RELEASE_ARROW_DOWN,
-    WindowEvent.RELEASE_ARROW_LEFT,
-    WindowEvent.RELEASE_ARROW_RIGHT,
-    WindowEvent.RELEASE_ARROW_UP,
-    WindowEvent.RELEASE_BUTTON_A,
-    WindowEvent.RELEASE_BUTTON_B,
-    WindowEvent.RELEASE_BUTTON_START,
-]
+VALID_ACTIONS_STR = ["down", "left", "right", "up", "a", "b", "start"]
 
 ACTION_SPACE = spaces.Discrete(len(VALID_ACTIONS))
 
@@ -515,11 +507,8 @@ class RedGymEnv(Env):
         self.action_hist[action] += 1
         # press button then release after some steps
         # TODO: Add video saving logic
-        self.pyboy.send_input(VALID_ACTIONS[action])
-        self.pyboy.tick(8, render=False)
-        if action < len(RELEASE_ACTIONS):
-            self.pyboy.send_input(RELEASE_ACTIONS[action])
-        self.pyboy.tick(self.action_freq - 8, render=True)
+        self.pyboy.button(VALID_ACTIONS_STR[action], delay=8)
+        self.pyboy.tick(24, render=True)
 
         if self.save_video and self.fast_video:
             self.add_video_frame()
