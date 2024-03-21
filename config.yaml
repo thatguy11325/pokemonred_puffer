@@ -79,6 +79,7 @@ train:
   overlay_interval: 200
   cpu_offload: True
   pool_kernel: [0]
+  log_frequency: 2000
 
 wrappers:
   baseline:

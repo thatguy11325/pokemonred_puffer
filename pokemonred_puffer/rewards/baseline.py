@@ -86,27 +86,46 @@ class TeachCutReplicationEnv(RedGymEnv):
 
     def get_game_state_reward(self):
         return {
-            "event": self.reward_config.event * self.update_max_event_rew(),
-            "met_bill": self.reward_config.bill_saved * int(self.read_bit(0xD7F1, 0)),
-            "used_cell_separator_on_bill": self.reward_config.bill_saved
+            "event": self.reward_config["event"] * self.update_max_event_rew(),
+            "met_bill": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F1, 0)),
+            "used_cell_separator_on_bill": self.reward_config["bill_saved"]
             * int(self.read_bit(0xD7F2, 3)),
-            "ss_ticket": self.reward_config.bill_saved * int(self.read_bit(0xD7F2, 4)),
-            "met_bill_2": self.reward_config.bill_saved * int(self.read_bit(0xD7F2, 5)),
-            "bill_said_use_cell_separator": self.reward_config.bill_saved
+            "ss_ticket": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F2, 4)),
+            "met_bill_2": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F2, 5)),
+            "bill_said_use_cell_separator": self.reward_config["bill_saved"]
             * int(self.read_bit(0xD7F2, 6)),
-            "left_bills_house_after_helping": self.reward_config.bill_saved
+            "left_bills_house_after_helping": self.reward_config["bill_saved"]
             * int(self.read_bit(0xD7F2, 7)),
-            "seen_pokemon": self.reward_config.seen_pokemon * sum(self.seen_pokemon),
-            "caught_pokemon": self.reward_config.caught_pokemon * sum(self.caught_pokemon),
-            "moves_obtained": self.reward_config.moves_obtained * sum(self.moves_obtained),
-            "hm_count": self.reward_config.hm_count * self.get_hm_count(),
-            "level": self.reward_config.level * self.get_levels_reward(),
-            "badges": self.reward_config.badges * self.get_badges(),
-            "exploration": self.reward_config.exploration * len(self.seen_coords),
-            "cut_coords": self.reward_config.cut_coords * sum(self.cut_coords.values()),
-            "cut_tiles": self.reward_config.cut_tiles * sum(self.cut_tiles),
-            "start_menu": self.reward_config.start_menu * self.seen_start_menu,
-            "pokemon_menu": self.reward_config.pokemon_menu * self.seen_pokemon_menu,
-            "stats_menu": self.reward_config.stats_menu * self.seen_stats_menu,
-            "bag_menu": self.reward_config.bag_menu * self.seen_bag_menu,
+            "seen_pokemon": self.reward_config["seen_pokemon"] * sum(self.seen_pokemon),
+            "caught_pokemon": self.reward_config["caught_pokemon"] * sum(self.caught_pokemon),
+            "moves_obtained": self.reward_config["moves_obtained"] * sum(self.moves_obtained),
+            "hm_count": self.reward_config["hm_count"] * self.get_hm_count(),
+            "level": self.reward_config["level"] * self.get_levels_reward(),
+            "badges": self.reward_config["badges"] * self.get_badges(),
+            "exploration": self.reward_config["exploration"] * sum(self.seen_coords.values()),
+            "cut_coords": self.reward_config["cut_coords"] * sum(self.cut_coords.values()),
+            "cut_tiles": self.reward_config["cut_tiles"] * sum(self.cut_tiles),
+            "start_menu": self.reward_config["start_menu"] * self.seen_start_menu,
+            "pokemon_menu": self.reward_config["pokemon_menu"] * self.seen_pokemon_menu,
+            "stats_menu": self.reward_config["stats_menu"] * self.seen_stats_menu,
+            "bag_menu": self.reward_config["bag_menu"] * self.seen_bag_menu,
         }
+
+    def update_max_event_rew(self):
+        cur_rew = self.get_all_events_reward()
+        self.max_event_rew = max(cur_rew, self.max_event_rew)
+        return self.max_event_rew
+
+    def get_all_events_reward(self):
+        # adds up all event flags, exclude museum ticket
+        return max(
+            sum(
+                [
+                    self.read_m(i).bit_count()
+                    for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
+                ]
+            )
+            - self.base_event_flags
+            - int(self.read_bit(*MUSEUM_TICKET)),
+            0,
+        )
