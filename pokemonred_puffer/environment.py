@@ -179,13 +179,13 @@ class RedGymEnv(Env):
                 ),
                 # Discrete is more apt, but pufferlib is slower at processing Discrete
                 "direction": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
-                "reset_map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
+                # "reset_map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
                 "battle_type": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
-                "cut_in_party": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
-                "x": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
-                "y": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
-                "map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
-                "badges": spaces.Box(low=0, high=8, shape=(1,), dtype=np.uint8),
+                # "cut_in_party": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
+                # "x": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
+                # "y": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
+                # "map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
+                # "badges": spaces.Box(low=0, high=8, shape=(1,), dtype=np.uint8),
             }
         )
 
