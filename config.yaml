@@ -17,7 +17,7 @@ debug:
     batch_size: 128
     batch_rows: 32
     bptt_horizon: 4
-    total_timesteps: 1000
+    total_timesteps: 100_000_000
     save_checkpoint: True
     checkpoint_interval: 4
     save_overlay: True

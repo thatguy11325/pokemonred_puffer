@@ -38,4 +38,5 @@ def make_pokemon_red_overlay(counts: np.ndarray):
     return render
 
 
-make_pokemon_red_overlay = torch.compile(make_pokemon_red_overlay)
+if torch.cuda.is_available():
+    make_pokemon_red_overlay = torch.compile(make_pokemon_red_overlay)
