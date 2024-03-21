@@ -516,7 +516,7 @@ class RedGymEnv(Env):
         self.action_hist[action] += 1
         # press button then release after some steps
         # TODO: Add video saving logic
-        self.pyboy.send_input(action)
+        self.pyboy.send_input(VALID_ACTIONS[action])
         self.pyboy.send_input(VALID_RELEASE_ACTIONS[action], delay=8)
         self.pyboy.tick(self.action_freq, render=True)
 
