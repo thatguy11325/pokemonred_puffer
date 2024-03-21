@@ -487,7 +487,7 @@ class CleanPuffeRL:
                     if self.wandb is not None:
                         self.stats["Media/aggregate_exploration_map"] = self.wandb.Image(overlay)
             try:  # TODO: Better checks on log data types
-                self.stats[f"Histogram/{k}"] = self.wandb.Histogram(v, num_bins=16)
+                # self.stats[f"Histogram/{k}"] = self.wandb.Histogram(v, num_bins=16)
                 self.stats[k] = np.mean(v)
                 self.max_stats[k] = np.max(v)
             except:  # noqa

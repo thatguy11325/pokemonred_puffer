@@ -114,6 +114,16 @@ VALID_ACTIONS = [
     WindowEvent.PRESS_BUTTON_START,
 ]
 
+VALID_RELEASE_ACTIONS = [
+    WindowEvent.RELEASE_ARROW_DOWN,
+    WindowEvent.RELEASE_ARROW_LEFT,
+    WindowEvent.RELEASE_ARROW_RIGHT,
+    WindowEvent.RELEASE_ARROW_UP,
+    WindowEvent.RELEASE_BUTTON_A,
+    WindowEvent.RELEASE_BUTTON_B,
+    WindowEvent.RELEASE_BUTTON_START,
+]
+
 VALID_ACTIONS_STR = ["down", "left", "right", "up", "a", "b", "start"]
 
 ACTION_SPACE = spaces.Discrete(len(VALID_ACTIONS))
@@ -144,6 +154,7 @@ class RedGymEnv(Env):
         self.perfect_ivs = env_config.perfect_ivs
         self.reduce_res = env_config.reduce_res
         self.gb_path = env_config.gb_path
+        self.log_frequency = env_config.log_frequency
         self.action_space = ACTION_SPACE
 
         # Obs space-related. TODO: avoid hardcoding?
@@ -488,7 +499,7 @@ class RedGymEnv(Env):
 
         info = {}
         # TODO: Make log frequency a configuration parameter
-        if self.step_count % 2000 == 0:
+        if self.step_count % self.log_frequency == 0:
             info = self.agent_stats(action)
 
         obs = self._get_obs()
@@ -505,7 +516,8 @@ class RedGymEnv(Env):
         self.action_hist[action] += 1
         # press button then release after some steps
         # TODO: Add video saving logic
-        self.pyboy.button(VALID_ACTIONS_STR[action], delay=8)
+        self.pyboy.send_input(action)
+        self.pyboy.send_input(VALID_RELEASE_ACTIONS[action], delay=8)
         self.pyboy.tick(self.action_freq, render=True)
 
         if self.save_video and self.fast_video:
