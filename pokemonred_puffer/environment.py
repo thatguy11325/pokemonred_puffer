@@ -4,7 +4,7 @@ import random
 from collections import deque
 from multiprocessing import Lock, shared_memory
 from pathlib import Path
-from typing import Optional
+from typing import Iterable, Optional
 import uuid
 
 import mediapy as media
@@ -82,6 +82,8 @@ TM_HM_MOVES = set(
         0x94,  # Flash
     ]
 )
+
+HM_ITEM_IDS = set([0xC4, 0xC5, 0xC6, 0xC7, 0xC8])
 
 RESET_MAP_IDS = set(
     [
@@ -242,23 +244,22 @@ class RedGymEnv(Env):
             self.explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
             self.init_mem()
             self.reset_count = 0
+            with open(self.init_state_path, "rb") as f:
+                self.pyboy.load_state(f)
+            # lazy random seed setting
+            if not seed:
+                seed = random.randint(0, 4096)
+            self.pyboy.tick(seed, render=False)
         else:
-            self.recent_screens.clear()
-            self.recent_actions.clear()
-            self.seen_pokemon.fill(0)
-            self.caught_pokemon.fill(0)
-            self.moves_obtained.fill(0)
-            self.explore_map *= 0
-            self.reset_mem()
             self.reset_count += 1
 
-        with open(self.init_state_path, "rb") as f:
-            self.pyboy.load_state(f)
-
-        # lazy random seed setting
-        if not seed:
-            seed = random.randint(0, 4096)
-        self.pyboy.tick(seed, render=False)
+        self.recent_screens.clear()
+        self.recent_actions.clear()
+        self.seen_pokemon.fill(0)
+        self.caught_pokemon.fill(0)
+        self.moves_obtained.fill(0)
+        self.explore_map *= 0
+        self.reset_mem()
 
         self.taught_cut = self.check_if_party_has_cut()
         self.base_event_flags = sum(
@@ -283,9 +284,6 @@ class RedGymEnv(Env):
         self.current_event_flags_set = {}
 
         self.action_hist = np.zeros(len(VALID_ACTIONS))
-
-        # experiment!
-        # self.max_steps += 128
 
         self.max_map_progress = 0
         self.progress_reward = self.get_game_state_reward()
@@ -497,7 +495,7 @@ class RedGymEnv(Env):
 
         self.step_count += 1
         reset = (
-            self.step_count > self.max_steps  # or
+            self.step_count >= self.max_steps  # or
             # self.caught_pokemon[6] == 1  # squirtle
         )
 
@@ -799,3 +797,21 @@ class RedGymEnv(Env):
             return self.essential_map_locations[map_idx]
         else:
             return -1
+
+    def get_items_in_bag(self) -> Iterable[int]:
+        num_bag_items = self.read_m("wNumBagItems")
+        _, addr = self.pyboy.symbol_lookup("wBagItems")
+        return self.pyboy.memory[addr : addr + 2 * num_bag_items][::2]
+
+    def get_hm_count(self) -> int:
+        return len(HM_ITEM_IDS.intersection(self.get_items_in_bag()))
+
+    def get_levels_reward(self):
+        # Level reward
+        party_levels = self.read_party()
+        self.max_level_sum = max(self.max_level_sum, sum(party_levels))
+        if self.max_level_sum < 30:
+            level_reward = 1 * self.max_level_sum
+        else:
+            level_reward = 30 + (self.max_level_sum - 30) / 4
+        return level_reward
