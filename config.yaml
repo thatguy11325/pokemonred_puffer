@@ -33,7 +33,7 @@ env:
   state_dir: pyboy_states
   init_state: Bulbasaur
   action_freq: 24
-  max_steps: 100_000_000
+  max_steps: 20480
   save_video: False
   fast_video: False
   frame_stacks: 1
@@ -48,9 +48,9 @@ train:
   compile_mode: "reduce-overhead"
   float32_matmul_precision: "high"
   total_timesteps: 100_000_000_000
-  batch_size: 32768
-  learning_rate: 2.5e-4
-  anneal_lr: True
+  batch_size: 65536 
+  learning_rate: 2.0e-4
+  anneal_lr: False
   gamma: 0.998
   gae_lambda: 0.95
   num_minibatches: 4
@@ -63,12 +63,12 @@ train:
   max_grad_norm: 0.5
   target_kl: ~
   batch_rows: 128
-  bptt_horizon: 16 #8
-  vf_clip_coef: 0.12 # 0.1
+  bptt_horizon: 16 
+  vf_clip_coef: 0.1
 
-  num_envs: 150
-  envs_per_worker: 2
-  envs_per_batch: 60
+  num_envs: 96
+  envs_per_worker: 1
+  envs_per_batch: 32
   env_pool: True
 
   verbose: True
@@ -103,9 +103,31 @@ wrappers:
     - exploration.MaxLengthWrapper:
         capacity: 1750
 
+  stream_only:
+    - stream_wrapper.StreamWrapper:
+        user: thatguy 
+
 rewards:
   baseline.BaselineRewardEnv:
     reward:
+  baseline.TeachCutReplicationEnv:
+    reward:
+      event: 1.0
+      bill_saved: 5.0
+      seen_pokemon: 4.0
+      caught_pokemon: 4.0
+      moves_obtained: 4.0
+      hm_count: 10.0
+      level: 1.0
+      badges: 10.0
+      exploration: 0.02
+      cut_coords: 1.0
+      cut_tiles: 1.0
+      start_menu: 0.01
+      pokemon_menu: 0.1
+      stats_menu: 0.1
+      bag_menu: 0.1
+
 
 policies:
   multi_convolutional.MultiConvolutionalPolicy:

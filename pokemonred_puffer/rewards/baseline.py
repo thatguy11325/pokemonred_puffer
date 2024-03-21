@@ -12,9 +12,6 @@ class BaselineRewardEnv(RedGymEnv):
     def __init__(self, env_config: pufferlib.namespace, reward_config: pufferlib.namespace):
         super().__init__(env_config)
 
-    def step(self, action):
-        return super().step(action)
-
     # TODO: make the reward weights configurable
     def get_game_state_reward(self):
         # addresses from https://datacrystal.romhacking.net/wiki/Pok%C3%A9mon_Red/Blue:RAM_map
@@ -80,3 +77,36 @@ class BaselineRewardEnv(RedGymEnv):
             return self.max_level_sum
         else:
             return 15 + (self.max_level_sum - 15) / 4
+
+
+class TeachCutReplicationEnv(RedGymEnv):
+    def __init__(self, env_config: pufferlib.namespace, reward_config: pufferlib.namespace):
+        super().__init__(env_config)
+        self.reward_config = reward_config
+
+    def get_game_state_reward(self):
+        return {
+            "event": self.reward_config.event * self.update_max_event_rew(),
+            "met_bill": self.reward_config.bill_saved * int(self.read_bit(0xD7F1, 0)),
+            "used_cell_separator_on_bill": self.reward_config.bill_saved
+            * int(self.read_bit(0xD7F2, 3)),
+            "ss_ticket": self.reward_config.bill_saved * int(self.read_bit(0xD7F2, 4)),
+            "met_bill_2": self.reward_config.bill_saved * int(self.read_bit(0xD7F2, 5)),
+            "bill_said_use_cell_separator": self.reward_config.bill_saved
+            * int(self.read_bit(0xD7F2, 6)),
+            "left_bills_house_after_helping": self.reward_config.bill_saved
+            * int(self.read_bit(0xD7F2, 7)),
+            "seen_pokemon": self.reward_config.seen_pokemon * sum(self.seen_pokemon),
+            "caught_pokemon": self.reward_config.caught_pokemon * sum(self.caught_pokemon),
+            "moves_obtained": self.reward_config.moves_obtained * sum(self.moves_obtained),
+            "hm_count": self.reward_config.hm_count * self.get_hm_count(),
+            "level": self.reward_config.level * self.get_levels_reward(),
+            "badges": self.reward_config.badges * self.get_badges(),
+            "exploration": self.reward_config.exploration * len(self.seen_coords),
+            "cut_coords": self.reward_config.cut_coords * sum(self.cut_coords.values()),
+            "cut_tiles": self.reward_config.cut_tiles * sum(self.cut_tiles),
+            "start_menu": self.reward_config.start_menu * self.seen_start_menu,
+            "pokemon_menu": self.reward_config.pokemon_menu * self.seen_pokemon_menu,
+            "stats_menu": self.reward_config.stats_menu * self.seen_stats_menu,
+            "bag_menu": self.reward_config.bag_menu * self.seen_bag_menu,
+        }
