@@ -306,7 +306,7 @@ class RedGymEnv(Env):
         self.seen_hidden_objs = {}
 
         self.cut_coords = {}
-        self.cut_tiles = set([])
+        self.cut_tiles = {}
         self.cut_state = deque(maxlen=3)
 
         self.seen_start_menu = 0
@@ -668,7 +668,7 @@ class RedGymEnv(Env):
         explore_map = np.zeros(GLOBAL_MAP_SHAPE)
         for (x, y, map_n), v in self.seen_coords.items():
             gy, gx = local_to_global(y, x, map_n)
-            if gy >= explore_map.shape[0] or gx >= explore_map.shape[1]:
+            if 0 > gy >= explore_map.shape[0] or 0 > gx >= explore_map.shape[1]:
                 print(f"coord out of bounds! global: ({gx}, {gy}) game: ({x}, {y}, {map_n})")
             else:
                 explore_map[gy, gx] = v

@@ -20,3 +20,6 @@ def local_to_global(r: int, c: int, map_n: int):
     except KeyError:
         print(f"Map id {map_n} not found in map_data.json.")
         return r + 0, c + 0
+    except IndexError:
+        print(f"Coord {map_x}, {map_y} out of bounds for map id {map_n}.")
+        return 0, 0
