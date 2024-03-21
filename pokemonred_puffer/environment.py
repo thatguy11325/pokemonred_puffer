@@ -444,13 +444,13 @@ class RedGymEnv(Env):
             "direction": np.array(
                 self.read_m("wSpritePlayerStateData1FacingDirection") // 4, dtype=np.uint8
             ),
-            "reset_map_id": np.array(self.read_m("wLastBlackoutMap"), dtype=np.uint8),
+            # "reset_map_id": np.array(self.read_m("wLastBlackoutMap"), dtype=np.uint8),
             "battle_type": np.array(self.read_m("wIsInBattle") + 1, dtype=np.uint8),
-            "cut_in_party": np.array(self.check_if_party_has_cut(), dtype=np.uint8),
-            "x": np.array(player_x, dtype=np.uint8),
-            "y": np.array(player_y, dtype=np.uint8),
-            "map_id": np.array(map_n, dtype=np.uint8),
-            "badges": np.array(self.get_badges(), dtype=np.uint8),
+            # "cut_in_party": np.array(self.check_if_party_has_cut(), dtype=np.uint8),
+            # "x": np.array(player_x, dtype=np.uint8),
+            # "y": np.array(player_y, dtype=np.uint8),
+            # "map_id": np.array(map_n, dtype=np.uint8),
+            # "badges": np.array(self.get_badges(), dtype=np.uint8),
         }
 
     def set_perfect_iv_dvs(self):
