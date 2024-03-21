@@ -4,7 +4,7 @@ import random
 from collections import deque
 from multiprocessing import Lock, shared_memory
 from pathlib import Path
-from typing import Optional
+from typing import Iterable, Optional
 import uuid
 
 import mediapy as media
@@ -83,6 +83,8 @@ TM_HM_MOVES = set(
     ]
 )
 
+HM_ITEM_IDS = set([0xC4, 0xC5, 0xC6, 0xC7, 0xC8])
+
 RESET_MAP_IDS = set(
     [
         0x0,  # Pallet Town
@@ -110,6 +112,16 @@ VALID_ACTIONS = [
     WindowEvent.PRESS_BUTTON_A,
     WindowEvent.PRESS_BUTTON_B,
     WindowEvent.PRESS_BUTTON_START,
+]
+
+VALID_RELEASE_ACTIONS = [
+    WindowEvent.RELEASE_ARROW_DOWN,
+    WindowEvent.RELEASE_ARROW_LEFT,
+    WindowEvent.RELEASE_ARROW_RIGHT,
+    WindowEvent.RELEASE_ARROW_UP,
+    WindowEvent.RELEASE_BUTTON_A,
+    WindowEvent.RELEASE_BUTTON_B,
+    WindowEvent.RELEASE_BUTTON_START,
 ]
 
 VALID_ACTIONS_STR = ["down", "left", "right", "up", "a", "b", "start"]
@@ -142,6 +154,7 @@ class RedGymEnv(Env):
         self.perfect_ivs = env_config.perfect_ivs
         self.reduce_res = env_config.reduce_res
         self.gb_path = env_config.gb_path
+        self.log_frequency = env_config.log_frequency
         self.action_space = ACTION_SPACE
 
         # Obs space-related. TODO: avoid hardcoding?
@@ -177,13 +190,13 @@ class RedGymEnv(Env):
                 ),
                 # Discrete is more apt, but pufferlib is slower at processing Discrete
                 "direction": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
-                "reset_map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
+                # "reset_map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
                 "battle_type": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
-                "cut_in_party": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
-                "x": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
-                "y": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
-                "map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
-                "badges": spaces.Box(low=0, high=8, shape=(1,), dtype=np.uint8),
+                # "cut_in_party": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
+                # "x": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
+                # "y": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
+                # "map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
+                # "badges": spaces.Box(low=0, high=8, shape=(1,), dtype=np.uint8),
             }
         )
 
@@ -242,23 +255,22 @@ class RedGymEnv(Env):
             self.explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
             self.init_mem()
             self.reset_count = 0
+            with open(self.init_state_path, "rb") as f:
+                self.pyboy.load_state(f)
+            # lazy random seed setting
+            if not seed:
+                seed = random.randint(0, 4096)
+            self.pyboy.tick(seed, render=False)
         else:
-            self.recent_screens.clear()
-            self.recent_actions.clear()
-            self.seen_pokemon.fill(0)
-            self.caught_pokemon.fill(0)
-            self.moves_obtained.fill(0)
-            self.explore_map *= 0
-            self.reset_mem()
             self.reset_count += 1
 
-        with open(self.init_state_path, "rb") as f:
-            self.pyboy.load_state(f)
-
-        # lazy random seed setting
-        if not seed:
-            seed = random.randint(0, 4096)
-        self.pyboy.tick(seed, render=False)
+        self.recent_screens.clear()
+        self.recent_actions.clear()
+        self.seen_pokemon.fill(0)
+        self.caught_pokemon.fill(0)
+        self.moves_obtained.fill(0)
+        self.explore_map *= 0
+        self.reset_mem()
 
         self.taught_cut = self.check_if_party_has_cut()
         self.base_event_flags = sum(
@@ -283,9 +295,6 @@ class RedGymEnv(Env):
         self.current_event_flags_set = {}
 
         self.action_hist = np.zeros(len(VALID_ACTIONS))
-
-        # experiment!
-        # self.max_steps += 128
 
         self.max_map_progress = 0
         self.progress_reward = self.get_game_state_reward()
@@ -446,13 +455,13 @@ class RedGymEnv(Env):
             "direction": np.array(
                 self.read_m("wSpritePlayerStateData1FacingDirection") // 4, dtype=np.uint8
             ),
-            "reset_map_id": np.array(self.read_m("wLastBlackoutMap"), dtype=np.uint8),
+            # "reset_map_id": np.array(self.read_m("wLastBlackoutMap"), dtype=np.uint8),
             "battle_type": np.array(self.read_m("wIsInBattle") + 1, dtype=np.uint8),
-            "cut_in_party": np.array(self.check_if_party_has_cut(), dtype=np.uint8),
-            "x": np.array(player_x, dtype=np.uint8),
-            "y": np.array(player_y, dtype=np.uint8),
-            "map_id": np.array(map_n, dtype=np.uint8),
-            "badges": np.array(self.get_badges(), dtype=np.uint8),
+            # "cut_in_party": np.array(self.check_if_party_has_cut(), dtype=np.uint8),
+            # "x": np.array(player_x, dtype=np.uint8),
+            # "y": np.array(player_y, dtype=np.uint8),
+            # "map_id": np.array(map_n, dtype=np.uint8),
+            # "badges": np.array(self.get_badges(), dtype=np.uint8),
         }
 
     def set_perfect_iv_dvs(self):
@@ -490,14 +499,14 @@ class RedGymEnv(Env):
 
         info = {}
         # TODO: Make log frequency a configuration parameter
-        if self.step_count % 2000 == 0:
+        if self.step_count % self.log_frequency == 0:
             info = self.agent_stats(action)
 
         obs = self._get_obs()
 
         self.step_count += 1
         reset = (
-            self.step_count > self.max_steps  # or
+            self.step_count >= self.max_steps  # or
             # self.caught_pokemon[6] == 1  # squirtle
         )
 
@@ -507,7 +516,8 @@ class RedGymEnv(Env):
         self.action_hist[action] += 1
         # press button then release after some steps
         # TODO: Add video saving logic
-        self.pyboy.button(VALID_ACTIONS_STR[action], delay=8)
+        self.pyboy.send_input(VALID_ACTIONS[action])
+        self.pyboy.send_input(VALID_RELEASE_ACTIONS[action], delay=8)
         self.pyboy.tick(self.action_freq, render=True)
 
         if self.save_video and self.fast_video:
@@ -799,3 +809,21 @@ class RedGymEnv(Env):
             return self.essential_map_locations[map_idx]
         else:
             return -1
+
+    def get_items_in_bag(self) -> Iterable[int]:
+        num_bag_items = self.read_m("wNumBagItems")
+        _, addr = self.pyboy.symbol_lookup("wBagItems")
+        return self.pyboy.memory[addr : addr + 2 * num_bag_items][::2]
+
+    def get_hm_count(self) -> int:
+        return len(HM_ITEM_IDS.intersection(self.get_items_in_bag()))
+
+    def get_levels_reward(self):
+        # Level reward
+        party_levels = self.read_party()
+        self.max_level_sum = max(self.max_level_sum, sum(party_levels))
+        if self.max_level_sum < 30:
+            level_reward = 1 * self.max_level_sum
+        else:
+            level_reward = 30 + (self.max_level_sum - 30) / 4
+        return level_reward
