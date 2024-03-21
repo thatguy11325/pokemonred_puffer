@@ -137,7 +137,7 @@ policies:
       hidden_size: 512
       output_size: 512
       framestack: 3
-      flat_size: 2184
+      flat_size: 1928
 
     recurrent:
       # Assumed to be in the same module as the policy
