@@ -309,7 +309,7 @@ class RedGymEnv(Env):
         self.seen_hidden_objs = {}
 
         self.cut_coords = {}
-        self.cut_tiles = {}  # set([])
+        self.cut_tiles = {}
         self.cut_state = deque(maxlen=3)
 
         self.seen_start_menu = 0
@@ -809,11 +809,7 @@ class RedGymEnv(Env):
         x_pos, y_pos, map_n = self.get_game_coords()
         self.seen_coords[(x_pos, y_pos, map_n)] = 1
         self.seen_coords_since_blackout.add((x_pos, y_pos, map_n))
-        try:
-            self.explore_map[local_to_global(y_pos, x_pos, map_n)] = 1
-        except IndexError:
-            gy, gx = local_to_global(y_pos, x_pos, map_n)
-            print(f"coord out of bounds! global: ({gx}, {gy}) game: ({x_pos}, {y_pos}, {map_n})")
+        self.explore_map[local_to_global(y_pos, x_pos, map_n)] = 1
         # self.seen_global_coords[local_to_global(y_pos, x_pos, map_n)] = 1
         self.seen_map_ids[map_n] = 1
         self.seen_map_ids_since_blackout.add(map_n)
@@ -822,7 +818,7 @@ class RedGymEnv(Env):
         explore_map = np.zeros(GLOBAL_MAP_SHAPE)
         for (x, y, map_n), v in self.seen_coords.items():
             gy, gx = local_to_global(y, x, map_n)
-            if gy >= explore_map.shape[0] or gy < 0 or gx >= explore_map.shape[1] or gx < 0:
+            if 0 > gy >= explore_map.shape[0] or 0 > gx >= explore_map.shape[1]:
                 print(f"coord out of bounds! global: ({gx}, {gy}) game: ({x}, {y}, {map_n})")
             else:
                 explore_map[gy, gx] = v
