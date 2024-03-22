@@ -24,6 +24,7 @@ debug:
     overlay_interval: 4
     verbose: True
     env_pool: False
+    log_frequency: 5000
 
 env:
   headless: True
@@ -39,6 +40,7 @@ env:
   frame_stacks: 1
   perfect_ivs: True
   reduce_res: True
+  log_frequency: 2000
 
 train:
   seed: 1
@@ -79,7 +81,6 @@ train:
   overlay_interval: 200
   cpu_offload: True
   pool_kernel: [0]
-  log_frequency: 2000
 
 wrappers:
   baseline:
