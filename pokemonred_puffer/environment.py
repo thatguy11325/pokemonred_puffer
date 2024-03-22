@@ -255,6 +255,8 @@ class RedGymEnv(Env):
             self.explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
             self.cut_explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
             self.init_mem()
+            # We only init seen hidden objs once cause they can only be found once!
+            self.seen_hidden_objs = {}
             self.reset_count = 0
             with open(self.init_state_path, "rb") as f:
                 self.pyboy.load_state(f)
@@ -266,7 +268,6 @@ class RedGymEnv(Env):
                 self.read_m(i).bit_count()
                 for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
             )
-
         else:
             self.reset_count += 1
 
@@ -311,14 +312,10 @@ class RedGymEnv(Env):
         self.seen_coords = {}
         # self.seen_global_coords = np.zeros(GLOBAL_MAP_SHAPE)
         self.seen_map_ids = np.zeros(256)
-
         self.seen_npcs = {}
-
-        self.seen_hidden_objs = {}
 
         self.cut_coords = {}
         self.cut_tiles = {}
-        self.cut_state = deque(maxlen=3)
 
         self.seen_start_menu = 0
         self.seen_pokemon_menu = 0
@@ -329,13 +326,9 @@ class RedGymEnv(Env):
     def reset_mem(self):
         self.seen_coords.update((k, 0) for k, _ in self.seen_coords.items())
         self.seen_map_ids *= 0
-
         self.seen_npcs.update((k, 0) for k, _ in self.seen_npcs.items())
 
-        self.seen_hidden_objs.update((k, 0) for k, _ in self.seen_hidden_objs.items())
-
         self.cut_coords.update((k, 0) for k, _ in self.cut_coords.items())
-        self.cut_state = deque(maxlen=3)
 
         self.seen_start_menu = 0
         self.seen_pokemon_menu = 0

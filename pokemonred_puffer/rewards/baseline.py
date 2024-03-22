@@ -152,6 +152,9 @@ class TeachCutReplicationEnvFork(RedGymEnv):
             "hm_count": self.reward_config["hm_count"] * self.get_hm_count(),
             "badges": self.reward_config["badges"] * self.get_badges(),
             "exploration": self.reward_config["exploration"] * sum(self.seen_coords.values()),
+            "explore_npcs": self.reward_config["explore_npcs"] * sum(self.seen_npcs.values()),
+            "explore_hidden_objs": self.reward_config["explore_hidden_objs"]
+            * sum(self.seen_hidden_objs.values()),
             "cut_coords": self.reward_config["cut_coords"] * sum(self.cut_coords.values()),
             "cut_tiles": self.reward_config["cut_tiles"] * sum(self.cut_tiles),
             "start_menu": self.reward_config["start_menu"] * self.seen_start_menu,
