@@ -129,3 +129,53 @@ class TeachCutReplicationEnv(RedGymEnv):
             - int(self.read_bit(*MUSEUM_TICKET)),
             0,
         )
+
+
+class TeachCutReplicationEnvFork(RedGymEnv):
+    def __init__(self, env_config: pufferlib.namespace, reward_config: pufferlib.namespace):
+        super().__init__(env_config)
+        self.reward_config = reward_config
+
+    def get_game_state_reward(self):
+        return {
+            "event": self.reward_config["event"] * self.update_max_event_rew(),
+            "met_bill": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F1, 0)),
+            "used_cell_separator_on_bill": self.reward_config["bill_saved"]
+            * int(self.read_bit(0xD7F2, 3)),
+            "ss_ticket": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F2, 4)),
+            "met_bill_2": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F2, 5)),
+            "bill_said_use_cell_separator": self.reward_config["bill_saved"]
+            * int(self.read_bit(0xD7F2, 6)),
+            "left_bills_house_after_helping": self.reward_config["bill_saved"]
+            * int(self.read_bit(0xD7F2, 7)),
+            "moves_obtained": self.reward_config["moves_obtained"] * sum(self.moves_obtained),
+            "hm_count": self.reward_config["hm_count"] * self.get_hm_count(),
+            "badges": self.reward_config["badges"] * self.get_badges(),
+            "exploration": self.reward_config["exploration"] * sum(self.seen_coords.values()),
+            "cut_coords": self.reward_config["cut_coords"] * sum(self.cut_coords.values()),
+            "cut_tiles": self.reward_config["cut_tiles"] * sum(self.cut_tiles),
+            "start_menu": self.reward_config["start_menu"] * self.seen_start_menu,
+            "pokemon_menu": self.reward_config["pokemon_menu"] * self.seen_pokemon_menu,
+            "stats_menu": self.reward_config["stats_menu"] * self.seen_stats_menu,
+            "bag_menu": self.reward_config["bag_menu"] * self.seen_bag_menu,
+            "taught_cut": self.reward_config["taught_cut"] * int(self.check_if_party_has_cut()),
+        }
+
+    def update_max_event_rew(self):
+        cur_rew = self.get_all_events_reward()
+        self.max_event_rew = max(cur_rew, self.max_event_rew)
+        return self.max_event_rew
+
+    def get_all_events_reward(self):
+        # adds up all event flags, exclude museum ticket
+        return max(
+            sum(
+                [
+                    self.read_m(i).bit_count()
+                    for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
+                ]
+            )
+            - self.base_event_flags
+            - int(self.read_bit(*MUSEUM_TICKET)),
+            0,
+        )

@@ -314,6 +314,9 @@ class CleanPuffeRL:
 
         self.reward_buffer = deque(maxlen=1_000)
         self.exploration_map_agg = np.zeros((config.num_envs, *GLOBAL_MAP_SHAPE), dtype=np.float32)
+        self.cut_exploration_map_agg = np.zeros(
+            (config.num_envs, *GLOBAL_MAP_SHAPE), dtype=np.float32
+        )
         self.taught_cut = False
 
         self.infos = {}
@@ -479,13 +482,18 @@ class CleanPuffeRL:
         self.stats = {}
         self.max_stats = {}
         for k, v in self.infos["learner"].items():
-            if "pokemon_exploration_map" in k and config.save_overlay is True:
+            if "exploration_map" in k and config.save_overlay is True:
                 if self.update % config.overlay_interval == 0:
-                    # self.exploration_map_agg[env_id, :, :] = v
-                    # overlay = make_pokemon_red_overlay(self.exploration_map_agg)
                     overlay = make_pokemon_red_overlay(np.stack(v, axis=0))
                     if self.wandb is not None:
                         self.stats["Media/aggregate_exploration_map"] = self.wandb.Image(overlay)
+            if "cut_exploration_map" in k and config.save_overlay is True:
+                if self.update % config.overlay_interval == 0:
+                    overlay = make_pokemon_red_overlay(np.stack(v, axis=0))
+                    if self.wandb is not None:
+                        self.stats["Media/aggregate_cut_exploration_map"] = self.wandb.Image(
+                            overlay
+                        )
             try:  # TODO: Better checks on log data types
                 # self.stats[f"Histogram/{k}"] = self.wandb.Histogram(v, num_bins=16)
                 self.stats[k] = np.mean(v)

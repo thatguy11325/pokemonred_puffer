@@ -25,13 +25,6 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
     def __init__(
         self,
         env,
-        screen_framestack: int = 3,
-        global_map_frame_stack: int = 1,
-        screen_flat_size: int = 1928,  # 14341,
-        global_map_flat_size: int = 1600,
-        input_size: int = 512,
-        framestack: int = 1,
-        flat_size: int = 1,
         hidden_size=512,
         output_size=512,
         channels_last: bool = True,
@@ -42,41 +35,22 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
         self.channels_last = channels_last
         self.downsample = downsample
         self.screen_network = nn.Sequential(
-            pufferlib.pytorch.layer_init(nn.Conv2d(screen_framestack, 32, 8, stride=4)),
+            nn.LazyConv2d(32, 8, stride=4),
             nn.ReLU(),
-            pufferlib.pytorch.layer_init(nn.Conv2d(32, 64, 4, stride=2)),
+            nn.LazyConv2d(64, 4, stride=2),
             nn.ReLU(),
-            pufferlib.pytorch.layer_init(nn.Conv2d(64, 64, 3, stride=1)),
-            nn.ReLU(),
-            nn.Flatten(),
-        )
-
-        """
-        self.global_map_network = nn.Sequential(
-            pufferlib.pytorch.layer_init(nn.Conv2d(global_map_frame_stack, 32, 16, stride=8)),
-            nn.ReLU(),
-            pufferlib.pytorch.layer_init(nn.Conv2d(32, 64, 8, stride=4)),
-            nn.ReLU(),
-            pufferlib.pytorch.layer_init(nn.Conv2d(64, 64, 4, stride=2)),
+            nn.LazyConv2d(64, 3, stride=1),
             nn.ReLU(),
             nn.Flatten(),
         )
-        """
 
         self.encode_linear = nn.Sequential(
-            pufferlib.pytorch.layer_init(
-                nn.Linear(
-                    screen_flat_size,
-                    hidden_size,
-                ),
-            ),
+            nn.LazyLinear(hidden_size),
             nn.ReLU(),
         )
 
-        self.actor = pufferlib.pytorch.layer_init(
-            nn.Linear(output_size, self.num_actions), std=0.01
-        )
-        self.value_fn = pufferlib.pytorch.layer_init(nn.Linear(output_size, 1), std=1)
+        self.actor = nn.LazyLinear(self.num_actions)
+        self.value_fn = nn.LazyLinear(output_size, 1)
 
     def encode_observations(self, observations):
         observations = unpack_batched_obs(observations, self.unflatten_context)

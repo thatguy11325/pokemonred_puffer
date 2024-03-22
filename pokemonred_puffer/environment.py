@@ -253,6 +253,7 @@ class RedGymEnv(Env):
             self.caught_pokemon = np.zeros(152, dtype=np.uint8)
             self.moves_obtained = np.zeros(0xA5, dtype=np.uint8)
             self.explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
+            self.cut_explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
             self.init_mem()
             self.reset_count = 0
             with open(self.init_state_path, "rb") as f:
@@ -270,6 +271,7 @@ class RedGymEnv(Env):
         self.caught_pokemon.fill(0)
         self.moves_obtained.fill(0)
         self.explore_map *= 0
+        self.cut_explore_map *= 0
         self.reset_mem()
 
         self.taught_cut = self.check_if_party_has_cut()
@@ -543,7 +545,7 @@ class RedGymEnv(Env):
         self.seen_pokemon_menu = 1
 
     def chose_stats_hook(self, *args, **kwargs):
-        self.chose_stats_hook = 1
+        self.seen_stats_menu = 1
 
     def chose_item_hook(self, *args, **kwargs):
         self.seen_action_bag_menu = 1
@@ -567,8 +569,12 @@ class RedGymEnv(Env):
             coords = (x - 1, y, map_id)
         if player_direction == 0xC:
             coords = (x + 1, y, map_id)
+
+        wTileInFrontOfPlayer = self.pyboy.memory[
+            self.pyboy.symbol_lookup("wTileInFrontOfPlayer")[1]
+        ]
         if context:
-            if self.pyboy.memory[self.pyboy.symbol_lookup("wTileInFrontOfPlayer")[1]] in [
+            if wTileInFrontOfPlayer in [
                 0x3D,
                 0x50,
             ]:
@@ -577,6 +583,9 @@ class RedGymEnv(Env):
                 self.cut_coords[coords] = 0.01
         else:
             self.cut_coords[coords] = 0.01
+
+        self.cut_explore_map[local_to_global(y, x, map_id)] = 1
+        self.cut_tiles[wTileInFrontOfPlayer] = 1
 
     def agent_stats(self, action):
         levels = [self.read_m(f"wPartyMon{i+1}Level") for i in range(self.read_m("wPartyCount"))]
@@ -626,7 +635,8 @@ class RedGymEnv(Env):
             },
             "reward": self.get_game_state_reward(),
             "reward/reward_sum": sum(self.get_game_state_reward().values()),
-            "pokemon_exploration_map": self.explore_map,
+            "exploration_map": self.explore_map,
+            "cut_exploration_map": self.cut_explore_map,
         }
 
     def start_video(self):
@@ -717,12 +727,12 @@ class RedGymEnv(Env):
         if isinstance(addr, str):
             _, addr = self.pyboy.symbol_lookup(addr)
         data = self.pyboy.memory[addr : addr + 2]
-        return data[0] << 8 + data[1]
+        return int(data[0] << 8) + int(data[1])
 
     def read_bit(self, addr: str | int, bit: int) -> bool:
         # add padding so zero will read '0b100000000' instead of '0b0'
         # return bin(256 + self.read_m(addr))[-bit - 1] == "1"
-        return bool(self.read_m(addr) & 1 << (7 - bit))
+        return bool(int(self.read_m(addr)) & (1 << (7 - bit)))
 
     def read_event_bits(self):
         _, addr = self.pyboy.symbol_lookup("wEventFlags")
