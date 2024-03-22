@@ -148,6 +148,8 @@ rewards:
       stats_menu: 0.1
       bag_menu: 0.1
       taught_cut: 10.0
+      explore_npcs: 0.02
+      explore_hidden_objs: 0.02
 
 
 policies:
