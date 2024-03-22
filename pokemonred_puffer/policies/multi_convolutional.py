@@ -50,7 +50,7 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
         )
 
         self.actor = nn.LazyLinear(self.num_actions)
-        self.value_fn = nn.LazyLinear(output_size, 1)
+        self.value_fn = nn.LazyLinear(1)
 
     def encode_observations(self, observations):
         observations = unpack_batched_obs(observations, self.unflatten_context)
