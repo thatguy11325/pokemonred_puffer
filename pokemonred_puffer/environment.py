@@ -262,6 +262,11 @@ class RedGymEnv(Env):
             if not seed:
                 seed = random.randint(0, 4096)
             self.pyboy.tick(seed, render=False)
+            self.base_event_flags = sum(
+                self.read_m(i).bit_count()
+                for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
+            )
+
         else:
             self.reset_count += 1
 
@@ -275,11 +280,6 @@ class RedGymEnv(Env):
         self.reset_mem()
 
         self.taught_cut = self.check_if_party_has_cut()
-        self.base_event_flags = sum(
-            self.read_m(i).bit_count()
-            for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
-        )
-
         self.levels_satisfied = False
         self.base_explore = 0
         self.max_opponent_level = 0
