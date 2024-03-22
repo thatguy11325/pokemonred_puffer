@@ -132,7 +132,7 @@ rewards:
       bag_menu: 0.1
   baseline.TeachCutReplicationEnvFork:
     reward:
-      event: 4.0
+      event: 1.0
       bill_saved: 5.0
       moves_obtained: 4.0
       hm_count: 10.0
@@ -147,6 +147,9 @@ rewards:
       taught_cut: 10.0
       explore_npcs: 0.02
       explore_hidden_objs: 0.02
+      seen_pokemon: 4.0
+      caught_pokemon: 4.0
+      level: 1.0
 
 
 policies:
