@@ -464,7 +464,7 @@ class CleanPuffeRL:
         self.stats = {}
         self.max_stats = {}
         for k, v in self.infos["learner"].items():
-            if "exploration_map" in k and config.save_overlay is True:
+            if "pokemon_exploration_map" in k and config.save_overlay is True:
                 if self.update % config.overlay_interval == 0:
                     overlay = make_pokemon_red_overlay(np.stack(v, axis=0))
                     if self.wandb is not None:
