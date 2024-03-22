@@ -731,8 +731,7 @@ class RedGymEnv(Env):
 
     def read_bit(self, addr: str | int, bit: int) -> bool:
         # add padding so zero will read '0b100000000' instead of '0b0'
-        # return bin(256 + self.read_m(addr))[-bit - 1] == "1"
-        return bool(int(self.read_m(addr)) & (1 << (7 - bit)))
+        return bool(int(self.read_m(addr)) & (1 << bit))
 
     def read_event_bits(self):
         _, addr = self.pyboy.symbol_lookup("wEventFlags")
