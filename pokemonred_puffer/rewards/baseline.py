@@ -172,6 +172,9 @@ class TeachCutReplicationEnvFork(RedGymEnv):
             ),
             "bag_menu": self.reward_config["bag_menu"] * self.seen_bag_menu * int(self.taught_cut),
             "taught_cut": self.reward_config["taught_cut"] * int(self.taught_cut),
+            "seen_pokemon": self.reward_config["seen_pokemon"] * sum(self.seen_pokemon),
+            "caught_pokemon": self.reward_config["caught_pokemon"] * sum(self.caught_pokemon),
+            "level": self.reward_config["level"] * self.get_levels_reward(),
         }
 
     def update_max_event_rew(self):
@@ -192,3 +195,12 @@ class TeachCutReplicationEnvFork(RedGymEnv):
             - int(self.read_bit(*MUSEUM_TICKET)),
             0,
         )
+
+    def get_levels_reward(self):
+        party_size = self.read_m("wPartyCount")
+        party_levels = [self.read_m(f"wPartyMon{i+1}Level") for i in range(party_size)]
+        self.max_level_sum = max(self.max_level_sum, sum(party_levels))
+        if self.max_level_sum < 15:
+            return self.max_level_sum
+        else:
+            return 15 + (self.max_level_sum - 15) / 4
