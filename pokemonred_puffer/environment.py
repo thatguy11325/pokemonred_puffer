@@ -338,7 +338,8 @@ class RedGymEnv(Env):
 
     def render(self):
         # (144, 160, 3)
-        game_pixels_render = self.screen.ndarray[:, :, 0:1]
+        # screen is ARGB. We'll just take the R channel since they are the same.
+        game_pixels_render = np.expand_dims(self.screen.ndarray[:, :, 1], axis=-1)
         if self.reduce_res:
             game_pixels_render = game_pixels_render[::2, ::2, :]
         # place an overlay on top of the screen greying out places we haven't visited
