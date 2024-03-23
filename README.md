@@ -14,8 +14,7 @@ To install the library you can either
 For example,
 
 ```sh
-git clone https://github.com/thatguy11325/pokemonred_puffer.git --recurse-submodules
-pip3 install -e . 'PufferLib[cleanrl,pokemon_red]'
+pip3 install -e . 
 ```
 
 ### Running
