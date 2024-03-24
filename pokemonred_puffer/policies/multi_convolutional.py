@@ -82,30 +82,19 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
             screen = torch.index_select(
                 self.screen_buckets,
                 0,
-                screen.flatten()
-                .unsqueeze(-1)
-                .bitwise_and(self.unpack_mask)
-                .bitwise_right_shift(self.unpack_shift)
-                .flatten()
-                .int(),
+                ((screen.reshape((-1, 1)) & self.unpack_mask) >> self.unpack_shift).flatten().int(),
             ).reshape(restored_shape)
             visited_mask = torch.index_select(
                 self.linear_buckets,
                 0,
-                visited_mask.flatten()
-                .unsqueeze(-1)
-                .bitwise_and(self.unpack_mask)
-                .bitwise_right_shift(self.unpack_shift)
+                ((visited_mask.reshape((-1, 1)) & self.unpack_mask) >> self.unpack_shift)
                 .flatten()
                 .int(),
             ).reshape(restored_shape)
             global_map = torch.index_select(
                 self.linear_buckets,
                 0,
-                global_map.flatten()
-                .unsqueeze(-1)
-                .bitwise_and(self.unpack_mask)
-                .bitwise_right_shift(self.unpack_shift)
+                ((global_map.reshape((-1, 1)) & self.unpack_mask) >> self.unpack_shift)
                 .flatten()
                 .int(),
             ).reshape(restored_shape)

@@ -276,7 +276,7 @@ class CleanPuffeRL:
                 torch.zeros(shape, device=self.device),
                 torch.zeros(shape, device=self.device),
             )
-        self.obs = torch.zeros(config.batch_size + 1, *obs_shape)
+        self.obs = torch.zeros(config.batch_size + 1, *obs_shape, dtype=torch.uint8)
         self.actions = torch.zeros(config.batch_size + 1, *atn_shape, dtype=int)
         self.logprobs = torch.zeros(config.batch_size + 1)
         self.rewards = torch.zeros(config.batch_size + 1)
@@ -284,7 +284,7 @@ class CleanPuffeRL:
         self.truncateds = torch.zeros(config.batch_size + 1)
         self.values = torch.zeros(config.batch_size + 1)
 
-        self.obs_ary = np.asarray(self.obs)
+        self.obs_ary = np.asarray(self.obs, dtype=np.uint8)
         self.actions_ary = np.asarray(self.actions)
         self.logprobs_ary = np.asarray(self.logprobs)
         self.rewards_ary = np.asarray(self.rewards)
@@ -534,11 +534,11 @@ class CleanPuffeRL:
                 )
 
         # Flatten the batch
-        self.b_obs = b_obs = torch.Tensor(self.obs_ary[b_idxs])
-        b_actions = torch.Tensor(self.actions_ary[b_idxs]).to(self.device, non_blocking=True)
-        b_logprobs = torch.Tensor(self.logprobs_ary[b_idxs]).to(self.device, non_blocking=True)
+        self.b_obs = b_obs = torch.tensor(self.obs_ary[b_idxs], dtype=torch.uint8)
+        b_actions = torch.tensor(self.actions_ary[b_idxs]).to(self.device, non_blocking=True)
+        b_logprobs = torch.tensor(self.logprobs_ary[b_idxs]).to(self.device, non_blocking=True)
         # b_dones = torch.Tensor(self.dones_ary[b_idxs]).to(self.device, non_blocking=True)
-        b_values = torch.Tensor(self.values_ary[b_idxs]).to(self.device, non_blocking=True)
+        b_values = torch.tensor(self.values_ary[b_idxs]).to(self.device, non_blocking=True)
         b_advantages = advantages.reshape(
             config.batch_rows, num_minibatches, config.bptt_horizon
         ).transpose(0, 1)
@@ -547,7 +547,9 @@ class CleanPuffeRL:
         # Optimizing the policy and value network
         train_time = time.time()
         pg_losses, entropy_losses, v_losses, clipfracs, old_kls, kls = [], [], [], [], [], []
-        mb_obs_buffer = torch.zeros_like(b_obs[0], pin_memory=(self.device == "cuda"))
+        mb_obs_buffer = torch.zeros_like(
+            b_obs[0], pin_memory=(self.device == "cuda"), dtype=torch.uint8
+        )
 
         for epoch in range(config.update_epochs):
             lstm_state = None
