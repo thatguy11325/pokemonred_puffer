@@ -529,19 +529,24 @@ class RedGymEnv(Env):
         self.seen_npcs[(map_id, sprite_id)] = 1
 
     def start_menu_hook(self, *args, **kwargs):
-        self.seen_start_menu = 1
+        if self.read_m("wIsInBattle") == 0:
+            self.seen_start_menu = 1
 
     def item_menu_hook(self, *args, **kwargs):
-        self.seen_bag_menu = 1
+        if self.read_m("wIsInBattle") == 0:
+            self.seen_bag_menu = 1
 
     def pokemon_menu_hook(self, *args, **kwargs):
-        self.seen_pokemon_menu = 1
+        if self.read_m("wIsInBattle") == 0:
+            self.seen_pokemon_menu = 1
 
     def chose_stats_hook(self, *args, **kwargs):
-        self.seen_stats_menu = 1
+        if self.read_m("wIsInBattle") == 0:
+            self.seen_stats_menu = 1
 
     def chose_item_hook(self, *args, **kwargs):
-        self.seen_action_bag_menu = 1
+        if self.read_m("wIsInBattle") == 0:
+            self.seen_action_bag_menu = 1
 
     def blackout_hook(self, *args, **kwargs):
         self.blackout_count += 1
