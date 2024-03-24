@@ -17,6 +17,8 @@ from skimage.transform import resize
 import pufferlib
 from pokemonred_puffer.global_map import GLOBAL_MAP_SHAPE, local_to_global
 
+PIXEL_VALUES = np.array([0, 85, 153, 255], dtype=np.uint8)
+
 EVENT_FLAGS_START = 0xD747
 EVENTS_FLAGS_LENGTH = 320
 MUSEUM_TICKET = (0xD754, 0)
@@ -150,18 +152,24 @@ class RedGymEnv(Env):
         self.max_steps = env_config.max_steps
         self.save_video = env_config.save_video
         self.fast_video = env_config.fast_video
-        self.frame_stacks = env_config.frame_stacks
         self.perfect_ivs = env_config.perfect_ivs
         self.reduce_res = env_config.reduce_res
         self.gb_path = env_config.gb_path
         self.log_frequency = env_config.log_frequency
+        self.two_bit = env_config.two_bit
         self.action_space = ACTION_SPACE
 
         # Obs space-related. TODO: avoid hardcoding?
         if self.reduce_res:
-            self.screen_output_shape = (72, 80, 3 * self.frame_stacks)
+            self.screen_output_shape = (72, 80, 1)
         else:
-            self.screen_output_shape = (144, 160, 3 * self.frame_stacks)
+            self.screen_output_shape = (144, 160, 1)
+        if self.two_bit:
+            self.screen_output_shape = (
+                self.screen_output_shape[0],
+                self.screen_output_shape[1] // 4,
+                1,
+            )
         self.coords_pad = 12
         self.enc_freqs = 8
 
@@ -186,6 +194,12 @@ class RedGymEnv(Env):
         self.observation_space = spaces.Dict(
             {
                 "screen": spaces.Box(
+                    low=0, high=255, shape=self.screen_output_shape, dtype=np.uint8
+                ),
+                "visited_mask": spaces.Box(
+                    low=0, high=255, shape=self.screen_output_shape, dtype=np.uint8
+                ),
+                "global_map": spaces.Box(
                     low=0, high=255, shape=self.screen_output_shape, dtype=np.uint8
                 ),
                 # Discrete is more apt, but pufferlib is slower at processing Discrete
@@ -247,8 +261,8 @@ class RedGymEnv(Env):
         # restart game, skipping credits
         self.explore_map_dim = 384
         if self.first:
-            self.recent_screens = deque()  # np.zeros(self.output_shape, dtype=np.uint8)
-            self.recent_actions = deque()  # np.zeros((self.frame_stacks,), dtype=np.uint8)
+            self.recent_screens = deque()
+            self.recent_actions = deque()
             self.seen_pokemon = np.zeros(152, dtype=np.uint8)
             self.caught_pokemon = np.zeros(152, dtype=np.uint8)
             self.moves_obtained = np.zeros(0xA5, dtype=np.uint8)
@@ -338,9 +352,10 @@ class RedGymEnv(Env):
 
     def render(self):
         # (144, 160, 3)
-        game_pixels_render = self.screen.ndarray[:, :, 0:1]
+        game_pixels_render = np.expand_dims(self.screen.ndarray[:, :, 1], axis=-1)
         if self.reduce_res:
             game_pixels_render = game_pixels_render[::2, ::2, :]
+
         # place an overlay on top of the screen greying out places we haven't visited
         # first get our location
         player_x, player_y, map_n = self.get_game_coords()
@@ -388,7 +403,7 @@ class RedGymEnv(Env):
                                 player_y + y + 1,
                                 map_n,
                             ),
-                            0.15,
+                            0,
                         )
                         * 255
                     )
@@ -422,31 +437,59 @@ class RedGymEnv(Env):
         ).astype(np.uint8)
         visited_mask = np.expand_dims(visited_mask, -1)
         """
-        # game_pixels_render = np.concatenate([game_pixels_render, visited_mask, cut_mask], axis=-1)
-        game_pixels_render = np.concatenate([game_pixels_render, visited_mask], axis=-1)
 
-        return game_pixels_render
-
-    def _get_screen_obs(self):
-        screen = self.render()
-        screen = np.concatenate(
-            [
-                screen,
-                np.expand_dims(
-                    255 * resize(self.explore_map, screen.shape[:-1], anti_aliasing=False),
-                    axis=-1,
-                ).astype(np.uint8),
-            ],
+        global_map = np.expand_dims(
+            255 * resize(self.explore_map, game_pixels_render.shape, anti_aliasing=False),
             axis=-1,
-        )
+        ).astype(np.uint8)
 
-        self.update_recent_screens(screen)
-        return screen
+        if self.two_bit:
+            game_pixels_render = (
+                (
+                    np.digitize(
+                        game_pixels_render.reshape((-1, 4)), PIXEL_VALUES, right=True
+                    ).astype(np.uint8)
+                    << np.array([6, 4, 2, 0], dtype=np.uint8)
+                )
+                .sum(axis=1, dtype=np.uint8)
+                .reshape((-1, game_pixels_render.shape[1] // 4, 1))
+            )
+            visited_mask = (
+                (
+                    np.digitize(
+                        visited_mask.reshape((-1, 4)),
+                        np.array([0, 64, 128, 255], dtype=np.uint8),
+                        right=True,
+                    ).astype(np.uint8)
+                    << np.array([6, 4, 2, 0], dtype=np.uint8)
+                )
+                .sum(axis=1, dtype=np.uint8)
+                .reshape(game_pixels_render.shape)
+                .astype(np.uint8)
+            )
+            global_map = (
+                (
+                    np.digitize(
+                        global_map.reshape((-1, 4)),
+                        np.array([0, 64, 128, 255], dtype=np.uint8),
+                        right=True,
+                    ).astype(np.uint8)
+                    << np.array([6, 4, 2, 0], dtype=np.uint8)
+                )
+                .sum(axis=1, dtype=np.uint8)
+                .reshape(game_pixels_render.shape)
+            )
+
+        return {
+            "screen": game_pixels_render,
+            "visited_mask": visited_mask,
+            "global_map": global_map,
+        }
 
     def _get_obs(self):
-        player_x, player_y, map_n = self.get_game_coords()
+        # player_x, player_y, map_n = self.get_game_coords()
         return {
-            "screen": self._get_screen_obs(),
+            **self.render(),
             "direction": np.array(
                 self.read_m("wSpritePlayerStateData1FacingDirection") // 4, dtype=np.uint8
             ),
@@ -514,9 +557,6 @@ class RedGymEnv(Env):
         self.pyboy.send_input(VALID_ACTIONS[action])
         self.pyboy.send_input(VALID_RELEASE_ACTIONS[action], delay=8)
         self.pyboy.tick(self.action_freq, render=True)
-
-        if self.save_video and self.fast_video:
-            self.add_video_frame()
 
     def hidden_object_hook(self, *args, **kwargs):
         hidden_object_id = self.pyboy.memory[self.pyboy.symbol_lookup("wHiddenObjectIndex")[1]]
@@ -692,20 +732,6 @@ class RedGymEnv(Env):
                 explore_map[gy, gx] = v
 
         return explore_map
-
-    def update_recent_screens(self, cur_screen):
-        # self.recent_screens = np.roll(self.recent_screens, 1, axis=2)
-        # self.recent_screens[:, :, 0] = cur_screen[:, :, 0]
-        self.recent_screens.append(cur_screen)
-        if len(self.recent_screens) > self.frame_stacks:
-            self.recent_screens.popleft()
-
-    def update_recent_actions(self, action):
-        # self.recent_actions = np.roll(self.recent_actions, 1)
-        # self.recent_actions[0] = action
-        self.recent_actions.append(action)
-        if len(self.recent_actions) > self.frame_stacks:
-            self.recent_actions.popleft()
 
     def update_reward(self):
         # compute reward

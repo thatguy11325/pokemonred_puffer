@@ -41,6 +41,7 @@ env:
   frame_stacks: 1
   perfect_ivs: True
   reduce_res: True
+  two_bit: True
   log_frequency: 2000
 
 train:
@@ -147,16 +148,12 @@ rewards:
       taught_cut: 10.0
       explore_npcs: 0.02
       explore_hidden_objs: 0.02
-      seen_pokemon: 4.0
-      caught_pokemon: 4.0
-      level: 1.0
 
 
 policies:
   multi_convolutional.MultiConvolutionalPolicy:
     policy:
       hidden_size: 512
-      output_size: 512
 
     recurrent:
       # Assumed to be in the same module as the policy
