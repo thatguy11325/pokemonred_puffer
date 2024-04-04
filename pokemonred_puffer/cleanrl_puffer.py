@@ -1,4 +1,5 @@
 import os
+import pathlib
 import random
 import time
 from collections import deque
@@ -227,16 +228,24 @@ class CleanPuffeRL:
 
         # If data_dir is provided, load the resume state
         resume_state = {}
-        path = os.path.join(config.data_dir, exp_name)
-        if os.path.exists(path):
-            trainer_path = os.path.join(path, "trainer_state.pt")
+        path = pathlib.Path(config.data_dir) / exp_name
+        trainer_path = path / "trainer_state.pt"
+        if trainer_path.exists():
             resume_state = torch.load(trainer_path)
-            model_path = os.path.join(path, resume_state["model_name"])
-            self.agent.load_state_dict(torch.load(model_path, map_location=self.device))
-            print(
-                f'Resumed from update {resume_state["update"]} '
-                f'with policy {resume_state["model_name"]}'
-            )
+
+            model_version = str(resume_state["update"]).zfill(6)
+            model_filename = f"model_{model_version}_state.pth"
+            model_path = path / model_filename
+            if model_path.exists():
+                self.agent.load_state_dict(torch.load(model_path, map_location=self.device))
+                print(
+                    f'Resumed from update {resume_state["update"]} '
+                    f'with policy {resume_state["model_name"]}'
+                )
+            else:
+                print("No checkpoint found. Starting fresh.")
+        else:
+            print("No checkpoint found. Starting fresh.")
 
         self.global_step = resume_state.get("global_step", 0)
         self.agent_step = resume_state.get("agent_step", 0)
