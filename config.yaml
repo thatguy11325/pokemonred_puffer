@@ -43,6 +43,7 @@ env:
   reduce_res: True
   two_bit: True
   log_frequency: 2000
+  load_optimizer_state: False
 
 train:
   seed: 1
