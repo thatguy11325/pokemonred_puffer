@@ -16,10 +16,12 @@ def local_to_global(r: int, c: int, map_n: int):
             map_x,
             map_y,
         ) = MAP_DATA[map_n]["coordinates"]
-        return r + map_y, c + map_x
+        gy = r + map_y
+        gx = c + map_x
+        if 0 > gy >= GLOBAL_MAP_SHAPE[0] or 0 > gx >= GLOBAL_MAP_SHAPE[1]:
+            print(f"coord out of bounds! global: ({gx}, {gy}) game: ({r}, {c}, {map_n})")
+            return 0, 0
+        return gy, gx
     except KeyError:
         print(f"Map id {map_n} not found in map_data.json.")
         return r + 0, c + 0
-    except IndexError:
-        print(f"Coord {map_x}, {map_y} out of bounds for map id {map_n}.")
-        return 0, 0
