@@ -26,6 +26,7 @@ debug:
     verbose: True 
     env_pool: False
     log_frequency: 5000
+    load_optimizer_state: False
 
 env:
   headless: True
@@ -43,7 +44,6 @@ env:
   reduce_res: True
   two_bit: True
   log_frequency: 2000
-  load_optimizer_state: False
 
 train:
   seed: 1
@@ -84,6 +84,7 @@ train:
   overlay_interval: 200
   cpu_offload: True
   pool_kernel: [0]
+  load_optimizer_state: False
 
 wrappers:
   baseline:
