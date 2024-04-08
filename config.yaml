@@ -27,6 +27,8 @@ debug:
     env_pool: False
     log_frequency: 5000
     load_optimizer_state: False
+    swarm_frequency: 1
+    swarm_pct: 10
 
 env:
   headless: True
