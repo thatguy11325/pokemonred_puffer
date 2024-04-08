@@ -1,4 +1,5 @@
 from abc import abstractmethod
+import io
 import os
 import random
 from collections import deque
@@ -318,7 +319,10 @@ class RedGymEnv(Env):
         self.total_reward = sum([val for _, val in self.progress_reward.items()])
 
         self.first = False
-        return self._get_obs(), {}
+        state = io.BytesIO()
+        self.pyboy.save_state(state)
+        state.seek(0)
+        return self._get_obs(), {"state": state}
 
     def init_mem(self):
         # Maybe I should preallocate a giant matrix for all map ids
