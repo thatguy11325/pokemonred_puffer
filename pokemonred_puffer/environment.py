@@ -258,10 +258,10 @@ class RedGymEnv(Env):
         self.pyboy.hook_register(None, "UsedCut.nothingToCut", self.cut_hook, context=True)
         self.pyboy.hook_register(None, "UsedCut.canCut", self.cut_hook, context=False)
 
-    def reset(self, seed: Optional[int] = None):
+    def reset(self, seed: Optional[int] = None, state: Optional[io.BytesIO] = None):
         # restart game, skipping credits
         self.explore_map_dim = 384
-        if self.first:
+        if self.first or state is not None:
             self.recent_screens = deque()
             self.recent_actions = deque()
             self.seen_pokemon = np.zeros(152, dtype=np.uint8)
@@ -273,8 +273,12 @@ class RedGymEnv(Env):
             # We only init seen hidden objs once cause they can only be found once!
             self.seen_hidden_objs = {}
             self.reset_count = 0
-            with open(self.init_state_path, "rb") as f:
-                self.pyboy.load_state(f)
+            if state is not None:
+                print(f"Migrating state {self.env_id}")
+                self.pyboy.load_state(state)
+            else:
+                with open(self.init_state_path, "rb") as f:
+                    self.pyboy.load_state(f)
             # lazy random seed setting
             if not seed:
                 seed = random.randint(0, 4096)
