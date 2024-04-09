@@ -426,6 +426,10 @@ class CleanPuffeRL:
                 random.choice(largest) if i not in largest else i
                 for i in range(self.config.num_envs)
             ]
+            # Do this with + because f-strings are tricky. Can do nested f-string in a later python.
+            print(
+                f"Migrating states: {','.join(str(i) + '->' + str(n) for i, n in enumerate(reset_states))}"
+            )
             # unsure if bytes io can deep copy so I'm gonna make a bunch of copies here
             for i in range(self.config.num_envs):
                 reset_states[i] = io.BytesIO(self.infos["learner"]["state"][i].read())
