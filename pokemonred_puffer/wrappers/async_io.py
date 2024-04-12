@@ -8,8 +8,9 @@ from pokemonred_puffer.environment import RedGymEnv
 class AsyncWrapper(gym.Wrapper):
     def __init__(self, env: RedGymEnv, send_queues: list[Queue], recv_queues: list[Queue]):
         super().__init__(env)
-        self.send_queue = send_queues[self.env.unwrapped.env_id]
-        self.recv_queue = recv_queues[self.env.unwrapped.env_id]
+        # We need to -1 because the env id is one offset due to puffer's driver env
+        self.send_queue = send_queues[self.env.unwrapped.env_id - 1]
+        self.recv_queue = recv_queues[self.env.unwrapped.env_id - 1]
         # Now we will spawn a thread that will listen for updates
         # and send back when the new state has been loaded
         # this is a slow process and should rarely happen.
@@ -20,4 +21,4 @@ class AsyncWrapper(gym.Wrapper):
     def update(self):
         while new_state := self.recv_queue.get():
             self.env.update_state(new_state)
-            self.send_queue.put(self.env.unwrapped.env_id)
+            self.send_queue.put(self.env.unwrapped.env_id - 1)
