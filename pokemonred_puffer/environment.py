@@ -5,7 +5,7 @@ import random
 from collections import deque
 from multiprocessing import Lock, shared_memory
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Any, Iterable, Optional
 import uuid
 
 import mediapy as media
@@ -261,13 +261,12 @@ class RedGymEnv(Env):
 
     def update_state(self, state: bytes):
         self.first = True
-        print(f"Migrating state {self.env_id}")
-        self.reset(seed=random.randint(10), state=state)
+        self.reset(seed=random.randint(0, 10), options={"state": state})
 
-    def reset(self, seed: Optional[int] = None, state: Optional[bytes] = None):
+    def reset(self, seed: Optional[int] = None, options: Optional[dict[str, Any]] = None):
         # restart game, skipping credits
         self.explore_map_dim = 384
-        if self.first or state is not None:
+        if self.first or (options and options.get("state", None) is not None):
             self.recent_screens = deque()
             self.recent_actions = deque()
             self.seen_pokemon = np.zeros(152, dtype=np.uint8)
@@ -279,8 +278,8 @@ class RedGymEnv(Env):
             # We only init seen hidden objs once cause they can only be found once!
             self.seen_hidden_objs = {}
             self.reset_count = 0
-            if state is not None:
-                self.pyboy.load_state(io.BytesIO(state))
+            if options and options.get("state", None) is not None:
+                self.pyboy.load_state(io.BytesIO(options["state"]))
             else:
                 with open(self.init_state_path, "rb") as f:
                     self.pyboy.load_state(f)
