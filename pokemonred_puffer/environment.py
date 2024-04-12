@@ -235,8 +235,9 @@ class RedGymEnv(Env):
                 + (int(RedGymEnv.env_id.buf[1]) << 16)
                 + (int(RedGymEnv.env_id.buf[2]) << 8)
                 + (int(RedGymEnv.env_id.buf[3]))
-            ) + 1
+            )
             self.env_id = env_id
+            env_id += 1
             RedGymEnv.env_id.buf[0] = (env_id >> 24) & 0xFF
             RedGymEnv.env_id.buf[1] = (env_id >> 16) & 0xFF
             RedGymEnv.env_id.buf[2] = (env_id >> 8) & 0xFF
@@ -258,7 +259,12 @@ class RedGymEnv(Env):
         self.pyboy.hook_register(None, "UsedCut.nothingToCut", self.cut_hook, context=True)
         self.pyboy.hook_register(None, "UsedCut.canCut", self.cut_hook, context=False)
 
-    def reset(self, seed: Optional[int] = None, state: Optional[io.BytesIO] = None):
+    def update_state(self, state: bytes):
+        self.first = True
+        print(f"Migrating state {self.env_id}")
+        self.reset(seed=random.randint(10), state=state)
+
+    def reset(self, seed: Optional[int] = None, state: Optional[bytes] = None):
         # restart game, skipping credits
         self.explore_map_dim = 384
         if self.first or state is not None:
@@ -274,8 +280,7 @@ class RedGymEnv(Env):
             self.seen_hidden_objs = {}
             self.reset_count = 0
             if state is not None:
-                print(f"Migrating state {self.env_id}")
-                self.pyboy.load_state(state)
+                self.pyboy.load_state(io.BytesIO(state))
             else:
                 with open(self.init_state_path, "rb") as f:
                     self.pyboy.load_state(f)
@@ -326,7 +331,7 @@ class RedGymEnv(Env):
         state = io.BytesIO()
         self.pyboy.save_state(state)
         state.seek(0)
-        return self._get_obs(), {"state": state}
+        return self._get_obs(), {"state": state.read()}
 
     def init_mem(self):
         # Maybe I should preallocate a giant matrix for all map ids
