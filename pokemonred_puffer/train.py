@@ -1,5 +1,6 @@
 import argparse
 import importlib
+from multiprocessing import Queue
 import pathlib
 import sys
 import time
@@ -15,6 +16,7 @@ import pufferlib
 import pufferlib.utils
 from pokemonred_puffer.cleanrl_puffer import CleanPuffeRL, rollout
 from pokemonred_puffer.environment import RedGymEnv
+from pokemonred_puffer.wrappers.async_io import AsyncWrapper
 
 
 # TODO: Replace with Pydantic or Spock parser
@@ -68,10 +70,12 @@ def make_env_creator(
         env_config: pufferlib.namespace,
         wrappers_config: list[dict[str, Any]],
         reward_config: pufferlib.namespace,
+        async_config: dict[str, Queue],
     ) -> pufferlib.emulation.GymnasiumPufferEnv:
         env = reward_class(env_config, reward_config)
         for cfg, (_, wrapper_class) in zip(wrappers_config, wrapper_classes):
             env = wrapper_class(env, pufferlib.namespace(**[x for x in cfg.values()][0]))
+        env = AsyncWrapper(env, async_config["send_queues"], async_config["recv_queues"])
         return pufferlib.emulation.GymnasiumPufferEnv(
             env=env, postprocessor_cls=pufferlib.emulation.BasicPostprocessor
         )
@@ -178,6 +182,8 @@ def train(
     env_creator: Callable,
     agent_creator: Callable[[gym.Env, pufferlib.namespace], pufferlib.models.Policy],
 ):
+    env_send_queues = [Queue() for _ in range(args.train.num_envs)]
+    env_recv_queues = [Queue() for _ in range(args.train.num_envs)]
     with CleanPuffeRL(
         config=args.train,
         agent_creator=agent_creator,
@@ -187,6 +193,7 @@ def train(
             "env_config": args.env,
             "wrappers_config": args.wrappers[args.wrappers_name],
             "reward_config": args.rewards[args.reward_name]["reward"],
+            "async_config": {"send_queues": env_send_queues, "recv_queues": env_recv_queues},
         },
         vectorization=args.vectorization,
         exp_name=args.exp_name,
