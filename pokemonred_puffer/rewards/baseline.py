@@ -33,7 +33,7 @@ class BaselineRewardEnv(RedGymEnv):
             # "explore_maps": np.sum(self.seen_map_ids) * 0.0001,
             "taught_cut": 4 * int(self.check_if_party_has_cut()),
             "cut_coords": sum(self.cut_coords.values()) * 1.0,
-            "cut_tiles": len(self.cut_tiles) * 1.0,
+            "cut_tiles": sum(self.cut_tiles.values()) * 1.0,
             "met_bill": 5 * int(self.read_bit(0xD7F1, 0)),
             "used_cell_separator_on_bill": 5 * int(self.read_bit(0xD7F2, 3)),
             "ss_ticket": 5 * int(self.read_bit(0xD7F2, 4)),
@@ -48,6 +48,7 @@ class BaselineRewardEnv(RedGymEnv):
             "bag_menu": self.seen_bag_menu * 0.1,
             "action_bag_menu": self.seen_action_bag_menu * 0.1,
             # "blackout_check": self.blackout_check * 0.001,
+            "rival3": self.reward_config["event"] * int(self.read_m(0xD665) == 4),
         }
 
     def update_max_event_rew(self):
@@ -104,11 +105,12 @@ class TeachCutReplicationEnv(RedGymEnv):
             "badges": self.reward_config["badges"] * self.get_badges(),
             "exploration": self.reward_config["exploration"] * sum(self.seen_coords.values()),
             "cut_coords": self.reward_config["cut_coords"] * sum(self.cut_coords.values()),
-            "cut_tiles": self.reward_config["cut_tiles"] * sum(self.cut_tiles),
+            "cut_tiles": self.reward_config["cut_tiles"] * sum(self.cut_tiles.values()),
             "start_menu": self.reward_config["start_menu"] * self.seen_start_menu,
             "pokemon_menu": self.reward_config["pokemon_menu"] * self.seen_pokemon_menu,
             "stats_menu": self.reward_config["stats_menu"] * self.seen_stats_menu,
             "bag_menu": self.reward_config["bag_menu"] * self.seen_bag_menu,
+            "rival3": self.reward_config["event"] * int(self.read_m(0xD665) == 4),
         }
 
     def update_max_event_rew(self):

@@ -355,6 +355,7 @@ class RedGymEnv(Env):
         self.seen_npcs.update((k, 0) for k, _ in self.seen_npcs.items())
 
         self.cut_coords.update((k, 0) for k, _ in self.cut_coords.items())
+        self.cut_tiles.update((k, 0) for k, _ in self.cut_tiles.items())
 
         self.seen_start_menu = 0
         self.seen_pokemon_menu = 0
