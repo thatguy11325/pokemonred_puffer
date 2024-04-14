@@ -384,7 +384,7 @@ class CleanPuffeRL:
             print("Migrating states:")
             for i, n in enumerate(reset_states):
                 print(
-                    f"\t {i} -> {n}, event scores: {self.infos["learner"]["reward/event"][i]} -> {self.infos["learner"]["reward/event"][n]}"
+                    f'\t {i} -> {n}, event scores: {self.infos["learner"]["reward/event"][i]} -> {self.infos["learner"]["reward/event"][n]}'
                 )
             for i in range(self.config.num_envs):
                 self.env_recv_queues[i].put(self.infos["learner"]["state"][reset_states[i]])
