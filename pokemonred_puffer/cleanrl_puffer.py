@@ -374,21 +374,19 @@ class CleanPuffeRL:
                     key=lambda x: x[1],
                 )
             ]
-            # TODO: Not every one of these learners will have a recently saved state.
-            # Find a good way to tell them to make a saved state even if it is with a reset or get
-            reset_states = [
-                random.choice(largest) if i not in largest else i
-                for i in range(self.config.num_envs)
-            ]
-            # Do this with + because f-strings are tricky. Can do nested f-string in a later python.
             print("Migrating states:")
-            for i, n in enumerate(reset_states):
-                print(
-                    f'\t {i} -> {n}, event scores: {self.infos["learner"]["reward/event"][i]} -> {self.infos["learner"]["reward/event"][n]}'
-                )
+            waiting_for = []
+            # Need a way not to reset the env id counter for the driver env
+            # Until then env ids are 1-indexed
             for i in range(self.config.num_envs):
-                self.env_recv_queues[i].put(self.infos["learner"]["state"][reset_states[i]])
-            for i in range(self.config.num_envs):
+                if i not in largest:
+                    new_state = random.choice(largest)
+                    print(
+                        f'\t {i+1} -> {new_state+1}, event scores: {self.infos["learner"]["reward/event"][i]} -> {self.infos["learner"]["reward/event"][new_state]}'
+                    )
+                    self.env_recv_queues[i + 1].put(self.infos["learner"]["state"][new_state])
+                    waiting_for.append(i + 1)
+            for i in waiting_for:
                 self.env_send_queues[i].get()
 
         self.policy_pool.update_policies()

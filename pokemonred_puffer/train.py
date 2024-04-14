@@ -182,8 +182,9 @@ def train(
     env_creator: Callable,
     agent_creator: Callable[[gym.Env, pufferlib.namespace], pufferlib.models.Policy],
 ):
-    env_send_queues = [Queue() for _ in range(args.train.num_envs)]
-    env_recv_queues = [Queue() for _ in range(args.train.num_envs)]
+    # TODO: Remove the +1 once the driver env doesn't permanently increase the env id
+    env_send_queues = [Queue() for _ in range(args.train.num_envs + 1)]
+    env_recv_queues = [Queue() for _ in range(args.train.num_envs + 1)]
     with CleanPuffeRL(
         config=args.train,
         agent_creator=agent_creator,
