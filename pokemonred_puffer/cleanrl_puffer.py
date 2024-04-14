@@ -381,9 +381,11 @@ class CleanPuffeRL:
                 for i in range(self.config.num_envs)
             ]
             # Do this with + because f-strings are tricky. Can do nested f-string in a later python.
-            print(
-                f"Migrating states: {','.join(str(i) + '->' + str(n) for i, n in enumerate(reset_states))}"
-            )
+            print("Migrating states:")
+            for i, n in enumerate(reset_states):
+                print(
+                    f"\t {i} -> {n}, event scores: {self.infos["learner"]["reward/event"][i]} -> {self.infos["learner"]["reward/event"][n]}"
+                )
             for i in range(self.config.num_envs):
                 self.env_recv_queues[i].put(self.infos["learner"]["state"][reset_states[i]])
             for i in range(self.config.num_envs):
