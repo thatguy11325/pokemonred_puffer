@@ -260,37 +260,39 @@ class RedGymEnv(Env):
         self.pyboy.hook_register(None, "UsedCut.canCut", self.cut_hook, context=False)
 
     def update_state(self, state: bytes):
-        self.first = True
         self.reset(seed=random.randint(0, 10), options={"state": state})
 
     def reset(self, seed: Optional[int] = None, options: Optional[dict[str, Any]] = None):
         # restart game, skipping credits
+        options = options or {}
+
         self.explore_map_dim = 384
-        if self.first or (options and options.get("state", None) is not None):
+        if self.first or options.get("state", None) is not None:
             self.recent_screens = deque()
             self.recent_actions = deque()
-            self.seen_pokemon = np.zeros(152, dtype=np.uint8)
-            self.caught_pokemon = np.zeros(152, dtype=np.uint8)
-            self.moves_obtained = np.zeros(0xA5, dtype=np.uint8)
-            self.explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
-            self.cut_explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
             self.init_mem()
             # We only init seen hidden objs once cause they can only be found once!
             self.seen_hidden_objs = {}
-            self.reset_count = 0
-            if options and options.get("state", None) is not None:
+            if options.get("state", None) is not None:
                 self.pyboy.load_state(io.BytesIO(options["state"]))
+                self.reset_count += 1
             else:
                 with open(self.init_state_path, "rb") as f:
                     self.pyboy.load_state(f)
+                self.reset_count = 0
+                self.explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
+                self.cut_explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
+                self.base_event_flags = sum(
+                    self.read_m(i).bit_count()
+                    for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
+                )
+                self.seen_pokemon = np.zeros(152, dtype=np.uint8)
+                self.caught_pokemon = np.zeros(152, dtype=np.uint8)
+                self.moves_obtained = np.zeros(0xA5, dtype=np.uint8)
             # lazy random seed setting
             if not seed:
                 seed = random.randint(0, 4096)
             self.pyboy.tick(seed, render=False)
-            self.base_event_flags = sum(
-                self.read_m(i).bit_count()
-                for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
-            )
         else:
             self.reset_count += 1
 
@@ -303,6 +305,8 @@ class RedGymEnv(Env):
         self.cut_explore_map *= 0
         self.reset_mem()
 
+        self.update_pokedex()
+        self.update_tm_hm_moves_obtained()
         self.taught_cut = self.check_if_party_has_cut()
         self.levels_satisfied = False
         self.base_explore = 0
