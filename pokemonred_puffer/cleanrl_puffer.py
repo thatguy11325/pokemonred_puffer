@@ -388,6 +388,7 @@ class CleanPuffeRL:
                     waiting_for.append(i + 1)
             for i in waiting_for:
                 self.env_send_queues[i].get()
+            print("State migration complete")
 
         self.policy_pool.update_policies()
         env_profiler = pufferlib.utils.Profiler()
