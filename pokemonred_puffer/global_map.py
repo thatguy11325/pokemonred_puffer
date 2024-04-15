@@ -24,4 +24,4 @@ def local_to_global(r: int, c: int, map_n: int):
         return gy, gx
     except KeyError:
         print(f"Map id {map_n} not found in map_data.json.")
-        return r + 0, c + 0
+        return 0, 0
