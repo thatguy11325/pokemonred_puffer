@@ -15,6 +15,7 @@ from pyboy import PyBoy
 from pyboy.utils import WindowEvent
 from skimage.transform import resize
 
+import skimage
 import pufferlib
 from pokemonred_puffer.global_map import GLOBAL_MAP_SHAPE, local_to_global
 
@@ -370,8 +371,10 @@ class RedGymEnv(Env):
     def render(self):
         # (144, 160, 3)
         game_pixels_render = np.expand_dims(self.screen.ndarray[:, :, 1], axis=-1)
+
         if self.reduce_res:
-            game_pixels_render = game_pixels_render[::2, ::2, :]
+            # game_pixels_render = game_pixels_render[::2, ::2, :]
+            game_pixels_render = skimage.measure.block_reduce(game_pixels_render, (2, 2, 1), np.min)
 
         # place an overlay on top of the screen greying out places we haven't visited
         # first get our location
