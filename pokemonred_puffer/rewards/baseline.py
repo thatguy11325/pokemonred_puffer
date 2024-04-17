@@ -245,3 +245,12 @@ class RockTunnelReplicationEnv(TeachCutReplicationEnv):
             * int(self.read_bit(0xD7F2, 7)),
             "rival3": self.reward_config["event"] * int(self.read_m(0xD665) == 4),
         }
+
+    def get_levels_reward(self):
+        party_size = self.read_m("wPartyCount")
+        party_levels = [self.read_m(f"wPartyMon{i+1}Level") for i in range(party_size)]
+        self.max_level_sum = max(self.max_level_sum, sum(party_levels))
+        if self.max_level_sum < 15:
+            return self.max_level_sum
+        else:
+            return 15  # + (self.max_level_sum - 15) / 4

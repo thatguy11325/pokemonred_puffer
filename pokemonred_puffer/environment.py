@@ -290,7 +290,7 @@ class RedGymEnv(Env):
                 self.seen_pokemon = np.zeros(152, dtype=np.uint8)
                 self.caught_pokemon = np.zeros(152, dtype=np.uint8)
                 self.moves_obtained = np.zeros(0xA5, dtype=np.uint8)
-                self.pokecenters = np.zeros(255, dtype=np.uint8)
+                self.pokecenters = np.zeros(252, dtype=np.uint8)
             # lazy random seed setting
             if not seed:
                 seed = random.randint(0, 4096)
@@ -877,8 +877,8 @@ class RedGymEnv(Env):
         # Level reward
         party_levels = self.read_party()
         self.max_level_sum = max(self.max_level_sum, sum(party_levels))
-        if self.max_level_sum < 15:
+        if self.max_level_sum < 30:
             level_reward = 1 * self.max_level_sum
         else:
-            level_reward = 15 + (self.max_level_sum - 15) / 4
+            level_reward = 30 + (self.max_level_sum - 30) / 4
         return level_reward
