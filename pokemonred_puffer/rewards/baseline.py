@@ -5,6 +5,8 @@ from pokemonred_puffer.environment import (
     RedGymEnv,
 )
 
+import numpy as np
+
 MUSEUM_TICKET = (0xD754, 0)
 
 
@@ -206,3 +208,40 @@ class TeachCutReplicationEnvFork(RedGymEnv):
             return self.max_level_sum
         else:
             return 15 + (self.max_level_sum - 15) / 4
+
+
+class RockTunnelReplicationEnv(TeachCutReplicationEnv):
+    def get_game_state_reward(self):
+        return {
+            "level": self.reward_config["level"] * self.get_levels_reward(),
+            "exploration": self.reward_config["exploration"] * np.sum(self.seen_coords.values()),
+            "taught_cut": self.reward_config["taught_cut"] * int(self.taught_cut),
+            "event": self.reward_config["event"] * self.update_max_event_rew(),
+            "seen_pokemon": self.reward_config["seen_pokemon"] * np.sum(self.seen_pokemon),
+            "caught_pokemon": self.reward_config["caught_pokemon"] * np.sum(self.caught_pokemon),
+            "moves_obtained": self.reward_config["moves_obtained"] * np.sum(self.moves_obtained),
+            "cut_coords": self.reward_config["cut_coords"] * np.sum(self.cut_coords.values()),
+            "cut_tiles": self.reward_config["cut_tiles"] * np.sum(self.cut_tiles),
+            "start_menu": (
+                self.reward_config["start_menu"] * self.seen_start_menu * int(self.taught_cut)
+            ),
+            "pokemon_menu": (
+                self.reward_config["pokemon_menu"] * self.seen_pokemon_menu * int(self.taught_cut)
+            ),
+            "stats_menu": (
+                self.reward_config["stats_menu"] * self.seen_stats_menu * int(self.taught_cut)
+            ),
+            "bag_menu": self.reward_config["bag_menu"] * self.seen_bag_menu * int(self.taught_cut),
+            "pokecenter": self.reward_config["pokecenter"] * np.sum(self.pokecenters),
+            "badges": self.reward_config["badges"] * self.get_badges(),
+            "met_bill": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F1, 0)),
+            "used_cell_separator_on_bill": self.reward_config["bill_saved"]
+            * int(self.read_bit(0xD7F2, 3)),
+            "ss_ticket": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F2, 4)),
+            "met_bill_2": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F2, 5)),
+            "bill_said_use_cell_separator": self.reward_config["bill_saved"]
+            * int(self.read_bit(0xD7F2, 6)),
+            "left_bills_house_after_helping": self.reward_config["bill_saved"]
+            * int(self.read_bit(0xD7F2, 7)),
+            "rival3": self.reward_config["event"] * int(self.read_m(0xD665) == 4),
+        }

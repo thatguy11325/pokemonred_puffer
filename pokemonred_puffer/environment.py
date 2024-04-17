@@ -290,6 +290,7 @@ class RedGymEnv(Env):
                 self.seen_pokemon = np.zeros(152, dtype=np.uint8)
                 self.caught_pokemon = np.zeros(152, dtype=np.uint8)
                 self.moves_obtained = np.zeros(0xA5, dtype=np.uint8)
+                self.pokecenters = np.zeros(255, dtype=np.uint8)
             # lazy random seed setting
             if not seed:
                 seed = random.randint(0, 4096)
@@ -554,6 +555,7 @@ class RedGymEnv(Env):
         if self.perfect_ivs:
             self.set_perfect_iv_dvs()
         self.taught_cut = self.check_if_party_has_cut()
+        self.pokecenters[self.read_m("wLastBlackoutMap")] = 1
 
         info = {}
         # TODO: Make log frequency a configuration parameter
@@ -638,9 +640,9 @@ class RedGymEnv(Env):
             ]:
                 self.cut_coords[coords] = 10
             else:
-                self.cut_coords[coords] = 0.01
+                self.cut_coords[coords] = 0.001
         else:
-            self.cut_coords[coords] = 0.01
+            self.cut_coords[coords] = 0.001
 
         self.cut_explore_map[local_to_global(y, x, map_id)] = 1
         self.cut_tiles[wTileInFrontOfPlayer] = 1
@@ -875,8 +877,8 @@ class RedGymEnv(Env):
         # Level reward
         party_levels = self.read_party()
         self.max_level_sum = max(self.max_level_sum, sum(party_levels))
-        if self.max_level_sum < 30:
+        if self.max_level_sum < 15:
             level_reward = 1 * self.max_level_sum
         else:
-            level_reward = 30 + (self.max_level_sum - 30) / 4
+            level_reward = 15 + (self.max_level_sum - 15) / 4
         return level_reward
