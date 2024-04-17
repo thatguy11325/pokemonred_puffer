@@ -692,6 +692,7 @@ class RedGymEnv(Env):
                 "item_count": self.read_m(0xD31D),
                 "reset_count": self.reset_count,
                 "blackout_count": self.blackout_count,
+                "pokecenter": np.sum(self.pokecenters),
             },
             "reward": self.get_game_state_reward(),
             "reward/reward_sum": sum(self.get_game_state_reward().values()),
