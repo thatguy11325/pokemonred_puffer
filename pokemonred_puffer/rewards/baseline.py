@@ -232,7 +232,7 @@ class RockTunnelReplicationEnv(TeachCutReplicationEnv):
                 self.reward_config["stats_menu"] * self.seen_stats_menu * int(self.taught_cut)
             ),
             "bag_menu": self.reward_config["bag_menu"] * self.seen_bag_menu * int(self.taught_cut),
-            "pokecenter": self.reward_config["pokecenter"] * np.sum(self.pokecenters),
+            # "pokecenter": self.reward_config["pokecenter"] * np.sum(self.pokecenters),
             "badges": self.reward_config["badges"] * self.get_badges(),
             "met_bill": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F1, 0)),
             "used_cell_separator_on_bill": self.reward_config["bill_saved"]
