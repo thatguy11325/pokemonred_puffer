@@ -253,4 +253,4 @@ class RockTunnelReplicationEnv(TeachCutReplicationEnv):
         if self.max_level_sum < 15:
             return self.max_level_sum
         else:
-            return 15(self.max_level_sum - 15) / 4
+            return 15 + (self.max_level_sum - 15) / 4
