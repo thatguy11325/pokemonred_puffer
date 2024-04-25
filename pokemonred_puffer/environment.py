@@ -555,11 +555,17 @@ class RedGymEnv(Env):
             self.set_perfect_iv_dvs()
         self.taught_cut = self.check_if_party_has_cut()
         self.pokecenters[self.read_m("wLastBlackoutMap")] = 1
-
         info = {}
+
+        if self.get_events_sum() > self.max_event_rew:
+            state = io.BytesIO()
+            self.pyboy.save_state(state)
+            state.seek(0)
+            info["state"] = state.read()
+
         # TODO: Make log frequency a configuration parameter
         if self.step_count % self.log_frequency == 0:
-            info = self.agent_stats(action)
+            info = info | self.agent_stats(action)
 
         obs = self._get_obs()
 
@@ -882,3 +888,17 @@ class RedGymEnv(Env):
         else:
             level_reward = 30 + (self.max_level_sum - 30) / 4
         return level_reward
+
+    def get_events_sum(self):
+        # adds up all event flags, exclude museum ticket
+        return max(
+            sum(
+                [
+                    self.read_m(i).bit_count()
+                    for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
+                ]
+            )
+            - self.base_event_flags
+            - int(self.read_bit(*MUSEUM_TICKET)),
+            0,
+        )
