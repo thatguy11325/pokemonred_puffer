@@ -82,7 +82,7 @@ class BaselineRewardEnv(RedGymEnv):
             return 15 + (self.max_level_sum - 15) / 4
 
 
-class TeachCutReplicationEnv(RedGymEnv):
+class TeachCutReplicationEnv(BaselineRewardEnv):
     def __init__(self, env_config: pufferlib.namespace, reward_config: pufferlib.namespace):
         super().__init__(env_config)
         self.reward_config = reward_config
@@ -115,27 +115,8 @@ class TeachCutReplicationEnv(RedGymEnv):
             "rival3": self.reward_config["event"] * int(self.read_m(0xD665) == 4),
         }
 
-    def update_max_event_rew(self):
-        cur_rew = self.get_all_events_reward()
-        self.max_event_rew = max(cur_rew, self.max_event_rew)
-        return self.max_event_rew
 
-    def get_all_events_reward(self):
-        # adds up all event flags, exclude museum ticket
-        return max(
-            sum(
-                [
-                    self.read_m(i).bit_count()
-                    for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
-                ]
-            )
-            - self.base_event_flags
-            - int(self.read_bit(*MUSEUM_TICKET)),
-            0,
-        )
-
-
-class TeachCutReplicationEnvFork(RedGymEnv):
+class TeachCutReplicationEnvFork(BaselineRewardEnv):
     def __init__(self, env_config: pufferlib.namespace, reward_config: pufferlib.namespace):
         super().__init__(env_config)
         self.reward_config = reward_config
@@ -180,25 +161,6 @@ class TeachCutReplicationEnvFork(RedGymEnv):
             "caught_pokemon": self.reward_config["caught_pokemon"] * sum(self.caught_pokemon),
             "level": self.reward_config["level"] * self.get_levels_reward(),
         }
-
-    def update_max_event_rew(self):
-        cur_rew = self.get_all_events_reward()
-        self.max_event_rew = max(cur_rew, self.max_event_rew)
-        return self.max_event_rew
-
-    def get_all_events_reward(self):
-        # adds up all event flags, exclude museum ticket
-        return max(
-            sum(
-                [
-                    self.read_m(i).bit_count()
-                    for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
-                ]
-            )
-            - self.base_event_flags
-            - int(self.read_bit(*MUSEUM_TICKET)),
-            0,
-        )
 
     def get_levels_reward(self):
         party_size = self.read_m("wPartyCount")
