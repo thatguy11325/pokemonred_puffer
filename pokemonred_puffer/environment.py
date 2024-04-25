@@ -291,9 +291,9 @@ class RedGymEnv(Env):
                 self.moves_obtained = np.zeros(0xA5, dtype=np.uint8)
                 self.pokecenters = np.zeros(252, dtype=np.uint8)
             # lazy random seed setting
-            if not seed:
-                seed = random.randint(0, 4096)
-            self.pyboy.tick(seed, render=False)
+            # if not seed:
+            #     seed = random.randint(0, 4096)
+            #  self.pyboy.tick(seed, render=False)
         else:
             self.reset_count += 1
 

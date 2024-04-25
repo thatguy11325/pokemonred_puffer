@@ -13,6 +13,7 @@ MUSEUM_TICKET = (0xD754, 0)
 class BaselineRewardEnv(RedGymEnv):
     def __init__(self, env_config: pufferlib.namespace, reward_config: pufferlib.namespace):
         super().__init__(env_config)
+        self.reward_config = reward_config
 
     # TODO: make the reward weights configurable
     def get_game_state_reward(self):
@@ -83,10 +84,6 @@ class BaselineRewardEnv(RedGymEnv):
 
 
 class TeachCutReplicationEnv(BaselineRewardEnv):
-    def __init__(self, env_config: pufferlib.namespace, reward_config: pufferlib.namespace):
-        super().__init__(env_config)
-        self.reward_config = reward_config
-
     def get_game_state_reward(self):
         return {
             "event": self.reward_config["event"] * self.update_max_event_rew(),
@@ -117,10 +114,6 @@ class TeachCutReplicationEnv(BaselineRewardEnv):
 
 
 class TeachCutReplicationEnvFork(BaselineRewardEnv):
-    def __init__(self, env_config: pufferlib.namespace, reward_config: pufferlib.namespace):
-        super().__init__(env_config)
-        self.reward_config = reward_config
-
     def get_game_state_reward(self):
         return {
             "event": self.reward_config["event"] * self.update_max_event_rew(),
@@ -172,7 +165,7 @@ class TeachCutReplicationEnvFork(BaselineRewardEnv):
             return 15 + (self.max_level_sum - 15) / 4
 
 
-class RockTunnelReplicationEnv(TeachCutReplicationEnv):
+class RockTunnelReplicationEnv(BaselineRewardEnv):
     def get_game_state_reward(self):
         return {
             "level": self.reward_config["level"] * self.get_levels_reward(),
