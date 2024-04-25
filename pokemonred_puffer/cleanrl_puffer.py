@@ -386,6 +386,10 @@ class CleanPuffeRL:
                     )
                     self.env_recv_queues[i + 1].put(self.infos["learner"]["state"][new_state])
                     waiting_for.append(i + 1)
+                    # Now copy the hidden state over
+                    # This may be a little slow, but so is this whole process
+                    self.next_lstm_state[0][:, i, :] = self.next_lstm_state[0][:, new_state, :]
+                    self.next_lstm_state[1][:, i, :] = self.next_lstm_state[1][:, new_state, :]
             for i in waiting_for:
                 self.env_send_queues[i].get()
             print("State migration complete")
