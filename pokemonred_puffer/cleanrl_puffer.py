@@ -386,6 +386,10 @@ class CleanPuffeRL:
                     )
                     self.env_recv_queues[i + 1].put(self.infos["learner"]["state"][new_state])
                     waiting_for.append(i + 1)
+                    # Now copy the hidden state over
+                    # This may be a little slow, but so is this whole process
+                    self.next_lstm_state[0][:, i, :] = self.next_lstm_state[0][:, new_state, :]
+                    self.next_lstm_state[1][:, i, :] = self.next_lstm_state[1][:, new_state, :]
             for i in waiting_for:
                 self.env_send_queues[i].get()
             print("State migration complete")
@@ -451,7 +455,7 @@ class CleanPuffeRL:
 
                 # Index alive mask with policy pool idxs...
                 # TODO: Find a way to avoid having to do this
-                learner_mask = torch.Tensor(mask * self.policy_pool.mask)
+                learner_mask = torch.as_tensor(mask * self.policy_pool.mask)
 
                 # Ensure indices do not exceed batch size
                 indices = torch.where(learner_mask)[0][: config.batch_size - ptr + 1].numpy()
@@ -588,11 +592,11 @@ class CleanPuffeRL:
                 )
 
         # Flatten the batch
-        self.b_obs = b_obs = torch.tensor(self.obs_ary[b_idxs], dtype=torch.uint8)
-        b_actions = torch.tensor(self.actions_ary[b_idxs]).to(self.device, non_blocking=True)
-        b_logprobs = torch.tensor(self.logprobs_ary[b_idxs]).to(self.device, non_blocking=True)
-        # b_dones = torch.Tensor(self.dones_ary[b_idxs]).to(self.device, non_blocking=True)
-        b_values = torch.tensor(self.values_ary[b_idxs]).to(self.device, non_blocking=True)
+        self.b_obs = b_obs = torch.as_tensor(self.obs_ary[b_idxs], dtype=torch.uint8)
+        b_actions = torch.as_tensor(self.actions_ary[b_idxs]).to(self.device, non_blocking=True)
+        b_logprobs = torch.as_tensor(self.logprobs_ary[b_idxs]).to(self.device, non_blocking=True)
+        # b_dones = torch.as_tensor(self.dones_ary[b_idxs]).to(self.device, non_blocking=True)
+        b_values = torch.as_tensor(self.values_ary[b_idxs]).to(self.device, non_blocking=True)
         b_advantages = advantages.reshape(
             config.batch_rows, num_minibatches, config.bptt_horizon
         ).transpose(0, 1)

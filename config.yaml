@@ -5,18 +5,18 @@ wandb:
 
 debug:
   env:
-    headless: True
+    headless: False
     stream_wrapper: False
     init_state: cut
-    max_steps: 4
+    max_steps: 1_000_000
   train:
     device: cpu
     compile: False
     compile_mode: default
-    num_envs: 10
+    num_envs: 4
     envs_per_worker: 1
-    envs_per_batch: 1
-    batch_size: 8
+    envs_per_batch: 4
+    batch_size: 16
     batch_rows: 4
     bptt_horizon: 2
     total_timesteps: 100_000_000
@@ -28,8 +28,8 @@ debug:
     env_pool: False
     log_frequency: 5000
     load_optimizer_state: False
-    swarm_frequency: 5
-    swarm_keep_pct: .8
+    swarm_frequency: 10
+    swarm_keep_pct: .1
 
 env:
   headless: True
@@ -156,6 +156,27 @@ rewards:
       taught_cut: 10.0
       explore_npcs: 0.02
       explore_hidden_objs: 0.02
+
+  baseline.RockTunnelReplicationEnv:
+    reward:
+      level: 1.0
+      exploration: 0.02
+      taught_cut: 10.0
+      event: 3.0
+      seen_pokemon: 4.0
+      caught_pokemon: 4.0
+      moves_obtained: 4.0
+      cut_coords: 1.0
+      cut_tiles: 1.0
+      start_menu: 0.005
+      pokemon_menu: 0.05
+      stats_menu: 0.05
+      bag_menu: 0.05
+      pokecenter: 5.0
+      # Really an addition to event reward
+      badges: 2.0
+      bill_saved: 2.0
+
 
 
 policies:

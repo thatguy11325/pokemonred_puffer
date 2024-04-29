@@ -289,10 +289,11 @@ class RedGymEnv(Env):
                 self.seen_pokemon = np.zeros(152, dtype=np.uint8)
                 self.caught_pokemon = np.zeros(152, dtype=np.uint8)
                 self.moves_obtained = np.zeros(0xA5, dtype=np.uint8)
+                self.pokecenters = np.zeros(252, dtype=np.uint8)
             # lazy random seed setting
-            if not seed:
-                seed = random.randint(0, 4096)
-            self.pyboy.tick(seed, render=False)
+            # if not seed:
+            #     seed = random.randint(0, 4096)
+            #  self.pyboy.tick(seed, render=False)
         else:
             self.reset_count += 1
 
@@ -370,8 +371,10 @@ class RedGymEnv(Env):
     def render(self):
         # (144, 160, 3)
         game_pixels_render = np.expand_dims(self.screen.ndarray[:, :, 1], axis=-1)
+
         if self.reduce_res:
             game_pixels_render = game_pixels_render[::2, ::2, :]
+            # game_pixels_render = skimage.measure.block_reduce(game_pixels_render, (2, 2, 1), np.min)
 
         # place an overlay on top of the screen greying out places we haven't visited
         # first get our location
@@ -551,11 +554,18 @@ class RedGymEnv(Env):
         if self.perfect_ivs:
             self.set_perfect_iv_dvs()
         self.taught_cut = self.check_if_party_has_cut()
-
+        self.pokecenters[self.read_m("wLastBlackoutMap")] = 1
         info = {}
+
+        if self.get_events_sum() > self.max_event_rew:
+            state = io.BytesIO()
+            self.pyboy.save_state(state)
+            state.seek(0)
+            info["state"] = state.read()
+
         # TODO: Make log frequency a configuration parameter
         if self.step_count % self.log_frequency == 0:
-            info = self.agent_stats(action)
+            info = info | self.agent_stats(action)
 
         obs = self._get_obs()
 
@@ -635,9 +645,9 @@ class RedGymEnv(Env):
             ]:
                 self.cut_coords[coords] = 10
             else:
-                self.cut_coords[coords] = 0.01
+                self.cut_coords[coords] = 0.001
         else:
-            self.cut_coords[coords] = 0.01
+            self.cut_coords[coords] = 0.001
 
         self.cut_explore_map[local_to_global(y, x, map_id)] = 1
         self.cut_tiles[wTileInFrontOfPlayer] = 1
@@ -687,6 +697,7 @@ class RedGymEnv(Env):
                 "item_count": self.read_m(0xD31D),
                 "reset_count": self.reset_count,
                 "blackout_count": self.blackout_count,
+                "pokecenter": np.sum(self.pokecenters),
             },
             "reward": self.get_game_state_reward(),
             "reward/reward_sum": sum(self.get_game_state_reward().values()),
@@ -877,3 +888,17 @@ class RedGymEnv(Env):
         else:
             level_reward = 30 + (self.max_level_sum - 30) / 4
         return level_reward
+
+    def get_events_sum(self):
+        # adds up all event flags, exclude museum ticket
+        return max(
+            sum(
+                [
+                    self.read_m(i).bit_count()
+                    for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
+                ]
+            )
+            - self.base_event_flags
+            - int(self.read_bit(*MUSEUM_TICKET)),
+            0,
+        )
