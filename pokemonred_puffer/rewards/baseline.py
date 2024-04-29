@@ -5,12 +5,15 @@ from pokemonred_puffer.environment import (
     RedGymEnv,
 )
 
+import numpy as np
+
 MUSEUM_TICKET = (0xD754, 0)
 
 
 class BaselineRewardEnv(RedGymEnv):
     def __init__(self, env_config: pufferlib.namespace, reward_config: pufferlib.namespace):
         super().__init__(env_config)
+        self.reward_config = reward_config
 
     # TODO: make the reward weights configurable
     def get_game_state_reward(self):
@@ -80,11 +83,7 @@ class BaselineRewardEnv(RedGymEnv):
             return 15 + (self.max_level_sum - 15) / 4
 
 
-class TeachCutReplicationEnv(RedGymEnv):
-    def __init__(self, env_config: pufferlib.namespace, reward_config: pufferlib.namespace):
-        super().__init__(env_config)
-        self.reward_config = reward_config
-
+class TeachCutReplicationEnv(BaselineRewardEnv):
     def get_game_state_reward(self):
         return {
             "event": self.reward_config["event"] * self.update_max_event_rew(),
@@ -113,31 +112,8 @@ class TeachCutReplicationEnv(RedGymEnv):
             "rival3": self.reward_config["event"] * int(self.read_m(0xD665) == 4),
         }
 
-    def update_max_event_rew(self):
-        cur_rew = self.get_all_events_reward()
-        self.max_event_rew = max(cur_rew, self.max_event_rew)
-        return self.max_event_rew
 
-    def get_all_events_reward(self):
-        # adds up all event flags, exclude museum ticket
-        return max(
-            sum(
-                [
-                    self.read_m(i).bit_count()
-                    for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
-                ]
-            )
-            - self.base_event_flags
-            - int(self.read_bit(*MUSEUM_TICKET)),
-            0,
-        )
-
-
-class TeachCutReplicationEnvFork(RedGymEnv):
-    def __init__(self, env_config: pufferlib.namespace, reward_config: pufferlib.namespace):
-        super().__init__(env_config)
-        self.reward_config = reward_config
-
+class TeachCutReplicationEnvFork(BaselineRewardEnv):
     def get_game_state_reward(self):
         return {
             "event": self.reward_config["event"] * self.update_max_event_rew(),
@@ -179,24 +155,51 @@ class TeachCutReplicationEnvFork(RedGymEnv):
             "level": self.reward_config["level"] * self.get_levels_reward(),
         }
 
-    def update_max_event_rew(self):
-        cur_rew = self.get_all_events_reward()
-        self.max_event_rew = max(cur_rew, self.max_event_rew)
-        return self.max_event_rew
+    def get_levels_reward(self):
+        party_size = self.read_m("wPartyCount")
+        party_levels = [self.read_m(f"wPartyMon{i+1}Level") for i in range(party_size)]
+        self.max_level_sum = max(self.max_level_sum, sum(party_levels))
+        if self.max_level_sum < 15:
+            return self.max_level_sum
+        else:
+            return 15 + (self.max_level_sum - 15) / 4
 
-    def get_all_events_reward(self):
-        # adds up all event flags, exclude museum ticket
-        return max(
-            sum(
-                [
-                    self.read_m(i).bit_count()
-                    for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
-                ]
-            )
-            - self.base_event_flags
-            - int(self.read_bit(*MUSEUM_TICKET)),
-            0,
-        )
+
+class RockTunnelReplicationEnv(BaselineRewardEnv):
+    def get_game_state_reward(self):
+        return {
+            "level": self.reward_config["level"] * self.get_levels_reward(),
+            "exploration": self.reward_config["exploration"] * sum(self.seen_coords.values()),
+            "taught_cut": self.reward_config["taught_cut"] * int(self.taught_cut),
+            "event": self.reward_config["event"] * self.update_max_event_rew(),
+            "seen_pokemon": self.reward_config["seen_pokemon"] * np.sum(self.seen_pokemon),
+            "caught_pokemon": self.reward_config["caught_pokemon"] * np.sum(self.caught_pokemon),
+            "moves_obtained": self.reward_config["moves_obtained"] * np.sum(self.moves_obtained),
+            "cut_coords": self.reward_config["cut_coords"] * sum(self.cut_coords.values()),
+            "cut_tiles": self.reward_config["cut_tiles"] * sum(self.cut_tiles),
+            "start_menu": (
+                self.reward_config["start_menu"] * self.seen_start_menu * int(self.taught_cut)
+            ),
+            "pokemon_menu": (
+                self.reward_config["pokemon_menu"] * self.seen_pokemon_menu * int(self.taught_cut)
+            ),
+            "stats_menu": (
+                self.reward_config["stats_menu"] * self.seen_stats_menu * int(self.taught_cut)
+            ),
+            "bag_menu": self.reward_config["bag_menu"] * self.seen_bag_menu * int(self.taught_cut),
+            # "pokecenter": self.reward_config["pokecenter"] * np.sum(self.pokecenters),
+            "badges": self.reward_config["badges"] * self.get_badges(),
+            "met_bill": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F1, 0)),
+            "used_cell_separator_on_bill": self.reward_config["bill_saved"]
+            * int(self.read_bit(0xD7F2, 3)),
+            "ss_ticket": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F2, 4)),
+            "met_bill_2": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F2, 5)),
+            "bill_said_use_cell_separator": self.reward_config["bill_saved"]
+            * int(self.read_bit(0xD7F2, 6)),
+            "left_bills_house_after_helping": self.reward_config["bill_saved"]
+            * int(self.read_bit(0xD7F2, 7)),
+            "rival3": self.reward_config["event"] * int(self.read_m(0xD665) == 4),
+        }
 
     def get_levels_reward(self):
         party_size = self.read_m("wPartyCount")
