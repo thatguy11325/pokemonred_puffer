@@ -256,8 +256,8 @@ class RedGymEnv(Env):
         )
         self.pyboy.hook_register(None, "HandleBlackOut", self.blackout_hook, None)
         self.pyboy.hook_register(None, "SetLastBlackoutMap.done", self.blackout_update_hook, None)
-        self.pyboy.hook_register(None, "UsedCut.nothingToCut", self.cut_hook, context=True)
-        self.pyboy.hook_register(None, "UsedCut.canCut", self.cut_hook, context=False)
+        # self.pyboy.hook_register(None, "UsedCut.nothingToCut", self.cut_hook, context=True)
+        # self.pyboy.hook_register(None, "UsedCut.canCut", self.cut_hook, context=False)
 
     def update_state(self, state: bytes):
         self.reset(seed=random.randint(0, 10), options={"state": state})
@@ -584,6 +584,76 @@ class RedGymEnv(Env):
         self.pyboy.send_input(VALID_ACTIONS[action])
         self.pyboy.send_input(VALID_RELEASE_ACTIONS[action], delay=8)
         self.pyboy.tick(self.action_freq, render=True)
+        if self.check_if_party_has_cut():
+            self.cut_if_next()
+
+    def cut_if_next(self):
+        # https://github.com/pret/pokered/blob/d38cf5281a902b4bd167a46a7c9fd9db436484a7/constants/tileset_constants.asm#L11C8-L11C11
+        in_erika_gym = self.pyboy.memory[self.pyboy.symbol_lookup("wCurMapTileset")[1]] == 7
+        in_overworld = self.pyboy.memory[self.pyboy.symbol_lookup("wCurMapTileset")[1]] == 0
+        if in_erika_gym or in_overworld:
+            wTileMap = self.pyboy.symbol_lookup("wTileMap")[1]
+            tileMap = self.pyboy.memory[wTileMap : wTileMap + 20 * 18]
+            tileMap = np.array(tileMap, dtype=np.uint8)
+            tileMap = np.reshape(tileMap, (18, 20))
+            y, x = 8, 8
+            up, down, left, right = (
+                tileMap[y - 2 : y, x : x + 2],  # up
+                tileMap[y + 2 : y + 4, x : x + 2],  # down
+                tileMap[y : y + 2, x - 2 : x],  # left
+                tileMap[y : y + 2, x + 2 : x + 4],  # right
+            )
+
+            # Gym trees apparently get the same tile map as outside bushes
+            # GYM = 7
+            if (in_overworld and 0x3D in up) or (in_erika_gym and 0x50 in up):
+                self.pyboy.send_input(WindowEvent.PRESS_ARROW_UP)
+                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_UP, delay=8)
+                self.pyboy.tick(self.action_freq, render=True)
+            elif (in_overworld and 0x3D in down) or (in_erika_gym and 0x50 in down):
+                self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
+                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
+                self.pyboy.tick(self.action_freq, render=True)
+            elif (in_overworld and 0x3D in left) or (in_erika_gym and 0x50 in left):
+                self.pyboy.send_input(WindowEvent.PRESS_ARROW_LEFT)
+                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_LEFT, delay=8)
+                self.pyboy.tick(self.action_freq, render=True)
+            elif (in_overworld and 0x3D in right) or (in_erika_gym and 0x50 in right):
+                self.pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
+                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_RIGHT, delay=8)
+                self.pyboy.tick(self.action_freq, render=True)
+            else:
+                return
+
+            # open start menu
+            self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
+            self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START, delay=8)
+            self.pyboy.tick(self.action_freq, render=True)
+            # scroll to pokemon
+            # 1 is the item index for pokemon
+            while self.pyboy.memory[self.pyboy.symbol_lookup("wCurrentMenuItem")[1]] != 1:
+                self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
+                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
+                self.pyboy.tick(self.action_freq, render=True)
+            self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
+            self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, delay=8)
+            self.pyboy.tick(self.action_freq, render=True)
+
+            # find pokemon with cut
+            while True:
+                self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
+                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
+                self.pyboy.tick(self.action_freq, render=True)
+                party_mon = self.pyboy.memory[self.pyboy.symbol_lookup("wCurrentMenuItem")[1]]
+                _, addr = self.pyboy.symbol_lookup(f"wPartyMon{party_mon+1}Moves")
+                if 15 in self.pyboy.memory[addr : addr + 4]:
+                    break
+
+            # press a bunch of times
+            for _ in range(5):
+                self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
+                self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, delay=8)
+                self.pyboy.tick(4 * self.action_freq, render=True)
 
     def hidden_object_hook(self, *args, **kwargs):
         hidden_object_id = self.pyboy.memory[self.pyboy.symbol_lookup("wHiddenObjectIndex")[1]]
