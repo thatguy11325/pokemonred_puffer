@@ -588,9 +588,7 @@ class RedGymEnv(Env):
         if self.read_bit(0xD803, 0):
             if not self.check_if_party_has_cut():
                 self.teach_cut_to_bulba()
-                self.cut_if_next()
-            else:
-                self.cut_if_next()
+            self.cut_if_next()
 
     def teach_cut_to_bulba(self):
         # find bulba and replace tackle (first skill) with cut
