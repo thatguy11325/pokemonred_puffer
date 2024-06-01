@@ -656,7 +656,8 @@ class RedGymEnv(Env):
             self.pyboy.tick(self.action_freq, render=True)
 
             # find pokemon with cut
-            while True:
+            # We run this over all pokemon so we dont end up in an infinite for loop
+            for _ in range(7):
                 self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
                 self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
                 self.pyboy.tick(self.action_freq, render=True)
