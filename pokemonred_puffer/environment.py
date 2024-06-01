@@ -584,8 +584,26 @@ class RedGymEnv(Env):
         self.pyboy.send_input(VALID_ACTIONS[action])
         self.pyboy.send_input(VALID_RELEASE_ACTIONS[action], delay=8)
         self.pyboy.tick(self.action_freq, render=True)
-        if self.check_if_party_has_cut():
-            self.cut_if_next()
+
+        if self.read_bit(0xD803, 0):
+            if not self.check_if_party_has_cut():
+                self.teach_cut_to_bulba()
+                self.cut_if_next()
+            else:
+                self.cut_if_next()
+
+    def teach_cut_to_bulba(self):
+        # find bulba and replace tackle (first skill) with cut
+        move_pp_addr = [0xD188, 0xD189, 0xD18A, 0xD18B]
+        # D164-D169
+        PARTY_ADDR = [0xD164, 0xD165, 0xD166, 0xD167, 0xD168, 0xD169]
+        for poke_idx, poke_addr in enumerate(PARTY_ADDR):
+            poke = self.pyboy.memory[poke_addr]
+            if poke in [9, 153, 154]:  # bulba line
+                slot = 0  # this should have tackle
+                self.game.memory[poke_addr + 8 + slot] = 15
+                self.game.memory[move_pp_addr[slot] + 44 * poke_idx] = 30
+                # fill up pp: 30/30
 
     def cut_if_next(self):
         # https://github.com/pret/pokered/blob/d38cf5281a902b4bd167a46a7c9fd9db436484a7/constants/tileset_constants.asm#L11C8-L11C11
