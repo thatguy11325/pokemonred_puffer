@@ -599,8 +599,8 @@ class RedGymEnv(Env):
             poke = self.pyboy.memory[poke_addr]
             if poke in [9, 153, 154]:  # bulba line
                 slot = 0  # this should have tackle
-                self.game.memory[poke_addr + 8 + slot] = 15
-                self.game.memory[move_pp_addr[slot] + 44 * poke_idx] = 30
+                self.pyboy.memory[poke_addr + 8 + slot] = 15
+                self.pyboy.memory[move_pp_addr[slot] + 44 * poke_idx] = 30
                 # fill up pp: 30/30
 
     def cut_if_next(self):
