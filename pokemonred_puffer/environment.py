@@ -207,11 +207,11 @@ class RedGymEnv(Env):
                 "direction": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
                 # "reset_map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
                 "battle_type": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
-                # "cut_in_party": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
+                "cut_in_party": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
                 # "x": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
                 # "y": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
                 # "map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
-                # "badges": spaces.Box(low=0, high=8, shape=(1,), dtype=np.uint8),
+                "badges": spaces.Box(low=0, high=0xFFFF, shape=(1,), dtype=np.uint8),
             }
         )
 
@@ -515,11 +515,11 @@ class RedGymEnv(Env):
             ),
             # "reset_map_id": np.array(self.read_m("wLastBlackoutMap"), dtype=np.uint8),
             "battle_type": np.array(self.read_m("wIsInBattle") + 1, dtype=np.uint8),
-            # "cut_in_party": np.array(self.check_if_party_has_cut(), dtype=np.uint8),
+            "cut_in_party": np.array(self.check_if_party_has_cut(), dtype=np.uint8),
             # "x": np.array(player_x, dtype=np.uint8),
             # "y": np.array(player_y, dtype=np.uint8),
             # "map_id": np.array(map_n, dtype=np.uint8),
-            # "badges": np.array(self.get_badges(), dtype=np.uint8),
+            "badges": np.array(self.read_m("wObtainedBadges"), dtype=np.uint8),
         }
 
     def set_perfect_iv_dvs(self):
@@ -647,9 +647,9 @@ class RedGymEnv(Env):
             self.pyboy.tick(self.action_freq, render=True)
             # scroll to pokemon
             # 1 is the item index for pokemon
-            # for _ in range(24):
-            while self.pyboy.memory[self.pyboy.symbol_lookup("wCurrentMenuItem")[1]] != 1:
-                #        break
+            for _ in range(24):
+                if self.pyboy.memory[self.pyboy.symbol_lookup("wCurrentMenuItem")[1]] != 1:
+                    break
                 self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
                 self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
                 self.pyboy.tick(self.action_freq, render=True)
