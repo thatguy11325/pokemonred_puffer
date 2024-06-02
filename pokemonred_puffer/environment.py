@@ -647,7 +647,9 @@ class RedGymEnv(Env):
             self.pyboy.tick(self.action_freq, render=True)
             # scroll to pokemon
             # 1 is the item index for pokemon
-            while self.pyboy.memory[self.pyboy.symbol_lookup("wCurrentMenuItem")[1]] != 1:
+            for _ in range(24):
+                if self.pyboy.memory[self.pyboy.symbol_lookup("wCurrentMenuItem")[1]] == 1:
+                    break
                 self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
                 self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
                 self.pyboy.tick(self.action_freq, render=True)
