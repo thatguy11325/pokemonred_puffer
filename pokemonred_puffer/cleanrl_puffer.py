@@ -524,13 +524,13 @@ class CleanPuffeRL:
                     overlay = make_pokemon_red_overlay(np.stack(v, axis=0))
                     if self.wandb is not None:
                         self.stats["Media/aggregate_exploration_map"] = self.wandb.Image(overlay)
-            elif "cut_exploration_map" in k and config.save_overlay is True:
-                if self.update % config.overlay_interval == 0:
-                    overlay = make_pokemon_red_overlay(np.stack(v, axis=0))
-                    if self.wandb is not None:
-                        self.stats["Media/aggregate_cut_exploration_map"] = self.wandb.Image(
-                            overlay
-                        )
+            # elif "cut_exploration_map" in k and config.save_overlay is True:
+            #     if self.update % config.overlay_interval == 0:
+            #         overlay = make_pokemon_red_overlay(np.stack(v, axis=0))
+            #         if self.wandb is not None:
+            #             self.stats["Media/aggregate_cut_exploration_map"] = self.wandb.Image(
+            #                 overlay
+            #             )
             elif "state" in k:
                 pass
             else:
