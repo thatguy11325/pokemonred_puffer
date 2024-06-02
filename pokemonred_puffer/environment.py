@@ -107,6 +107,37 @@ RESET_MAP_IDS = set(
     ]
 )
 
+CUT_SPECIES_IDS = {
+    0x99,
+    0x09,
+    0x9A,
+    0xB0,
+    0xB2,
+    0xB4,
+    0x72,
+    0x60,
+    0x61,
+    0xB9,
+    0xBA,
+    0xBB,
+    0x6D,
+    0x2E,
+    0xBC,
+    0xBD,
+    0xBE,
+    0x18,
+    0x9B,
+    0x40,
+    0x4E,
+    0x8A,
+    0x0B,
+    0x1E,
+    0x1A,
+    0x1D,
+    0x5B,
+    0x15,
+}
+
 VALID_ACTIONS = [
     WindowEvent.PRESS_ARROW_DOWN,
     WindowEvent.PRESS_ARROW_LEFT,
@@ -587,20 +618,23 @@ class RedGymEnv(Env):
 
         if self.read_bit(0xD803, 0):
             if not self.check_if_party_has_cut():
-                self.teach_cut_to_bulba()
+                self.teach_cut()
             self.cut_if_next()
 
-    def teach_cut_to_bulba(self):
+    def teach_cut(self):
         # find bulba and replace tackle (first skill) with cut
-        move_pp_addr = [0xD188, 0xD189, 0xD18A, 0xD18B]
-        # D164-D169
-        PARTY_ADDR = [0xD164, 0xD165, 0xD166, 0xD167, 0xD168, 0xD169]
-        for poke_idx, poke_addr in enumerate(PARTY_ADDR):
-            poke = self.pyboy.memory[poke_addr]
-            if poke in [9, 153, 154]:  # bulba line
-                slot = 0  # this should have tackle
-                self.pyboy.memory[poke_addr + 8 + slot] = 15
-                self.pyboy.memory[move_pp_addr[slot] + 44 * poke_idx] = 30
+        party_size = self.read_m("wPartyCount")
+        for i in range(party_size):
+            # PRET 1-indexes
+            _, species_addr = self.pyboy.symbol_lookup(f"wPartyMon{i+1}Species")
+            poke = self.pyboy.memory[species_addr]
+            # https://github.com/pret/pokered/blob/d38cf5281a902b4bd167a46a7c9fd9db436484a7/constants/pokemon_constants.asm
+            if poke in CUT_SPECIES_IDS:
+                slot = 0
+                _, move_addr = self.pyboy.symbol_lookup(f"wPartyMon{i+1}Moves")
+                _, pp_addr = self.pyboy.symbol_lookup(f"wPartyMon{i+1}PP")
+                self.pyboy.memory[move_addr + slot] = 15
+                self.pyboy.memory[pp_addr + slot] = 30
                 # fill up pp: 30/30
 
     def cut_if_next(self):
