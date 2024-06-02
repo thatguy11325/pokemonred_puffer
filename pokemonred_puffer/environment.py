@@ -581,8 +581,8 @@ class RedGymEnv(Env):
         self.action_hist[action] += 1
         # press button then release after some steps
         # TODO: Add video saving logic
-        self.pyboy.send_input(VALID_ACTIONS[action])
-        self.pyboy.send_input(VALID_RELEASE_ACTIONS[action], delay=8)
+        # self.pyboy.send_input(VALID_ACTIONS[action])
+        # self.pyboy.send_input(VALID_RELEASE_ACTIONS[action], delay=8)
         self.pyboy.tick(self.action_freq, render=True)
 
         if self.read_bit(0xD803, 0):
@@ -647,9 +647,9 @@ class RedGymEnv(Env):
             self.pyboy.tick(self.action_freq, render=True)
             # scroll to pokemon
             # 1 is the item index for pokemon
-            for _ in range(24):
-                if self.pyboy.memory[self.pyboy.symbol_lookup("wCurrentMenuItem")[1]] == 1:
-                    break
+            # for _ in range(24):
+            while self.pyboy.memory[self.pyboy.symbol_lookup("wCurrentMenuItem")[1]] != 1:
+                #        break
                 self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
                 self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
                 self.pyboy.tick(self.action_freq, render=True)
@@ -664,7 +664,7 @@ class RedGymEnv(Env):
                 self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
                 self.pyboy.tick(self.action_freq, render=True)
                 party_mon = self.pyboy.memory[self.pyboy.symbol_lookup("wCurrentMenuItem")[1]]
-                _, addr = self.pyboy.symbol_lookup(f"wPartyMon{party_mon+1}Moves")
+                _, addr = self.pyboy.symbol_lookup(f"wPartyMon{party_mon%6+1}Moves")
                 if 15 in self.pyboy.memory[addr : addr + 4]:
                     break
 
