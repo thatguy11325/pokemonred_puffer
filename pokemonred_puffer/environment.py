@@ -239,10 +239,11 @@ class RedGymEnv(Env):
                 # "reset_map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
                 "battle_type": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
                 "cut_in_party": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
-                # "x": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
+                # "x": spaces.Box(low=0, high=255, shape=(1,), dtype=np.u`int8),
                 # "y": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
                 # "map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
-                "badges": spaces.Box(low=0, high=0xFFFF, shape=(1,), dtype=np.uint8),
+                # "badges": spaces.Box(low=0, high=np.iinfo(np.uint16).max, shape=(1,), dtype=np.uint16),
+                "badges": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
             }
         )
 
@@ -612,8 +613,8 @@ class RedGymEnv(Env):
         self.action_hist[action] += 1
         # press button then release after some steps
         # TODO: Add video saving logic
-        self.pyboy.send_input(VALID_ACTIONS[action])
-        self.pyboy.send_input(VALID_RELEASE_ACTIONS[action], delay=8)
+        # self.pyboy.send_input(VALID_ACTIONS[action])
+        # self.pyboy.send_input(VALID_RELEASE_ACTIONS[action], delay=8)
         self.pyboy.tick(self.action_freq, render=True)
 
         if self.read_bit(0xD803, 0):
@@ -682,7 +683,7 @@ class RedGymEnv(Env):
             # scroll to pokemon
             # 1 is the item index for pokemon
             for _ in range(24):
-                if self.pyboy.memory[self.pyboy.symbol_lookup("wCurrentMenuItem")[1]] != 1:
+                if self.pyboy.memory[self.pyboy.symbol_lookup("wCurrentMenuItem")[1]] == 1:
                     break
                 self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
                 self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
@@ -913,7 +914,7 @@ class RedGymEnv(Env):
         return self.pyboy.memory[addr : addr + EVENTS_FLAGS_LENGTH]
 
     def get_badges(self):
-        return self.read_m("wObtainedBadges").bit_count()
+        return self.read_short("wObtainedBadges").bit_count()
 
     def read_party(self):
         _, addr = self.pyboy.symbol_lookup("wPartySpecies")
