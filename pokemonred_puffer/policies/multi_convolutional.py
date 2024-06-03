@@ -115,6 +115,7 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
                     one_hot(observations["direction"].long(), 4).float().squeeze(1),
                     # one_hot(observations["reset_map_id"].long(), 0xF7).float().squeeze(1),
                     one_hot(observations["battle_type"].long(), 4).float().squeeze(1),
+                    observations["cut_event"].float(),
                     observations["cut_in_party"].float(),
                     # observations["x"].float(),
                     # observations["y"].float(),
