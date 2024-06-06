@@ -287,6 +287,12 @@ class RedGymEnv(Env):
         self.pyboy.hook_register(
             None, "CheckForHiddenObject.foundMatchingObject", self.hidden_object_hook, None
         )
+        """
+        _, addr = self.pyboy.symbol_lookup("IsSpriteOrSignInFrontOfPlayer.retry")
+        self.pyboy.hook_register(
+            None, addr-1, self.sign_hook, None
+        )
+        """
         self.pyboy.hook_register(None, "HandleBlackOut", self.blackout_hook, None)
         self.pyboy.hook_register(None, "SetLastBlackoutMap.done", self.blackout_update_hook, None)
         # self.pyboy.hook_register(None, "UsedCut.nothingToCut", self.cut_hook, context=True)
@@ -306,6 +312,7 @@ class RedGymEnv(Env):
             self.init_mem()
             # We only init seen hidden objs once cause they can only be found once!
             self.seen_hidden_objs = {}
+            self.seen_signs = {}
             if options.get("state", None) is not None:
                 self.pyboy.load_state(io.BytesIO(options["state"]))
                 self.reset_count += 1
@@ -553,7 +560,7 @@ class RedGymEnv(Env):
             # "x": np.array(player_x, dtype=np.uint8),
             # "y": np.array(player_y, dtype=np.uint8),
             # "map_id": np.array(map_n, dtype=np.uint8),
-            "badges": np.array(self.read_m("wObtainedBadges"), dtype=np.uint8),
+            "badges": np.array(self.read_short("wObtainedBadges").bit_count(), dtype=np.uint8),
         }
 
     def set_perfect_iv_dvs(self):
@@ -710,6 +717,12 @@ class RedGymEnv(Env):
                 self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
                 self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, delay=8)
                 self.pyboy.tick(4 * self.action_freq, render=True)
+
+    def sign_hook(self, *args, **kwargs):
+        sign_id = self.pyboy.memory[self.pyboy.symbol_lookup("hSpriteIndexOrTextID")[1]]
+        map_id = self.pyboy.memory[self.pyboy.symbol_lookup("wCurMap")[1]]
+        # We will store this by map id, y, x,
+        self.seen_hidden_objs[(map_id, sign_id)] = 1
 
     def hidden_object_hook(self, *args, **kwargs):
         hidden_object_id = self.pyboy.memory[self.pyboy.symbol_lookup("wHiddenObjectIndex")[1]]
