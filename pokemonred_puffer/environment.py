@@ -621,6 +621,12 @@ class RedGymEnv(Env):
             # self.caught_pokemon[6] == 1  # squirtle
         )
 
+        # cut mon check
+        if not self.party_has_cut_capable_mon():
+            reset = True
+            self.first = True
+            new_reward = -self.progress_reward
+
         return obs, new_reward, reset, False, info
 
     def run_action_on_emulator(self, action):
@@ -635,6 +641,18 @@ class RedGymEnv(Env):
             if not self.check_if_party_has_cut():
                 self.teach_cut()
             self.cut_if_next()
+
+    def party_has_cut_capable_mon(self):
+        # find bulba and replace tackle (first skill) with cut
+        party_size = self.read_m("wPartyCount")
+        for i in range(party_size):
+            # PRET 1-indexes
+            _, species_addr = self.pyboy.symbol_lookup(f"wPartyMon{i+1}Species")
+            poke = self.pyboy.memory[species_addr]
+            # https://github.com/pret/pokered/blob/d38cf5281a902b4bd167a46a7c9fd9db436484a7/constants/pokemon_constants.asm
+            if poke in CUT_SPECIES_IDS:
+                return True
+        return False
 
     def teach_cut(self):
         # find bulba and replace tackle (first skill) with cut
