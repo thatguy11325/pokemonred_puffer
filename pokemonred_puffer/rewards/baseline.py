@@ -168,41 +168,28 @@ class CutWithObjectRewardsEnv(BaselineRewardEnv):
         return {
             "event": self.reward_config["event"] * self.update_max_event_rew(),
             "met_bill": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F1, 0)),
-            "used_cell_separator_on_bill": (
-                self.reward_config["bill_saved"] * int(self.read_bit(0xD7F2, 3))
-            ),
+            "used_cell_separator_on_bill": self.reward_config["bill_saved"]
+            * int(self.read_bit(0xD7F2, 3)),
             "ss_ticket": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F2, 4)),
             "met_bill_2": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F2, 5)),
-            "bill_said_use_cell_separator": (
-                self.reward_config["bill_saved"] * int(self.read_bit(0xD7F2, 6))
-            ),
-            "left_bills_house_after_helping": (
-                self.reward_config["bill_saved"] * int(self.read_bit(0xD7F2, 7))
-            ),
-            "moves_obtained": self.reward_config["moves_obtained"] * sum(self.moves_obtained),
-            "hm_count": self.reward_config["hm_count"] * self.get_hm_count(),
-            "badges": self.reward_config["badges"] * self.get_badges(),
-            "exploration": self.reward_config["exploration"] * sum(self.seen_coords.values()),
-            "explore_npcs": self.reward_config["explore_npcs"] * sum(self.seen_npcs.values()),
-            "explore_hidden_objs": (
-                self.reward_config["explore_hidden_objs"] * sum(self.seen_hidden_objs.values())
-            ),
-            "cut_coords": self.reward_config["cut_coords"] * sum(self.cut_coords.values()),
-            "cut_tiles": self.reward_config["cut_tiles"] * sum(self.cut_tiles),
-            "start_menu": (
-                self.reward_config["start_menu"] * self.seen_start_menu * int(self.taught_cut)
-            ),
-            "pokemon_menu": (
-                self.reward_config["pokemon_menu"] * self.seen_pokemon_menu * int(self.taught_cut)
-            ),
-            "stats_menu": (
-                self.reward_config["stats_menu"] * self.seen_stats_menu * int(self.taught_cut)
-            ),
-            "bag_menu": self.reward_config["bag_menu"] * self.seen_bag_menu * int(self.taught_cut),
-            "taught_cut": self.reward_config["taught_cut"] * int(self.taught_cut),
+            "bill_said_use_cell_separator": self.reward_config["bill_saved"]
+            * int(self.read_bit(0xD7F2, 6)),
+            "left_bills_house_after_helping": self.reward_config["bill_saved"]
+            * int(self.read_bit(0xD7F2, 7)),
             "seen_pokemon": self.reward_config["seen_pokemon"] * sum(self.seen_pokemon),
             "caught_pokemon": self.reward_config["caught_pokemon"] * sum(self.caught_pokemon),
+            "moves_obtained": self.reward_config["moves_obtained"] * sum(self.moves_obtained),
+            "hm_count": self.reward_config["hm_count"] * self.get_hm_count(),
             "level": self.reward_config["level"] * self.get_levels_reward(),
+            "badges": self.reward_config["badges"] * self.get_badges(),
+            "exploration": self.reward_config["exploration"] * sum(self.seen_coords.values()),
+            "cut_coords": self.reward_config["cut_coords"] * sum(self.cut_coords.values()),
+            "cut_tiles": self.reward_config["cut_tiles"] * sum(self.cut_tiles.values()),
+            "start_menu": self.reward_config["start_menu"] * self.seen_start_menu,
+            "pokemon_menu": self.reward_config["pokemon_menu"] * self.seen_pokemon_menu,
+            "stats_menu": self.reward_config["stats_menu"] * self.seen_stats_menu,
+            "bag_menu": self.reward_config["bag_menu"] * self.seen_bag_menu,
+            "rival3": self.reward_config["event"] * int(self.read_m(0xD665) == 4),
             "rocket_hideout_found": self.reward_config["rocket_hideout_found"]
             * int(self.read_bit(0xD77E, 1)),
         }
