@@ -71,6 +71,10 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
         )
         self.register_buffer("badge_buffer", torch.arange(8) + 1, persistent=False)
 
+        # pokemon has 0xF7 map ids
+        # Lets start with 4 dims for now. Could try 8
+        self.map_embeddings = torch.nn.Embedding(0xF7, 4, dtype=torch.float32)
+
     def encode_observations(self, observations):
         observations = unpack_batched_obs(observations, self.unflatten_context)
 
@@ -100,6 +104,8 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
                 .int(),
             ).reshape(restored_shape)
         badges = self.badge_buffer <= observations["badges"]
+        map_id = self.map_embeddings(observations["map_id"].long())
+        blackout_map_id = self.map_embeddings(observations["blackout_map_id"].long())
 
         image_observation = torch.cat((screen, visited_mask, global_map), dim=-1)
         if self.channels_last:
@@ -120,6 +126,8 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
                     # observations["y"].float(),
                     # one_hot(observations["map_id"].long(), 0xF7).float().squeeze(1),
                     badges.float().squeeze(1),
+                    map_id.squeeze(1),
+                    blackout_map_id.squeeze(1),
                 ),
                 dim=-1,
             )
