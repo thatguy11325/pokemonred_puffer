@@ -189,6 +189,7 @@ class RedGymEnv(Env):
         self.gb_path = env_config.gb_path
         self.log_frequency = env_config.log_frequency
         self.two_bit = env_config.two_bit
+        self.auto_flash = env_config.auto_flash
         self.action_space = ACTION_SPACE
 
         # Obs space-related. TODO: avoid hardcoding?
@@ -581,6 +582,10 @@ class RedGymEnv(Env):
     def step(self, action):
         if self.save_video and self.step_count == 0:
             self.start_video()
+
+        _, wMapPalOffset = self.pyboy.symbol_lookup("wMapPalOffset")[1]
+        if self.auto_flash and self.pyboy.memory[wMapPalOffset] == 6:
+            self.pyboy.memory[wMapPalOffset] = 0
 
         self.run_action_on_emulator(action)
         self.update_seen_coords()
