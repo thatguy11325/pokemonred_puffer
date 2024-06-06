@@ -237,13 +237,13 @@ class RedGymEnv(Env):
                 ),
                 # Discrete is more apt, but pufferlib is slower at processing Discrete
                 "direction": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
-                # "reset_map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
+                "blackout_map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
                 "battle_type": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
                 "cut_event": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
                 "cut_in_party": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
                 # "x": spaces.Box(low=0, high=255, shape=(1,), dtype=np.u`int8),
                 # "y": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
-                # "map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
+                "map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
                 # "badges": spaces.Box(low=0, high=np.iinfo(np.uint16).max, shape=(1,), dtype=np.uint16),
                 "badges": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
             }
@@ -554,13 +554,13 @@ class RedGymEnv(Env):
             "direction": np.array(
                 self.read_m("wSpritePlayerStateData1FacingDirection") // 4, dtype=np.uint8
             ),
-            # "reset_map_id": np.array(self.read_m("wLastBlackoutMap"), dtype=np.uint8),
+            "blackout_map_id": np.array(self.read_m("wLastBlackoutMap"), dtype=np.uint8),
             "battle_type": np.array(self.read_m("wIsInBattle") + 1, dtype=np.uint8),
             "cut_event": np.array(self.read_bit(0xD803, 0), dtype=np.uint8),
             "cut_in_party": np.array(self.check_if_party_has_cut(), dtype=np.uint8),
             # "x": np.array(player_x, dtype=np.uint8),
             # "y": np.array(player_y, dtype=np.uint8),
-            # "map_id": np.array(map_n, dtype=np.uint8),
+            "map_id": np.array(self.read_m(0xD35E), dtype=np.uint8),
             "badges": np.array(self.read_short("wObtainedBadges").bit_count(), dtype=np.uint8),
         }
 
