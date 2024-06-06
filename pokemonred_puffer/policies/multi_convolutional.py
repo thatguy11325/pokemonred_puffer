@@ -69,6 +69,9 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
         self.register_buffer(
             "unpack_shift", torch.tensor([6, 4, 2, 0], dtype=torch.uint8), persistent=False
         )
+        self.register_buffer(
+            "badge_buffer", torch.arange(8) + 1, dtype=torch.uint8, persistent=False
+        )
 
     def encode_observations(self, observations):
         observations = unpack_batched_obs(observations, self.unflatten_context)
@@ -98,7 +101,7 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
                 .flatten()
                 .int(),
             ).reshape(restored_shape)
-        badges = (torch.arange(8) + 1) <= observations["badges"]
+        badges = self.badge_buffer <= observations["badges"]
 
         image_observation = torch.cat((screen, visited_mask, global_map), dim=-1)
         if self.channels_last:
