@@ -583,7 +583,7 @@ class RedGymEnv(Env):
         if self.save_video and self.step_count == 0:
             self.start_video()
 
-        _, wMapPalOffset = self.pyboy.symbol_lookup("wMapPalOffset")[1]
+        _, wMapPalOffset = self.pyboy.symbol_lookup("wMapPalOffset")
         if self.auto_flash and self.pyboy.memory[wMapPalOffset] == 6:
             self.pyboy.memory[wMapPalOffset] = 0
 
