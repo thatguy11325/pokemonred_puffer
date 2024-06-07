@@ -123,7 +123,7 @@ wrappers:
   stream_only:
     - stream_wrapper.StreamWrapper:
         user: thatguy 
-    - exploration.OnresetLowerToFixedValueWrapper:
+    - exploration.OnResetLowerToFixedValueWrapper:
       fixed_value:
         coords: 0.33
         map_ids: 0.33
@@ -131,7 +131,7 @@ wrappers:
         cut: 0.33
         explore: 0.33
     - exploration.OnResetExplorationWrapper:
-      full_reset_frequency: 0
+      full_reset_frequency: 25
 
   fixed_reset_value:
     - stream_wrapper.StreamWrapper:
