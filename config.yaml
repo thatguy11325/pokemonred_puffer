@@ -137,7 +137,7 @@ wrappers:
     - stream_wrapper.StreamWrapper:
         user: thatguy 
     - exploration.OnResetExplorationWrapper:
-      full_reset_frequency: 0
+      full_reset_frequency: 25
 
 rewards:
   baseline.BaselineRewardEnv:

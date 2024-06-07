@@ -101,9 +101,6 @@ class OnResetExplorationWrapper(gym.Wrapper):
         self.full_reset_frequency = reward_config.full_reset_frequency
         self.counter = 0
 
-    def step(self, action):
-        pass
-
     def reset(self, *args, **kwargs):
         if self.counter % self.full_reset_frequency == 0:
             self.counter = 0
@@ -115,6 +112,7 @@ class OnResetExplorationWrapper(gym.Wrapper):
             self.cut_coords.clear()
             self.cut_tiles.clear()
         self.counter += 1
+        return self.env.reset(*args, **kwargs)
 
 
 class OnResetLowerToFixedValueWrapper(gym.Wrapper):
@@ -122,24 +120,23 @@ class OnResetLowerToFixedValueWrapper(gym.Wrapper):
         super().__init__(env)
         self.fixed_value = reward_config.fixed_value
 
-    def step(self, action):
-        pass
-
     def reset(self, *args, **kwargs):
         self.env.unwrapped.seen_coords.update(
-            (k, self.fixed_value["coords"]) for k, v in self.env.unwrapped.seen_coords.items()
+            (k, self.fixed_value["coords"])
+            for k, v in self.env.unwrapped.seen_coords.items()
+            if v > 0
         )
         self.env.unwrapped.seen_map_ids[self.env.unwrapped.seen_map_ids > 0] = self.fixed_value[
             "map_ids"
         ]
         self.env.unwrapped.seen_npcs.update(
-            (k, self.fixed_value["npc"]) for k, v in self.env.unwrapped.seen_npcs.items()
+            (k, self.fixed_value["npc"]) for k, v in self.env.unwrapped.seen_npcs.items() if v > 0
         )
         self.env.unwrapped.cut_tiles.update(
-            (k, self.fixed_value["cut"]) for k, v in self.env.unwrapped.seen_npcs.items()
+            (k, self.fixed_value["cut"]) for k, v in self.env.unwrapped.seen_npcs.items() if v > 0
         )
         self.env.unwrapped.cut_coords.update(
-            (k, self.fixed_value["cut"]) for k, v in self.env.unwrapped.seen_npcs.items()
+            (k, self.fixed_value["cut"]) for k, v in self.env.unwrapped.seen_npcs.items() if v > 0
         )
         self.env.unwrapped.explore_map[self.env.unwrapped.explore_map > 0] = self.fixed_value[
             "explore"
@@ -147,3 +144,4 @@ class OnResetLowerToFixedValueWrapper(gym.Wrapper):
         self.env.unwrapped.cut_explore_map[self.env.unwrapped.cut_explore_map > 0] = (
             self.fixed_value["cut"]
         )
+        return self.env.reset(*args, **kwargs)
