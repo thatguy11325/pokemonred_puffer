@@ -321,8 +321,6 @@ class RedGymEnv(Env):
                 with open(self.init_state_path, "rb") as f:
                     self.pyboy.load_state(f)
                 self.reset_count = 0
-                self.explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
-                self.cut_explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
                 self.base_event_flags = sum(
                     self.read_m(i).bit_count()
                     for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
@@ -396,13 +394,6 @@ class RedGymEnv(Env):
         self.seen_action_bag_menu = 0
 
     def reset_mem(self):
-        self.seen_coords.update((k, 0) for k, _ in self.seen_coords.items())
-        self.seen_map_ids *= 0
-        self.seen_npcs.update((k, 0) for k, _ in self.seen_npcs.items())
-
-        self.cut_coords.update((k, 0) for k, _ in self.cut_coords.items())
-        self.cut_tiles.update((k, 0) for k, _ in self.cut_tiles.items())
-
         self.seen_start_menu = 0
         self.seen_pokemon_menu = 0
         self.seen_stats_menu = 0

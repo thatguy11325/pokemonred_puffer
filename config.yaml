@@ -109,16 +109,35 @@ wrappers:
           bag_menu: 0.998
           action_bag_menu: 0.998
         forgetting_frequency: 10
+    - exploration.OnResetExplorationWrapper:
+      full_reset_frequency: 0
   
   finite_coords:
     - stream_wrapper.StreamWrapper:
         user: thatguy
     - exploration.MaxLengthWrapper:
         capacity: 1750
+    - exploration.OnResetExplorationWrapper:
+      full_reset_frequency: 0
 
   stream_only:
     - stream_wrapper.StreamWrapper:
         user: thatguy 
+    - exploration.OnresetLowerToFixedValueWrapper:
+      fixed_value:
+        coords: 0.33
+        map_ids: 0.33
+        npc: 0.33
+        cut: 0.33
+        explore: 0.33
+    - exploration.OnResetExplorationWrapper:
+      full_reset_frequency: 0
+
+  fixed_reset_value:
+    - stream_wrapper.StreamWrapper:
+        user: thatguy 
+    - exploration.OnResetExplorationWrapper:
+      full_reset_frequency: 0
 
 rewards:
   baseline.BaselineRewardEnv:
@@ -177,6 +196,7 @@ rewards:
       stats_menu: 0.0
       bag_menu: 0.0
       rocket_hideout_found: 5.0
+      explore_hidden_objs: 0.02
 
 
 

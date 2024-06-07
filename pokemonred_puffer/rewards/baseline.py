@@ -192,6 +192,8 @@ class CutWithObjectRewardsEnv(BaselineRewardEnv):
             "rival3": self.reward_config["event"] * int(self.read_m(0xD665) == 4),
             "rocket_hideout_found": self.reward_config["rocket_hideout_found"]
             * int(self.read_bit(0xD77E, 1)),
+            "explore_hidden_objs": sum(self.seen_hidden_objs.values())
+            * self.reward_config["explore_hidden_objs"],
         }
 
     def get_levels_reward(self):
