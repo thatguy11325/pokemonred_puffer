@@ -109,12 +109,11 @@ class OnResetExplorationWrapper(gym.Wrapper):
             self.counter = 0
             self.explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
             self.cut_explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
-            self.seen_coords.update((k, 0) for k, _ in self.seen_coords.items())
+            self.seen_coords.clear()
             self.seen_map_ids *= 0
-            self.seen_npcs.update((k, 0) for k, _ in self.seen_npcs.items())
-
-            self.cut_coords.update((k, 0) for k, _ in self.cut_coords.items())
-            self.cut_tiles.update((k, 0) for k, _ in self.cut_tiles.items())
+            self.seen_npcs.clear()
+            self.cut_coords.clear()
+            self.cut_tiles.clear()
         self.counter += 1
 
 
