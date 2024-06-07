@@ -277,6 +277,8 @@ class RedGymEnv(Env):
             RedGymEnv.env_id.buf[2] = (env_id >> 8) & 0xFF
             RedGymEnv.env_id.buf[3] = (env_id) & 0xFF
 
+        self.init_mem()
+
     def register_hooks(self):
         self.pyboy.hook_register(None, "DisplayStartMenu", self.start_menu_hook, None)
         self.pyboy.hook_register(None, "RedisplayStartMenu", self.start_menu_hook, None)
@@ -310,7 +312,6 @@ class RedGymEnv(Env):
         if self.first or options.get("state", None) is not None:
             self.recent_screens = deque()
             self.recent_actions = deque()
-            self.init_mem()
             # We only init seen hidden objs once cause they can only be found once!
             self.seen_hidden_objs = {}
             self.seen_signs = {}
@@ -380,7 +381,8 @@ class RedGymEnv(Env):
         # Maybe I should preallocate a giant matrix for all map ids
         # All map ids have the same size, right?
         self.seen_coords = {}
-        # self.seen_global_coords = np.zeros(GLOBAL_MAP_SHAPE)
+        self.explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
+        self.cut_explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
         self.seen_map_ids = np.zeros(256)
         self.seen_npcs = {}
 

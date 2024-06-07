@@ -104,13 +104,13 @@ class OnResetExplorationWrapper(gym.Wrapper):
     def reset(self, *args, **kwargs):
         if self.counter % self.full_reset_frequency == 0:
             self.counter = 0
-            self.explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
-            self.cut_explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
-            self.seen_coords.clear()
-            self.seen_map_ids *= 0
-            self.seen_npcs.clear()
-            self.cut_coords.clear()
-            self.cut_tiles.clear()
+            self.env.unwrapped.explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
+            self.env.unwrapped.cut_explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
+            self.env.unwrapped.seen_coords.clear()
+            self.env.unwrapped.seen_map_ids *= 0
+            self.env.unwrapped.seen_npcs.clear()
+            self.env.unwrapped.cut_coords.clear()
+            self.env.unwrapped.cut_tiles.clear()
         self.counter += 1
         return self.env.reset(*args, **kwargs)
 
