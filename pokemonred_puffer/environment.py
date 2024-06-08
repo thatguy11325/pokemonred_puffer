@@ -622,7 +622,7 @@ class RedGymEnv(Env):
         if not self.party_has_cut_capable_mon():
             reset = True
             self.first = True
-            new_reward = -self.progress_reward
+            new_reward = -self.total_reward * 0.5
 
         return obs, new_reward, reset, False, info
 
