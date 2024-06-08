@@ -194,6 +194,8 @@ class CutWithObjectRewardsEnv(BaselineRewardEnv):
             * int(self.read_bit(0xD77E, 1)),
             "explore_hidden_objs": sum(self.seen_hidden_objs.values())
             * self.reward_config["explore_hidden_objs"],
+            "seen_action_bag_menu": self.seen_action_bag_menu
+            * self.reward_config["seen_action_bag_menu"],
         }
 
     def get_levels_reward(self):

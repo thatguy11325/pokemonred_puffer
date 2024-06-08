@@ -128,6 +128,7 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
                     badges.float().squeeze(1),
                     map_id.squeeze(1),
                     blackout_map_id.squeeze(1),
+                    observations["wJoyIgnore"].float(),
                 ),
                 dim=-1,
             )
