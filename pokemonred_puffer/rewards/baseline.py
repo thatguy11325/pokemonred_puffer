@@ -32,7 +32,7 @@ class BaselineRewardEnv(RedGymEnv):
             # "heal": self.total_healing_rew,
             "explore": sum(self.seen_coords.values()) * 0.012,
             # "explore_maps": np.sum(self.seen_map_ids) * 0.0001,
-            "taught_cut": 4 * int(self.check_if_party_has_cut()),
+            "taught_cut": 4 * int(self.check_if_party_has_hm(0xF)),
             "cut_coords": sum(self.cut_coords.values()) * 1.0,
             "cut_tiles": sum(self.cut_tiles.values()) * 1.0,
             "met_bill": 5 * int(self.read_bit(0xD7F1, 0)),
