@@ -192,6 +192,8 @@ class RedGymEnv(Env):
         self.log_frequency = env_config.log_frequency
         self.two_bit = env_config.two_bit
         self.auto_flash = env_config.auto_flash
+        self.disable_wild_encounters = env_config.disable_wild_encounters
+        self.disable_ai_actions = env_config.disable_ai_actions
         self.action_space = ACTION_SPACE
 
         # Obs space-related. TODO: avoid hardcoding?
@@ -303,6 +305,13 @@ class RedGymEnv(Env):
         self.pyboy.hook_register(None, "SetLastBlackoutMap.done", self.blackout_update_hook, None)
         # self.pyboy.hook_register(None, "UsedCut.nothingToCut", self.cut_hook, context=True)
         # self.pyboy.hook_register(None, "UsedCut.canCut", self.cut_hook, context=False)
+        if self.disable_wild_encounters:
+            self.pyboy.hook_register(
+                None,
+                "TryDoWildEncounter.gotWildEncounterType",
+                self.disable_wild_encounter_hook,
+                None,
+            )
 
     def update_state(self, state: bytes):
         self.reset(seed=random.randint(0, 10), options={"state": state})
@@ -630,8 +639,9 @@ class RedGymEnv(Env):
         self.action_hist[action] += 1
         # press button then release after some steps
         # TODO: Add video saving logic
-        self.pyboy.send_input(VALID_ACTIONS[action])
-        self.pyboy.send_input(VALID_RELEASE_ACTIONS[action], delay=8)
+        if not self.disable_ai_actions:
+            self.pyboy.send_input(VALID_ACTIONS[action])
+            self.pyboy.send_input(VALID_RELEASE_ACTIONS[action], delay=8)
         self.pyboy.tick(self.action_freq, render=True)
 
         if self.read_bit(0xD803, 0):
@@ -810,6 +820,10 @@ class RedGymEnv(Env):
 
         self.cut_explore_map[local_to_global(y, x, map_id)] = 1
         self.cut_tiles[wTileInFrontOfPlayer] = 1
+
+    def disable_wild_encounter_hook(self, *args, **kwargs):
+        self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = 100
+        self.pyboy.memory[self.pyboy.symbol_lookup("wCurEnemyLVL")[1]] = 1
 
     def agent_stats(self, action):
         levels = [self.read_m(f"wPartyMon{i+1}Level") for i in range(self.read_m("wPartyCount"))]
