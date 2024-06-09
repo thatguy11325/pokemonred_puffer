@@ -52,6 +52,10 @@ env:
   auto_flash: True
   disable_wild_encounters: False
   disable_ai_actions: False
+  auto_teach_cut: True
+  auto_use_cut: True
+  auto_teach_surf: True
+  auto_teach_strength: True
 
 
 train:
