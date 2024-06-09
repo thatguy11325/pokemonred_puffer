@@ -9,6 +9,8 @@ debug:
     stream_wrapper: False
     init_state: cut
     max_steps: 1_000_000
+    disable_wild_encounters: True
+    disable_ai_actions: True
   train:
     device: cpu
     compile: False
@@ -48,6 +50,9 @@ env:
   two_bit: True
   log_frequency: 2000
   auto_flash: True
+  disable_wild_encounters: False
+  disable_ai_actions: False
+
 
 train:
   seed: 1
