@@ -7,7 +7,7 @@ debug:
   env:
     headless: False
     stream_wrapper: False
-    init_state: cut
+    init_state: Bulbasaur
     max_steps: 1_000_000
     disable_wild_encounters: True
     disable_ai_actions: True

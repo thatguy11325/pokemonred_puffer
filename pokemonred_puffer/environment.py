@@ -601,9 +601,11 @@ class RedGymEnv(Env):
         # self.pyboy.hook_register(None, "UsedCut.nothingToCut", self.cut_hook, context=True)
         # self.pyboy.hook_register(None, "UsedCut.canCut", self.cut_hook, context=False)
         if self.disable_wild_encounters:
+            print("registering")
+            bank, addr = self.pyboy.symbol_lookup("TryDoWildEncounter.gotWildEncounterType")
             self.pyboy.hook_register(
-                None,
-                "TryDoWildEncounter.gotWildEncounterType",
+                bank,
+                addr + 8,
                 self.disable_wild_encounter_hook,
                 None,
             )
@@ -884,9 +886,6 @@ class RedGymEnv(Env):
         if self.save_video and self.step_count == 0:
             self.start_video()
 
-        if self.disable_wild_encounters:
-            self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = 100
-
         _, wMapPalOffset = self.pyboy.symbol_lookup("wMapPalOffset")
         if self.auto_flash and self.pyboy.memory[wMapPalOffset] == 6:
             self.pyboy.memory[wMapPalOffset] = 0
@@ -1131,8 +1130,8 @@ class RedGymEnv(Env):
         self.cut_tiles[wTileInFrontOfPlayer] = 1
 
     def disable_wild_encounter_hook(self, *args, **kwargs):
-        self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = 100
-        self.pyboy.memory[self.pyboy.symbol_lookup("wCurEnemyLVL")[1] + 1] = 1
+        self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = 0xFFFF
+        self.pyboy.memory[self.pyboy.symbol_lookup("wCurEnemyLVL")[1]] = 1
 
     def agent_stats(self, action):
         levels = [self.read_m(f"wPartyMon{i+1}Level") for i in range(self.read_m("wPartyCount"))]
