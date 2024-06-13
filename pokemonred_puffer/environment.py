@@ -17,6 +17,7 @@ from skimage.transform import resize
 
 import pufferlib
 from pokemonred_puffer.data.events import EVENT_FLAGS_START, EVENTS_FLAGS_LENGTH, MUSEUM_TICKET
+from pokemonred_puffer.data.field_moves import FIELD_MOVES_MAP
 from pokemonred_puffer.data.items import (
     ITEM_NAME_TO_ID,
     HM_ITEM_IDS,
@@ -94,6 +95,7 @@ class RedGymEnv(Env):
         self.auto_teach_surf = env_config.auto_teach_surf
         self.auto_teach_strength = env_config.auto_teach_strength
         self.auto_use_cut = env_config.auto_use_cut
+        self.auto_use_surf = env_config.auto_use_surf
         self.auto_remove_all_nonuseful_items = env_config.auto_remove_all_nonuseful_items
         self.infinite_money = env_config.infinite_money
         self.action_space = ACTION_SPACE
@@ -553,6 +555,7 @@ class RedGymEnv(Env):
         self.action_hist[action] += 1
         # press button then release after some steps
         # TODO: Add video saving logic
+
         if not self.disable_ai_actions:
             self.pyboy.send_input(VALID_ACTIONS[action])
             self.pyboy.send_input(VALID_RELEASE_ACTIONS[action], delay=8)
@@ -567,6 +570,8 @@ class RedGymEnv(Env):
         if self.read_bit(0xD78E, 0):
             if self.auto_teach_surf and not self.check_if_party_has_hm(0x39):
                 self.teach_hm(0x39, 15, SURF_SPECIES_IDS)
+            if self.auto_use_surf:
+                self.surf_if_attempt(VALID_ACTIONS[action])
 
         if self.read_bit(0xD857, 0):
             if self.auto_teach_strength and not self.check_if_party_has_hm(0x46):
@@ -607,7 +612,7 @@ class RedGymEnv(Env):
         in_erika_gym = self.pyboy.memory[self.pyboy.symbol_lookup("wCurMapTileset")[1]] == 7
         in_overworld = self.pyboy.memory[self.pyboy.symbol_lookup("wCurMapTileset")[1]] == 0
         if in_erika_gym or in_overworld:
-            wTileMap = self.pyboy.symbol_lookup("wTileMap")[1]
+            _, wTileMap = self.pyboy.symbol_lookup("wTileMap")
             tileMap = self.pyboy.memory[wTileMap : wTileMap + 20 * 18]
             tileMap = np.array(tileMap, dtype=np.uint8)
             tileMap = np.reshape(tileMap, (18, 20))
@@ -664,8 +669,139 @@ class RedGymEnv(Env):
                 self.pyboy.tick(self.action_freq, render=True)
                 party_mon = self.pyboy.memory[self.pyboy.symbol_lookup("wCurrentMenuItem")[1]]
                 _, addr = self.pyboy.symbol_lookup(f"wPartyMon{party_mon%6+1}Moves")
-                if 15 in self.pyboy.memory[addr : addr + 4]:
+                if 0xF in self.pyboy.memory[addr : addr + 4]:
                     break
+
+            # Enter submenu
+            self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
+            self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, delay=8)
+            self.pyboy.tick(4 * self.action_freq, render=True)
+
+            # Scroll until the field move is found
+            _, wFieldMoves = self.pyboy.symbol_lookup("wFieldMoves")
+            field_moves = self.pyboy.memory[wFieldMoves : wFieldMoves + 4]
+
+            for _ in range(10):
+                current_item = self.read_m("wCurrentMenuItem")
+                if current_item < 4 and FIELD_MOVES_MAP.get(field_moves[current_item], "") == "CUT":
+                    break
+                self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
+                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
+                self.pyboy.tick(self.action_freq, render=True)
+
+            # press a bunch of times
+            for _ in range(5):
+                self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
+                self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, delay=8)
+                self.pyboy.tick(4 * self.action_freq, render=True)
+
+    def surf_if_attempt(self, action: WindowEvent):
+        if not (
+            self.read_m("wWalkBikeSurfState") != 2
+            and self.check_if_party_has_hm(0x39)
+            and action
+            in [
+                WindowEvent.PRESS_ARROW_DOWN,
+                WindowEvent.PRESS_ARROW_LEFT,
+                WindowEvent.PRESS_ARROW_RIGHT,
+                WindowEvent.PRESS_ARROW_UP,
+            ]
+        ):
+            return
+
+        in_overworld = self.pyboy.memory[self.pyboy.symbol_lookup("wCurMapTileset")[1]] == 0
+        if in_overworld:
+            _, wTileMap = self.pyboy.symbol_lookup("wTileMap")
+            tileMap = self.pyboy.memory[wTileMap : wTileMap + 20 * 18]
+            tileMap = np.array(tileMap, dtype=np.uint8)
+            tileMap = np.reshape(tileMap, (18, 20))
+            y, x = 8, 8
+            # This could be made a little faster by only checking the
+            # direction that matters, but I decided to copy pasta the cut routine
+            up, down, left, right = (
+                tileMap[y - 2 : y, x : x + 2],  # up
+                tileMap[y + 2 : y + 4, x : x + 2],  # down
+                tileMap[y : y + 2, x - 2 : x],  # left
+                tileMap[y : y + 2, x + 2 : x + 4],  # right
+            )
+
+            # down, up, left, right
+            direction = self.read_m("wSpritePlayerStateData1FacingDirection")
+
+            if not (
+                (
+                    direction == 0x4
+                    and action == WindowEvent.PRESS_ARROW_UP
+                    and in_overworld
+                    and 0x14 in up
+                )
+                or (
+                    direction == 0x0
+                    and action == WindowEvent.PRESS_ARROW_DOWN
+                    and in_overworld
+                    and 0x14 in down
+                )
+                or (
+                    direction == 0x8
+                    and action == WindowEvent.PRESS_ARROW_LEFT
+                    and in_overworld
+                    and 0x14 in left
+                )
+                or (
+                    direction == 0xC
+                    and action == WindowEvent.PRESS_ARROW_RIGHT
+                    and in_overworld
+                    and 0x14 in right
+                )
+            ):
+                return
+
+            # open start menu
+            self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
+            self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START, delay=8)
+            self.pyboy.tick(self.action_freq, render=True)
+            # scroll to pokemon
+            # 1 is the item index for pokemon
+            for _ in range(24):
+                if self.pyboy.memory[self.pyboy.symbol_lookup("wCurrentMenuItem")[1]] == 1:
+                    break
+                self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
+                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
+                self.pyboy.tick(self.action_freq, render=True)
+            self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
+            self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, delay=8)
+            self.pyboy.tick(self.action_freq, render=True)
+
+            # find pokemon with surf
+            # We run this over all pokemon so we dont end up in an infinite for loop
+            for _ in range(7):
+                self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
+                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
+                self.pyboy.tick(self.action_freq, render=True)
+                party_mon = self.pyboy.memory[self.pyboy.symbol_lookup("wCurrentMenuItem")[1]]
+                _, addr = self.pyboy.symbol_lookup(f"wPartyMon{party_mon%6+1}Moves")
+                if 0x39 in self.pyboy.memory[addr : addr + 4]:
+                    break
+
+            # Enter submenu
+            self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
+            self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, delay=8)
+            self.pyboy.tick(4 * self.action_freq, render=True)
+
+            # Scroll until the field move is found
+            _, wFieldMoves = self.pyboy.symbol_lookup("wFieldMoves")
+            field_moves = self.pyboy.memory[wFieldMoves : wFieldMoves + 4]
+
+            for _ in range(10):
+                current_item = self.read_m("wCurrentMenuItem")
+                if (
+                    current_item < 4
+                    and FIELD_MOVES_MAP.get(field_moves[current_item], "") == "SURF"
+                ):
+                    break
+                self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
+                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
+                self.pyboy.tick(self.action_freq, render=True)
 
             # press a bunch of times
             for _ in range(5):
@@ -733,10 +869,7 @@ class RedGymEnv(Env):
             self.pyboy.symbol_lookup("wTileInFrontOfPlayer")[1]
         ]
         if context:
-            if wTileInFrontOfPlayer in [
-                0x3D,
-                0x50,
-            ]:
+            if wTileInFrontOfPlayer in [0x3D, 0x50]:
                 self.cut_coords[coords] = 10
             else:
                 self.cut_coords[coords] = 0.001

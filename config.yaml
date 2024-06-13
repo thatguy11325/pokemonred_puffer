@@ -7,7 +7,7 @@ debug:
   env:
     headless: False
     stream_wrapper: False
-    init_state: cut3
+    init_state: surf
     max_steps: 1_000_000
     disable_wild_encounters: True
     disable_ai_actions: True
@@ -54,6 +54,7 @@ env:
   disable_ai_actions: False
   auto_teach_cut: True
   auto_use_cut: True
+  auto_use_surf: True
   auto_teach_surf: True
   auto_teach_strength: True
   auto_remove_all_nonuseful_items: True
