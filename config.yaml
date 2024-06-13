@@ -57,6 +57,7 @@ env:
   auto_teach_surf: True
   auto_teach_strength: True
   auto_remove_all_nonuseful_items: True
+  infinite_money: True
 
 
 train:

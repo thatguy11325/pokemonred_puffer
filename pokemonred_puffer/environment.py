@@ -95,6 +95,7 @@ class RedGymEnv(Env):
         self.auto_teach_strength = env_config.auto_teach_strength
         self.auto_use_cut = env_config.auto_use_cut
         self.auto_remove_all_nonuseful_items = env_config.auto_remove_all_nonuseful_items
+        self.infinite_money = env_config.infinite_money
         self.action_space = ACTION_SPACE
 
         # Obs space-related. TODO: avoid hardcoding?
@@ -498,6 +499,13 @@ class RedGymEnv(Env):
 
         if self.auto_remove_all_nonuseful_items:
             self.remove_all_nonuseful_items()
+
+        _, wPlayerMoney = self.pyboy.symbol_lookup("wPlayerMoney")
+        if (
+            self.infinite_money
+            and int.from_bytes(self.pyboy.memory[wPlayerMoney : wPlayerMoney + 3], "little") < 10000
+        ):
+            self.pyboy.memory[wPlayerMoney : wPlayerMoney + 3] = int(10000).to_bytes(3, "little")
 
         self.run_action_on_emulator(action)
         self.update_seen_coords()
