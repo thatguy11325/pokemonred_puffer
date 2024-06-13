@@ -97,6 +97,7 @@ class RedGymEnv(Env):
         self.auto_use_cut = env_config.auto_use_cut
         self.auto_use_surf = env_config.auto_use_surf
         self.auto_remove_all_nonuseful_items = env_config.auto_remove_all_nonuseful_items
+        self.auto_pokeflute = env_config.auto_pokeflute
         self.infinite_money = env_config.infinite_money
         self.action_space = ACTION_SPACE
 
@@ -577,6 +578,9 @@ class RedGymEnv(Env):
             if self.auto_teach_strength and not self.check_if_party_has_hm(0x46):
                 self.teach_hm(0x46, 15, STRENGTH_SPECIES_IDS)
 
+        if self.read_bit(0xD76C, 0) and self.auto_pokeflute:
+            self.use_pokeflute()
+
     def party_has_cut_capable_mon(self):
         # find bulba and replace tackle (first skill) with cut
         party_size = self.read_m("wPartyCount")
@@ -606,6 +610,88 @@ class RedGymEnv(Env):
                         self.pyboy.memory[pp_addr + slot] = pp
                         # fill up pp: 30/30
                         break
+
+    def use_pokeflute(self):
+        in_overworld = self.pyboy.memory[self.pyboy.symbol_lookup("wCurMapTileset")[1]] == 0
+        if in_overworld:
+            _, wBagItems = self.pyboy.symbol_lookup("wBagItems")
+            bag_items = self.pyboy.memory[wBagItems : wBagItems + 40]
+            if ITEM_NAME_TO_ID["POKE_FLUTE"] not in bag_items[::2]:
+                return
+            pokeflute_index = bag_items[::2].index(ITEM_NAME_TO_ID["POKE_FLUTE"])
+
+            _, wTileMap = self.pyboy.symbol_lookup("wTileMap")
+            tileMap = self.pyboy.memory[wTileMap : wTileMap + 20 * 18]
+            tileMap = np.array(tileMap, dtype=np.uint8)
+            tileMap = np.reshape(tileMap, (18, 20))
+            y, x = 8, 8
+            up, down, left, right = (
+                tileMap[y - 2 : y, x : x + 2],  # up
+                tileMap[y + 2 : y + 4, x : x + 2],  # down
+                tileMap[y : y + 2, x - 2 : x],  # left
+                tileMap[y : y + 2, x + 2 : x + 4],  # right
+            )
+
+            if in_overworld and 0x30 in up:
+                self.pyboy.send_input(WindowEvent.PRESS_ARROW_UP)
+                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_UP, delay=8)
+                self.pyboy.tick(self.action_freq, render=True)
+            elif in_overworld and 0x30 in down:
+                self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
+                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
+                self.pyboy.tick(self.action_freq, render=True)
+            elif in_overworld and 0x30 in left:
+                self.pyboy.send_input(WindowEvent.PRESS_ARROW_LEFT)
+                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_LEFT, delay=8)
+                self.pyboy.tick(self.action_freq, render=True)
+            elif in_overworld and 0x30 in right:
+                self.pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
+                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_RIGHT, delay=8)
+                self.pyboy.tick(self.action_freq, render=True)
+            else:
+                return
+
+            # open start menu
+            self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
+            self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START, delay=8)
+            self.pyboy.tick(self.action_freq, render=True)
+            # scroll to bag
+            # 2 is the item index for bag
+            for _ in range(24):
+                if self.read_m("wCurrentMenuItem") == 2:
+                    break
+                self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
+                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
+                self.pyboy.tick(self.action_freq, render=True)
+            self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
+            self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, delay=8)
+            self.pyboy.tick(self.action_freq, render=True)
+
+            # Scroll until you get to pokeflute
+            # We'll do this by scrolling all the way up then all the way down
+            # There is a faster way to do it, but this is easier to think about
+            # Could also set the menu index manually, but there are like 4 variables
+            # for that
+            for _ in range(20):
+                self.pyboy.send_input(WindowEvent.PRESS_ARROW_UP)
+                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_UP, delay=8)
+                self.pyboy.tick(self.action_freq, render=True)
+
+            for _ in range(21):
+                if (
+                    self.read_m("wCurrentMenuItem") + self.read_m("wListScrollOffset")
+                    == pokeflute_index
+                ):
+                    break
+                self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
+                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
+                self.pyboy.tick(self.action_freq, render=True)
+
+            # press a bunch of times
+            for _ in range(5):
+                self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
+                self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, delay=8)
+                self.pyboy.tick(4 * self.action_freq, render=True)
 
     def cut_if_next(self):
         # https://github.com/pret/pokered/blob/d38cf5281a902b4bd167a46a7c9fd9db436484a7/constants/tileset_constants.asm#L11C8-L11C11
