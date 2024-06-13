@@ -7,7 +7,7 @@ debug:
   env:
     headless: False
     stream_wrapper: False
-    init_state: surf
+    init_state: pokeflute
     max_steps: 1_000_000
     disable_wild_encounters: True
     disable_ai_actions: True
@@ -58,6 +58,7 @@ env:
   auto_teach_surf: True
   auto_teach_strength: True
   auto_remove_all_nonuseful_items: True
+  auto_pokeflute: True
   infinite_money: True
 
 
