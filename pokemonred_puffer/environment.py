@@ -1055,6 +1055,7 @@ class RedGymEnv(Env):
 
     def agent_stats(self, action):
         levels = [self.read_m(f"wPartyMon{i+1}Level") for i in range(self.read_m("wPartyCount"))]
+        badges = self.read_short("wObtainedBadges")
         return {
             "stats": {
                 "step": self.step_count + self.reset_count * self.max_steps,
@@ -1101,7 +1102,8 @@ class RedGymEnv(Env):
                 "pokecenter": np.sum(self.pokecenters),
                 "rival3": int(self.read_m(0xD665) == 4),
                 "rocket_hideout_found": int(self.read_bit(0xD77E, 1)),
-            },
+            }
+            | {f"badge_{i+1}": badges & (1 << i) for i in range(8)},
             "reward": self.get_game_state_reward(),
             "reward/reward_sum": sum(self.get_game_state_reward().values()),
             "pokemon_exploration_map": self.explore_map,
