@@ -98,6 +98,7 @@ class RedGymEnv(Env):
         self.auto_teach_strength = env_config.auto_teach_strength
         self.auto_use_cut = env_config.auto_use_cut
         self.auto_use_surf = env_config.auto_use_surf
+        self.auto_solve_strength_puzzles = env_config.auto_solve_strength_puzzles
         self.auto_remove_all_nonuseful_items = env_config.auto_remove_all_nonuseful_items
         self.auto_pokeflute = env_config.auto_pokeflute
         self.infinite_money = env_config.infinite_money
@@ -585,8 +586,9 @@ class RedGymEnv(Env):
         if self.read_bit(0xD857, 0):
             if self.auto_teach_strength and not self.check_if_party_has_hm(0x46):
                 self.teach_hm(0x46, 15, STRENGTH_SPECIES_IDS)
-            self.solve_missable_strength_puzzle()
-            self.solve_switch_strength_puzzle()
+            if self.auto_solve_strength_puzzles:
+                self.solve_missable_strength_puzzle()
+                self.solve_switch_strength_puzzle()
 
         if self.read_bit(0xD76C, 0) and self.auto_pokeflute:
             self.use_pokeflute()
