@@ -585,7 +585,8 @@ class RedGymEnv(Env):
         if self.read_bit(0xD857, 0):
             if self.auto_teach_strength and not self.check_if_party_has_hm(0x46):
                 self.teach_hm(0x46, 15, STRENGTH_SPECIES_IDS)
-            self.solve_strength_puzzle()
+            self.solve_missable_strength_puzzle()
+            self.solve_switch_strength_puzzle()
 
         if self.read_bit(0xD76C, 0) and self.auto_pokeflute:
             self.use_pokeflute()
@@ -907,7 +908,7 @@ class RedGymEnv(Env):
                 self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, delay=8)
                 self.pyboy.tick(4 * self.action_freq, render=True)
 
-    def solve_strength_puzzle(self):
+    def solve_missable_strength_puzzle(self):
         in_cavern = self.read_m("wCurMapTileset") == Tilesets.CAVERN.value
         if in_cavern:
             _, wMissableObjectFlags = self.pyboy.symbol_lookup("wMissableObjectFlags")
@@ -928,6 +929,7 @@ class RedGymEnv(Env):
                     picture_id = self.read_m(f"wSprite{sprite_id:02}StateData1PictureID")
                     mapY = self.read_m(f"wSprite{sprite_id:02}StateData2MapY")
                     mapX = self.read_m(f"wSprite{sprite_id:02}StateData2MapX")
+                    print((picture_id, mapY, mapX) + self.get_game_coords())
                     if solution := STRENGTH_SOLUTIONS.get(
                         (picture_id, mapY, mapX) + self.get_game_coords(), []
                     ):
@@ -937,12 +939,50 @@ class RedGymEnv(Env):
                         _, wd728 = self.pyboy.symbol_lookup("wd728")
                         self.pyboy.memory[wd728] |= 0b0000_0001
                         # Perform solution
+                        current_repel_steps = self.read_m("wRepelRemainingSteps")
                         for button in solution:
+                            self.pyboy.memory[
+                                self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]
+                            ] = 0xFF
                             self.pyboy.button(button, 8)
-                            self.pyboy.tick(24, render=True)
+                            self.pyboy.tick(self.action_freq * 1.5, render=True)
+                        self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = (
+                            current_repel_steps
+                        )
                         if not self.disable_wild_encounters:
                             self.setup_enable_wild_ecounters()
                         break
+
+    def solve_switch_strength_puzzle(self):
+        in_cavern = self.read_m("wCurMapTileset") == Tilesets.CAVERN.value
+        if in_cavern:
+            for sprite_id in range(1, self.read_m("wNumSprites") + 1):
+                picture_id = self.read_m(f"wSprite{sprite_id:02}StateData1PictureID")
+                mapY = self.read_m(f"wSprite{sprite_id:02}StateData2MapY")
+                mapX = self.read_m(f"wSprite{sprite_id:02}StateData2MapX")
+                print((picture_id, mapY, mapX) + self.get_game_coords())
+                if solution := STRENGTH_SOLUTIONS.get(
+                    (picture_id, mapY, mapX) + self.get_game_coords(), []
+                ):
+                    if not self.disable_wild_encounters:
+                        self.setup_disable_wild_encounters()
+                    # Activate strength
+                    _, wd728 = self.pyboy.symbol_lookup("wd728")
+                    self.pyboy.memory[wd728] |= 0b0000_0001
+                    # Perform solution
+                    current_repel_steps = self.read_m("wRepelRemainingSteps")
+                    for button in solution:
+                        self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = (
+                            0xFF
+                        )
+                        self.pyboy.button(button, 8)
+                        self.pyboy.tick(self.action_freq * 2, render=True)
+                    self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = (
+                        current_repel_steps
+                    )
+                    if not self.disable_wild_encounters:
+                        self.setup_enable_wild_ecounters()
+                    break
 
     def sign_hook(self, *args, **kwargs):
         sign_id = self.pyboy.memory[self.pyboy.symbol_lookup("hSpriteIndexOrTextID")[1]]

@@ -7,7 +7,7 @@ debug:
   env:
     headless: False
     stream_wrapper: False
-    init_state: pokeflute 
+    init_state: victory_road_5
     max_steps: 1_000_000
     disable_wild_encounters: True
     disable_ai_actions: True
