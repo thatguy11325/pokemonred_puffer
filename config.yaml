@@ -140,7 +140,7 @@ wrappers:
         user: thatguy 
     - exploration.OnResetExplorationWrapper:
         full_reset_frequency: 1
-        jitter: 2
+        jitter: 1
 
   fixed_reset_value:
     - stream_wrapper.StreamWrapper:

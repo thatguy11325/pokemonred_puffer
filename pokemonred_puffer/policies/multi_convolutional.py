@@ -75,8 +75,10 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
         # pokemon has 0xF7 map ids
         # Lets start with 4 dims for now. Could try 8
         self.map_embeddings = torch.nn.Embedding(0xF7, 4, dtype=torch.float32)
+        # N.B. This is an overestimate
+        item_count = max(Items._value2member_map_.keys())
         self.item_embeddings = torch.nn.Embedding(
-            len(Items), len(Items) ** 0.25, dtype=torch.float32
+            item_count, int(item_count**0.25 + 1), dtype=torch.float32
         )
 
     def encode_observations(self, observations):
@@ -111,8 +113,9 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
         map_id = self.map_embeddings(observations["map_id"].long())
         blackout_map_id = self.map_embeddings(observations["blackout_map_id"].long())
         # The bag quantity can be a value between 1 and 99
-        items = self.item_embeddings(observations["bag_items"].long()).float() * (
-            observations["bag_quantity"].float() / 100.0
+        # TODO: Should items be positionally encoded? I dont think it matters
+        items = self.item_embeddings(observations["bag_items"].squeeze(1).long()).float() * (
+            observations["bag_quantity"].squeeze(1).float().unsqueeze(-1) / 100.0
         )
 
         # image_observation = torch.cat((screen, visited_mask, global_map), dim=-1)
@@ -138,7 +141,7 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
                     map_id.squeeze(1),
                     blackout_map_id.squeeze(1),
                     observations["wJoyIgnore"].float(),
-                    items.squeeze(1),
+                    items.flatten(start_dim=1),
                 ),
                 dim=-1,
             )

@@ -180,7 +180,7 @@ KEY_ITEM_IDS = {
     Items.DOME_FOSSIL.value,
     Items.HELIX_FOSSIL.value,
     Items.SECRET_KEY.value,
-    Items.ITEM_2C.value,
+    # Items.ITEM_2C.value,
     Items.BIKE_VOUCHER.value,
     Items.CARD_KEY.value,
     Items.S_S_TICKET.value,
