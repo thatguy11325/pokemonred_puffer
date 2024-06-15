@@ -57,6 +57,7 @@ env:
   auto_use_surf: True
   auto_teach_surf: True
   auto_teach_strength: True
+  auto_solve_strength_puzzles: True
   auto_remove_all_nonuseful_items: True
   auto_pokeflute: True
   infinite_money: True
