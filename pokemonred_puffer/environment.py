@@ -160,7 +160,7 @@ class RedGymEnv(Env):
                 # "badges": spaces.Box(low=0, high=np.iinfo(np.uint16).max, shape=(1,), dtype=np.uint16),
                 "badges": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
                 "wJoyIgnore": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
-                "bag": spaces.Box(
+                "bag_items": spaces.Box(
                     low=0, high=max(Items._value2member_map_.keys()), shape=(20,), dtype=np.uint8
                 ),
                 "bag_quantity": spaces.Box(low=0, high=100, shape=(20,), dtype=np.uint8),
