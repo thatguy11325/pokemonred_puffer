@@ -24,6 +24,8 @@ from pokemonred_puffer.data.items import (
     KEY_ITEM_IDS,
     MAX_ITEM_CAPACITY,
 )
+from pokemonred_puffer.data.strength_puzzles import STRENGTH_SOLUTIONS
+from pokemonred_puffer.data.tilesets import Tilesets
 from pokemonred_puffer.data.tm_hm import (
     CUT_SPECIES_IDS,
     STRENGTH_SPECIES_IDS,
@@ -211,14 +213,20 @@ class RedGymEnv(Env):
         # self.pyboy.hook_register(None, "UsedCut.nothingToCut", self.cut_hook, context=True)
         # self.pyboy.hook_register(None, "UsedCut.canCut", self.cut_hook, context=False)
         if self.disable_wild_encounters:
-            print("registering")
-            bank, addr = self.pyboy.symbol_lookup("TryDoWildEncounter.gotWildEncounterType")
-            self.pyboy.hook_register(
-                bank,
-                addr + 8,
-                self.disable_wild_encounter_hook,
-                None,
-            )
+            self.setup_disable_wild_encounters()
+
+    def setup_disable_wild_encounters(self):
+        bank, addr = self.pyboy.symbol_lookup("TryDoWildEncounter.gotWildEncounterType")
+        self.pyboy.hook_register(
+            bank,
+            addr + 8,
+            self.disable_wild_encounter_hook,
+            None,
+        )
+
+    def setup_enable_wild_ecounters(self):
+        bank, addr = self.pyboy.symbol_lookup("TryDoWildEncounter.gotWildEncounterType")
+        self.pyboy.hook_deregister(bank, addr)
 
     def update_state(self, state: bytes):
         self.reset(seed=random.randint(0, 10), options={"state": state})
@@ -577,6 +585,7 @@ class RedGymEnv(Env):
         if self.read_bit(0xD857, 0):
             if self.auto_teach_strength and not self.check_if_party_has_hm(0x46):
                 self.teach_hm(0x46, 15, STRENGTH_SPECIES_IDS)
+            self.solve_strength_puzzle()
 
         if self.read_bit(0xD76C, 0) and self.auto_pokeflute:
             self.use_pokeflute()
@@ -612,7 +621,7 @@ class RedGymEnv(Env):
                         break
 
     def use_pokeflute(self):
-        in_overworld = self.pyboy.memory[self.pyboy.symbol_lookup("wCurMapTileset")[1]] == 0
+        in_overworld = self.read_m("wCurMapTileset") == Tilesets.OVERWORLD.value
         if in_overworld:
             _, wBagItems = self.pyboy.symbol_lookup("wBagItems")
             bag_items = self.pyboy.memory[wBagItems : wBagItems + 40]
@@ -620,83 +629,86 @@ class RedGymEnv(Env):
                 return
             pokeflute_index = bag_items[::2].index(ITEM_NAME_TO_ID["POKE_FLUTE"])
 
-            _, wTileMap = self.pyboy.symbol_lookup("wTileMap")
-            tileMap = self.pyboy.memory[wTileMap : wTileMap + 20 * 18]
-            tileMap = np.array(tileMap, dtype=np.uint8)
-            tileMap = np.reshape(tileMap, (18, 20))
-            y, x = 8, 8
-            up, down, left, right = (
-                tileMap[y - 2 : y, x : x + 2],  # up
-                tileMap[y + 2 : y + 4, x : x + 2],  # down
-                tileMap[y : y + 2, x - 2 : x],  # left
-                tileMap[y : y + 2, x + 2 : x + 4],  # right
-            )
+            # Check if we're on the snorlax coordinates
 
-            if in_overworld and 0x30 in up:
-                self.pyboy.send_input(WindowEvent.PRESS_ARROW_UP)
-                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_UP, delay=8)
+            coords = self.get_game_coords()
+            if coords == (9, 62, 23):
+                self.pyboy.button("RIGHT", 8)
                 self.pyboy.tick(self.action_freq, render=True)
-            elif in_overworld and 0x30 in down:
-                self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
-                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
+            elif coords == (10, 63, 23):
+                self.pyboy.button("UP", 8)
                 self.pyboy.tick(self.action_freq, render=True)
-            elif in_overworld and 0x30 in left:
-                self.pyboy.send_input(WindowEvent.PRESS_ARROW_LEFT)
-                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_LEFT, delay=8)
+            elif coords == (10, 61, 23):
+                self.pyboy.button("DOWN", 8)
                 self.pyboy.tick(self.action_freq, render=True)
-            elif in_overworld and 0x30 in right:
-                self.pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
-                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_RIGHT, delay=8)
+            elif coords == (27, 10, 27):
+                self.pyboy.button("LEFT", 8)
+                self.pyboy.tick(self.action_freq, render=True)
+            elif coords == (27, 10, 25):
+                self.pyboy.button("RIGHT", 8)
                 self.pyboy.tick(self.action_freq, render=True)
             else:
                 return
+            # Then check if snorlax is a missable object
+            # Then trigger snorlax
 
-            # open start menu
-            self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
-            self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START, delay=8)
-            self.pyboy.tick(self.action_freq, render=True)
-            # scroll to bag
-            # 2 is the item index for bag
-            for _ in range(24):
-                if self.read_m("wCurrentMenuItem") == 2:
+            _, wMissableObjectFlags = self.pyboy.symbol_lookup("wMissableObjectFlags")
+            _, wMissableObjectList = self.pyboy.symbol_lookup("wMissableObjectList")
+            missable_objects_list = self.pyboy.memory[
+                wMissableObjectList : wMissableObjectList + 34
+            ]
+            missable_objects_list = missable_objects_list[: missable_objects_list.index(0xFF)]
+            missable_objects_sprite_ids = missable_objects_list[::2]
+            missable_objects_flags = missable_objects_list[1::2]
+            for sprite_id in missable_objects_sprite_ids:
+                picture_id = self.read_m(f"wSprite{sprite_id:02}StateData1PictureID")
+                flags_bit = missable_objects_flags[missable_objects_sprite_ids.index(sprite_id)]
+                flags_byte = flags_bit // 8
+                flag_bit = flags_bit % 8
+                flag_byte_value = self.read_bit(wMissableObjectFlags + flags_byte, flag_bit)
+                if picture_id == 0x43 and not flag_byte_value:
+                    # open start menu
+                    self.pyboy.button("START", 8)
+                    self.pyboy.tick(self.action_freq, render=True)
+                    # scroll to bag
+                    # 2 is the item index for bag
+                    for _ in range(24):
+                        if self.read_m("wCurrentMenuItem") == 2:
+                            break
+                        self.pyboy.button("DOWN", 8)
+                        self.pyboy.tick(self.action_freq, render=True)
+                    self.pyboy.button("A", 8)
+                    self.pyboy.tick(self.action_freq, render=True)
+
+                    # Scroll until you get to pokeflute
+                    # We'll do this by scrolling all the way up then all the way down
+                    # There is a faster way to do it, but this is easier to think about
+                    # Could also set the menu index manually, but there are like 4 variables
+                    # for that
+                    for _ in range(20):
+                        self.pyboy.button("UP", 8)
+                        self.pyboy.tick(self.action_freq, render=True)
+
+                    for _ in range(21):
+                        if (
+                            self.read_m("wCurrentMenuItem") + self.read_m("wListScrollOffset")
+                            == pokeflute_index
+                        ):
+                            break
+                        self.pyboy.button("DOWN", 8)
+                        self.pyboy.tick(self.action_freq, render=True)
+
+                    # press a bunch of times
+                    for _ in range(5):
+                        self.pyboy.button("A", 8)
+                        self.pyboy.tick(4 * self.action_freq, render=True)
+
                     break
-                self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
-                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
-                self.pyboy.tick(self.action_freq, render=True)
-            self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-            self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, delay=8)
-            self.pyboy.tick(self.action_freq, render=True)
-
-            # Scroll until you get to pokeflute
-            # We'll do this by scrolling all the way up then all the way down
-            # There is a faster way to do it, but this is easier to think about
-            # Could also set the menu index manually, but there are like 4 variables
-            # for that
-            for _ in range(20):
-                self.pyboy.send_input(WindowEvent.PRESS_ARROW_UP)
-                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_UP, delay=8)
-                self.pyboy.tick(self.action_freq, render=True)
-
-            for _ in range(21):
-                if (
-                    self.read_m("wCurrentMenuItem") + self.read_m("wListScrollOffset")
-                    == pokeflute_index
-                ):
-                    break
-                self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
-                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
-                self.pyboy.tick(self.action_freq, render=True)
-
-            # press a bunch of times
-            for _ in range(5):
-                self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-                self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, delay=8)
-                self.pyboy.tick(4 * self.action_freq, render=True)
 
     def cut_if_next(self):
         # https://github.com/pret/pokered/blob/d38cf5281a902b4bd167a46a7c9fd9db436484a7/constants/tileset_constants.asm#L11C8-L11C11
-        in_erika_gym = self.pyboy.memory[self.pyboy.symbol_lookup("wCurMapTileset")[1]] == 7
-        in_overworld = self.pyboy.memory[self.pyboy.symbol_lookup("wCurMapTileset")[1]] == 0
+        in_erika_gym = self.read_m("wCurMapTileset") == Tilesets.GYM.value
+        in_overworld = self.read_m("wCurMapTileset") == Tilesets.OVERWORLD.value
         if in_erika_gym or in_overworld:
             _, wTileMap = self.pyboy.symbol_lookup("wTileMap")
             tileMap = self.pyboy.memory[wTileMap : wTileMap + 20 * 18]
@@ -795,7 +807,7 @@ class RedGymEnv(Env):
         ):
             return
 
-        in_overworld = self.pyboy.memory[self.pyboy.symbol_lookup("wCurMapTileset")[1]] == 0
+        in_overworld = self.read_m("wCurMapTileset") == Tilesets.OVERWORLD.value
         if in_overworld:
             _, wTileMap = self.pyboy.symbol_lookup("wTileMap")
             tileMap = self.pyboy.memory[wTileMap : wTileMap + 20 * 18]
@@ -894,6 +906,43 @@ class RedGymEnv(Env):
                 self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
                 self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, delay=8)
                 self.pyboy.tick(4 * self.action_freq, render=True)
+
+    def solve_strength_puzzle(self):
+        in_cavern = self.read_m("wCurMapTileset") == Tilesets.CAVERN.value
+        if in_cavern:
+            _, wMissableObjectFlags = self.pyboy.symbol_lookup("wMissableObjectFlags")
+            _, wMissableObjectList = self.pyboy.symbol_lookup("wMissableObjectList")
+            missable_objects_list = self.pyboy.memory[
+                wMissableObjectList : wMissableObjectList + 34
+            ]
+            missable_objects_list = missable_objects_list[: missable_objects_list.index(0xFF)]
+            missable_objects_sprite_ids = missable_objects_list[::2]
+            missable_objects_flags = missable_objects_list[1::2]
+
+            for sprite_id in missable_objects_sprite_ids:
+                flags_bit = missable_objects_flags[missable_objects_sprite_ids.index(sprite_id)]
+                flags_byte = flags_bit // 8
+                flag_bit = flags_bit % 8
+                flag_byte_value = self.read_bit(wMissableObjectFlags + flags_byte, flag_bit)
+                if not flag_byte_value:  # True if missable
+                    picture_id = self.read_m(f"wSprite{sprite_id:02}StateData1PictureID")
+                    mapY = self.read_m(f"wSprite{sprite_id:02}StateData2MapY")
+                    mapX = self.read_m(f"wSprite{sprite_id:02}StateData2MapX")
+                    if solution := STRENGTH_SOLUTIONS.get(
+                        (picture_id, mapY, mapX) + self.get_game_coords(), []
+                    ):
+                        if not self.disable_wild_encounters:
+                            self.setup_disable_wild_encounters()
+                        # Activate strength
+                        _, wd728 = self.pyboy.symbol_lookup("wd728")
+                        self.pyboy.memory[wd728] |= 0b0000_0001
+                        # Perform solution
+                        for button in solution:
+                            self.pyboy.button(button, 8)
+                            self.pyboy.tick(24, render=True)
+                        if not self.disable_wild_encounters:
+                            self.setup_enable_wild_ecounters()
+                        break
 
     def sign_hook(self, *args, **kwargs):
         sign_id = self.pyboy.memory[self.pyboy.symbol_lookup("hSpriteIndexOrTextID")[1]]
