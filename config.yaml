@@ -124,7 +124,7 @@ wrappers:
           action_bag_menu: 0.998
         forgetting_frequency: 10
     - exploration.OnResetExplorationWrapper:
-        full_reset_frequency: 0
+        full_reset_frequency: 1
   
   finite_coords:
     - stream_wrapper.StreamWrapper:
@@ -132,9 +132,15 @@ wrappers:
     - exploration.MaxLengthWrapper:
         capacity: 1750
     - exploration.OnResetExplorationWrapper:
-        full_reset_frequency: 0
+        full_reset_frequency: 1
 
   stream_only:
+    - stream_wrapper.StreamWrapper:
+        user: thatguy 
+    - exploration.OnResetExplorationWrapper:
+        full_reset_frequency: 1
+
+  fixed_reset_value:
     - stream_wrapper.StreamWrapper:
         user: thatguy 
     - exploration.OnResetLowerToFixedValueWrapper:
@@ -144,12 +150,6 @@ wrappers:
           npc: 0.33
           cut: 0.33
           explore: 0.33
-    - exploration.OnResetExplorationWrapper:
-        full_reset_frequency: 25
-
-  fixed_reset_value:
-    - stream_wrapper.StreamWrapper:
-        user: thatguy 
     - exploration.OnResetExplorationWrapper:
         full_reset_frequency: 25
 
