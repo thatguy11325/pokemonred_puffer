@@ -17,12 +17,12 @@ from skimage.transform import resize
 
 import pufferlib
 from pokemonred_puffer.data.events import EVENT_FLAGS_START, EVENTS_FLAGS_LENGTH, MUSEUM_TICKET
-from pokemonred_puffer.data.field_moves import FIELD_MOVES_MAP
+from pokemonred_puffer.data.field_moves import FieldMoves
 from pokemonred_puffer.data.items import (
-    ITEM_NAME_TO_ID,
     HM_ITEM_IDS,
     KEY_ITEM_IDS,
     MAX_ITEM_CAPACITY,
+    Items,
 )
 from pokemonred_puffer.data.strength_puzzles import STRENGTH_SOLUTIONS
 from pokemonred_puffer.data.tilesets import Tilesets
@@ -30,6 +30,7 @@ from pokemonred_puffer.data.tm_hm import (
     CUT_SPECIES_IDS,
     STRENGTH_SPECIES_IDS,
     SURF_SPECIES_IDS,
+    TmHmMoves,
 )
 from pokemonred_puffer.global_map import GLOBAL_MAP_SHAPE, local_to_global
 
@@ -573,19 +574,19 @@ class RedGymEnv(Env):
 
         if self.read_bit(0xD803, 0):
             if self.auto_teach_cut and not self.check_if_party_has_hm(0x0F):
-                self.teach_hm(0x0F, 30, CUT_SPECIES_IDS)
+                self.teach_hm(TmHmMoves.CUT.value, 30, CUT_SPECIES_IDS)
             if self.auto_use_cut:
                 self.cut_if_next()
 
         if self.read_bit(0xD78E, 0):
             if self.auto_teach_surf and not self.check_if_party_has_hm(0x39):
-                self.teach_hm(0x39, 15, SURF_SPECIES_IDS)
+                self.teach_hm(TmHmMoves.SURF.value, 15, SURF_SPECIES_IDS)
             if self.auto_use_surf:
                 self.surf_if_attempt(VALID_ACTIONS[action])
 
         if self.read_bit(0xD857, 0):
             if self.auto_teach_strength and not self.check_if_party_has_hm(0x46):
-                self.teach_hm(0x46, 15, STRENGTH_SPECIES_IDS)
+                self.teach_hm(TmHmMoves.STRENGTH.value, 15, STRENGTH_SPECIES_IDS)
             if self.auto_solve_strength_puzzles:
                 self.solve_missable_strength_puzzle()
                 self.solve_switch_strength_puzzle()
@@ -628,9 +629,9 @@ class RedGymEnv(Env):
         if in_overworld:
             _, wBagItems = self.pyboy.symbol_lookup("wBagItems")
             bag_items = self.pyboy.memory[wBagItems : wBagItems + 40]
-            if ITEM_NAME_TO_ID["POKE_FLUTE"] not in bag_items[::2]:
+            if Items.POKE_FLUTE.value not in bag_items[::2]:
                 return
-            pokeflute_index = bag_items[::2].index(ITEM_NAME_TO_ID["POKE_FLUTE"])
+            pokeflute_index = bag_items[::2].index(Items.POKE_FLUTE.value)
 
             # Check if we're on the snorlax coordinates
 
@@ -784,7 +785,7 @@ class RedGymEnv(Env):
 
             for _ in range(10):
                 current_item = self.read_m("wCurrentMenuItem")
-                if current_item < 4 and FIELD_MOVES_MAP.get(field_moves[current_item], "") == "CUT":
+                if current_item < 4 and FieldMoves.CUT.value == field_moves[current_item]:
                     break
                 self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
                 self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
@@ -876,9 +877,9 @@ class RedGymEnv(Env):
 
             for _ in range(10):
                 current_item = self.read_m("wCurrentMenuItem")
-                if (
-                    current_item < 4
-                    and FIELD_MOVES_MAP.get(field_moves[current_item], "") == "SURF"
+                if current_item < 4 and field_moves[current_item] in (
+                    FieldMoves.SURF.value,
+                    FieldMoves.SURF_2.value,
                 ):
                     break
                 self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
@@ -1257,23 +1258,21 @@ class RedGymEnv(Env):
             new_bag_items = [
                 (item, quantity)
                 for item, quantity in zip(bag_items[::2], bag_items[1::2])
-                if (0x0 < item < 0xC4 and KEY_ITEM_IDS[item - 1])
-                or (
-                    item
-                    in {
-                        ITEM_NAME_TO_ID[name]
-                        for name in [
-                            "LEMONADE",
-                            "SODA_POP",
-                            "FRESH_WATER",
-                            "HM_01",
-                            "HM_02",
-                            "HM_03",
-                            "HM_04",
-                            "HM_05",
-                        ]
-                    }
-                )
+                if (0x0 < item < Items.HM_01.value and (item - 1) in KEY_ITEM_IDS)
+                or item
+                in {
+                    Items[name]
+                    for name in [
+                        "LEMONADE",
+                        "SODA_POP",
+                        "FRESH_WATER",
+                        "HM_01",
+                        "HM_02",
+                        "HM_03",
+                        "HM_04",
+                        "HM_05",
+                    ]
+                }
             ]
             # Write the new count back to memory
             self.pyboy.memory[wNumBagItems] = len(new_bag_items)
