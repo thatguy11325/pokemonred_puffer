@@ -80,7 +80,7 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
 
         screen = observations["screen"]
         visited_mask = observations["visited_mask"]
-        global_map = observations["global_map"]
+        # global_map = observations["global_map"]
         restored_shape = (screen.shape[0], screen.shape[1], screen.shape[2] * 4, screen.shape[3])
 
         if self.two_bit:
@@ -96,18 +96,19 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
                 .flatten()
                 .int(),
             ).reshape(restored_shape)
-            global_map = torch.index_select(
-                self.linear_buckets,
-                0,
-                ((global_map.reshape((-1, 1)) & self.unpack_mask) >> self.unpack_shift)
-                .flatten()
-                .int(),
-            ).reshape(restored_shape)
+            # global_map = torch.index_select(
+            #     self.linear_buckets,
+            #     0,
+            #     ((global_map.reshape((-1, 1)) & self.unpack_mask) >> self.unpack_shift)
+            #     .flatten()
+            #     .int(),
+            # ).reshape(restored_shape)
         badges = self.badge_buffer <= observations["badges"]
         map_id = self.map_embeddings(observations["map_id"].long())
         blackout_map_id = self.map_embeddings(observations["blackout_map_id"].long())
 
-        image_observation = torch.cat((screen, visited_mask, global_map), dim=-1)
+        # image_observation = torch.cat((screen, visited_mask, global_map), dim=-1)
+        image_observation = torch.cat((screen, visited_mask), dim=-1)
         if self.channels_last:
             image_observation = image_observation.permute(0, 3, 1, 2)
         if self.downsample > 1:
