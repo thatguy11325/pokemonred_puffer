@@ -4,6 +4,7 @@ from torch import nn
 import pufferlib.models
 from pufferlib.emulation import unpack_batched_obs
 
+from pokemonred_puffer.data.items import Items
 from pokemonred_puffer.environment import PIXEL_VALUES
 
 unpack_batched_obs = torch.compiler.disable(unpack_batched_obs)
@@ -74,6 +75,9 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
         # pokemon has 0xF7 map ids
         # Lets start with 4 dims for now. Could try 8
         self.map_embeddings = torch.nn.Embedding(0xF7, 4, dtype=torch.float32)
+        self.item_embeddings = torch.nn.Embedding(
+            len(Items), len(Items) ** 0.25, dtype=torch.float32
+        )
 
     def encode_observations(self, observations):
         observations = unpack_batched_obs(observations, self.unflatten_context)
@@ -106,6 +110,10 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
         badges = self.badge_buffer <= observations["badges"]
         map_id = self.map_embeddings(observations["map_id"].long())
         blackout_map_id = self.map_embeddings(observations["blackout_map_id"].long())
+        # The bag quantity can be a value between 1 and 99
+        items = self.item_embeddings(observations["bag_items"].long()).float() * (
+            observations["bag_quantity"].float() / 100.0
+        )
 
         # image_observation = torch.cat((screen, visited_mask, global_map), dim=-1)
         image_observation = torch.cat((screen, visited_mask), dim=-1)
@@ -130,6 +138,7 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
                     map_id.squeeze(1),
                     blackout_map_id.squeeze(1),
                     observations["wJoyIgnore"].float(),
+                    items.squeeze(1),
                 ),
                 dim=-1,
             )

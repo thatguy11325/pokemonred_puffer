@@ -160,6 +160,10 @@ class RedGymEnv(Env):
                 # "badges": spaces.Box(low=0, high=np.iinfo(np.uint16).max, shape=(1,), dtype=np.uint16),
                 "badges": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
                 "wJoyIgnore": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
+                "bag": spaces.Box(
+                    low=0, high=max(Items._value2member_map_.keys()), shape=(20,), dtype=np.uint8
+                ),
+                "bag_quantity": spaces.Box(low=0, high=100, shape=(20,), dtype=np.uint8),
             }
         )
 
@@ -471,6 +475,12 @@ class RedGymEnv(Env):
 
     def _get_obs(self):
         # player_x, player_y, map_n = self.get_game_coords()
+        _, wBagItems = self.pyboy.symbol_lookup("wBagItems")
+        bag = self.pyboy.memory[wBagItems : wBagItems + 40]
+        end_of_bag = list(bag[::2]).index(0xFF)
+        bag = np.array(bag, dtype=np.uint8)
+        bag[end_of_bag:] = 0
+
         return {
             **self.render(),
             "direction": np.array(
@@ -485,6 +495,8 @@ class RedGymEnv(Env):
             "map_id": np.array(self.read_m(0xD35E), dtype=np.uint8),
             "badges": np.array(self.read_short("wObtainedBadges").bit_count(), dtype=np.uint8),
             "wJoyIgnore": np.array(self.read_m("wJoyIgnore"), dtype=np.uint8),
+            "bag_items": bag[::2],
+            "bag_quantity": bag[1::2],
         }
 
     def set_perfect_iv_dvs(self):
