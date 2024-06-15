@@ -143,9 +143,9 @@ class RedGymEnv(Env):
                 "visited_mask": spaces.Box(
                     low=0, high=255, shape=self.screen_output_shape, dtype=np.uint8
                 ),
-                "global_map": spaces.Box(
-                    low=0, high=255, shape=self.screen_output_shape, dtype=np.uint8
-                ),
+                # "global_map": spaces.Box(
+                #     low=0, high=255, shape=self.screen_output_shape, dtype=np.uint8
+                # ),
                 # Discrete is more apt, but pufferlib is slower at processing Discrete
                 "direction": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
                 "blackout_map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
@@ -464,7 +464,7 @@ class RedGymEnv(Env):
         return {
             "screen": game_pixels_render,
             "visited_mask": visited_mask,
-            "global_map": global_map,
+            # "global_map": global_map,
         }
 
     def _get_obs(self):
