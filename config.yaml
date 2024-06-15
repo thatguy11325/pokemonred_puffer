@@ -50,7 +50,7 @@ env:
   two_bit: True
   log_frequency: 2000
   auto_flash: True
-  disable_wild_encounters: False
+  disable_wild_encounters: True
   disable_ai_actions: False
   auto_teach_cut: True
   auto_use_cut: True

@@ -1,194 +1,194 @@
-from pokemonred_puffer.data.species import SPECIES_IDS
+from enum import Enum
+from pokemonred_puffer.data.species import Species
 
 
-TM_HM_MOVES = {
-    5,  # Mega punch
-    0xD,  # Razor wind
-    0xE,  # Swords dance
-    0x12,  # Whirlwind
-    0x19,  # Mega kick
-    0x5C,  # Toxic
-    0x20,  # Horn drill
-    0x22,  # Body slam
-    0x24,  # Take down
-    0x26,  # Double edge
-    0x3D,  # Bubble beam
-    0x37,  # Water gun
-    0x3A,  # Ice beam
-    0x3B,  # Blizzard
-    0x3F,  # Hyper beam
-    0x06,  # Pay day
-    0x42,  # Submission
-    0x44,  # Counter
-    0x45,  # Seismic toss
-    0x63,  # Rage
-    0x48,  # Mega drain
-    0x4C,  # Solar beam
-    0x52,  # Dragon rage
-    0x55,  # Thunderbolt
-    0x57,  # Thunder
-    0x59,  # Earthquake
-    0x5A,  # Fissure
-    0x5B,  # Dig
-    0x5E,  # Psychic
-    0x64,  # Teleport
-    0x66,  # Mimic
-    0x68,  # Double team
-    0x73,  # Reflect
-    0x75,  # Bide
-    0x76,  # Metronome
-    0x78,  # Selfdestruct
-    0x79,  # Egg bomb
-    0x7E,  # Fire blast
-    0x81,  # Swift
-    0x82,  # Skull bash
-    0x87,  # Softboiled
-    0x8A,  # Dream eater
-    0x8F,  # Sky attack
-    0x9C,  # Rest
-    0x56,  # Thunder wave
-    0x95,  # Psywave
-    0x99,  # Explosion
-    0x9D,  # Rock slide
-    0xA1,  # Tri attack
-    0xA4,  # Substitute
-    0x0F,  # Cut
-    0x13,  # Fly
-    0x39,  # Surf
-    0x46,  # Strength
-    0x94,  # Flash
-}
+class TmHmMoves(Enum):
+    MEGA_PUNCH = (0x5,)
+    RAZOR_WIND = 0xD
+    SWORDS_DANCE = 0xE
+    WHIRLWIND = 0x12
+    MEGA_KICK = 0x19
+    TOXIC = 0x5C
+    HORN_DRILL = 0x20
+    BODY_SLAM = 0x22
+    TAKE_DOWN = 0x24
+    DOUBLE_EDGE = 0x26
+    BUBBLE_BEAM = 0x3D
+    WATER_GUN = 0x37
+    ICE_BEAM = 0x3A
+    BLIZZARD = 0x3B
+    HYPER_BEAM = 0x3F
+    PAY_DAY = 0x06
+    SUBMISSION = 0x42
+    COUNTER = 0x44
+    SEISMIC_TOSS = 0x45
+    RAGE = 0x63
+    MEGA_DRAIN = 0x48
+    SOLAR_BEAM = 0x4C
+    DRAGON_RAGE = 0x52
+    THUNDERBOLT = 0x55
+    THUNDER = 0x57
+    EARTHQUAKE = 0x59
+    FISSURE = 0x5A
+    DIG = 0x5B
+    PSYCHIC = 0x5E
+    TELEPORT = 0x64
+    MIMIC = 0x66
+    DOUBLE_TEAM = 0x68
+    REFLECT = 0x73
+    BIDE = 0x75
+    METRONOME = 0x76
+    SELFDESTRUCT = 0x78
+    EGG_BOMB = 0x79
+    FIRE_BLAST = 0x7E
+    SWIFT = 0x81
+    SKULL_BASH = 0x82
+    SOFTBOILED = 0x87
+    DREAM_EATER = 0x8A
+    SKY_ATTACK = 0x8F
+    REST = 0x9C
+    THUNDER_WAVE = 0x56
+    PSYWAVE = 0x95
+    EXPLOSION = 0x99
+    ROCK_SLIDE = 0x9D
+    TRI_ATTACK = 0xA1
+    SUBSTITUTE = 0xA4
+    CUT = 0x0F
+    FLY = 0x13
+    SURF = 0x39
+    STRENGTH = 0x46
+    FLASH = 0x94
 
 
 CUT_SPECIES_IDS = {
-    SPECIES_IDS["BULBASAUR"],
-    SPECIES_IDS["IVYSAUR"],
-    SPECIES_IDS["VENUSAUR"],
-    SPECIES_IDS["CHARMANDER"],
-    SPECIES_IDS["CHARMELEON"],
-    SPECIES_IDS["CHARIZARD"],
-    SPECIES_IDS["BEEDRILL"],
-    SPECIES_IDS["SANDSHREW"],
-    SPECIES_IDS["SANDSLASH"],
-    SPECIES_IDS["ODDISH"],
-    SPECIES_IDS["GLOOM"],
-    SPECIES_IDS["VILEPLUME"],
-    SPECIES_IDS["PARAS"],
-    SPECIES_IDS["PARASECT"],
-    SPECIES_IDS["BELLSPROUT"],
-    SPECIES_IDS["WEEPINBELL"],
-    SPECIES_IDS["VICTREEBEL"],
-    SPECIES_IDS["TENTACOOL"],
-    SPECIES_IDS["TENTACRUEL"],
-    SPECIES_IDS["FARFETCHD"],
-    SPECIES_IDS["KRABBY"],
-    SPECIES_IDS["KINGLER"],
-    SPECIES_IDS["LICKITUNG"],
-    SPECIES_IDS["TANGELA"],
-    SPECIES_IDS["SCYTHER"],
-    SPECIES_IDS["PINSIR"],
-    SPECIES_IDS["MEW"],
+    Species.BULBASAUR.value,
+    Species.IVYSAUR.value,
+    Species.VENUSAUR.value,
+    Species.CHARMANDER.value,
+    Species.CHARMELEON.value,
+    Species.CHARIZARD.value,
+    Species.BEEDRILL.value,
+    Species.SANDSHREW.value,
+    Species.SANDSLASH.value,
+    Species.ODDISH.value,
+    Species.GLOOM.value,
+    Species.VILEPLUME.value,
+    Species.PARAS.value,
+    Species.PARASECT.value,
+    Species.BELLSPROUT.value,
+    Species.WEEPINBELL.value,
+    Species.VICTREEBEL.value,
+    Species.TENTACOOL.value,
+    Species.TENTACRUEL.value,
+    Species.FARFETCHD.value,
+    Species.KRABBY.value,
+    Species.KINGLER.value,
+    Species.LICKITUNG.value,
+    Species.TANGELA.value,
+    Species.SCYTHER.value,
+    Species.PINSIR.value,
+    Species.MEW.value,
 }
 
 SURF_SPECIES_IDS = {
-    SPECIES_IDS["SQUIRTLE"],
-    SPECIES_IDS["WARTORTLE"],
-    SPECIES_IDS["BLASTOISE"],
-    SPECIES_IDS["NIDOQUEEN"],
-    SPECIES_IDS["NIDOKING"],
-    SPECIES_IDS["PSYDUCK"],
-    SPECIES_IDS["GOLDUCK"],
-    SPECIES_IDS["POLIWAG"],
-    SPECIES_IDS["POLIWHIRL"],
-    SPECIES_IDS["POLIWRATH"],
-    SPECIES_IDS["TENTACOOL"],
-    SPECIES_IDS["TENTACRUEL"],
-    SPECIES_IDS["SLOWPOKE"],
-    SPECIES_IDS["SLOWBRO"],
-    SPECIES_IDS["SEEL"],
-    SPECIES_IDS["DEWGONG"],
-    SPECIES_IDS["SHELLDER"],
-    SPECIES_IDS["CLOYSTER"],
-    SPECIES_IDS["KRABBY"],
-    SPECIES_IDS["KINGLER"],
-    SPECIES_IDS["LICKITUNG"],
-    SPECIES_IDS["RHYDON"],
-    SPECIES_IDS["KANGASKHAN"],
-    SPECIES_IDS["HORSEA"],
-    SPECIES_IDS["SEADRA"],
-    SPECIES_IDS["GOLDEEN"],
-    SPECIES_IDS["SEAKING"],
-    SPECIES_IDS["STARYU"],
-    SPECIES_IDS["STARMIE"],
-    SPECIES_IDS["GYARADOS"],
-    SPECIES_IDS["LAPRAS"],
-    SPECIES_IDS["VAPOREON"],
-    SPECIES_IDS["OMANYTE"],
-    SPECIES_IDS["OMASTAR"],
-    SPECIES_IDS["KABUTO"],
-    SPECIES_IDS["KABUTOPS"],
-    SPECIES_IDS["SNORLAX"],
-    SPECIES_IDS["DRATINI"],
-    SPECIES_IDS["DRAGONAIR"],
-    SPECIES_IDS["DRAGONITE"],
-    SPECIES_IDS["MEW"],
+    Species.SQUIRTLE.value,
+    Species.WARTORTLE.value,
+    Species.BLASTOISE.value,
+    Species.NIDOQUEEN.value,
+    Species.NIDOKING.value,
+    Species.PSYDUCK.value,
+    Species.GOLDUCK.value,
+    Species.POLIWAG.value,
+    Species.POLIWHIRL.value,
+    Species.POLIWRATH.value,
+    Species.TENTACOOL.value,
+    Species.TENTACRUEL.value,
+    Species.SLOWPOKE.value,
+    Species.SLOWBRO.value,
+    Species.SEEL.value,
+    Species.DEWGONG.value,
+    Species.SHELLDER.value,
+    Species.CLOYSTER.value,
+    Species.KRABBY.value,
+    Species.KINGLER.value,
+    Species.LICKITUNG.value,
+    Species.RHYDON.value,
+    Species.KANGASKHAN.value,
+    Species.HORSEA.value,
+    Species.SEADRA.value,
+    Species.GOLDEEN.value,
+    Species.SEAKING.value,
+    Species.STARYU.value,
+    Species.STARMIE.value,
+    Species.GYARADOS.value,
+    Species.LAPRAS.value,
+    Species.VAPOREON.value,
+    Species.OMANYTE.value,
+    Species.OMASTAR.value,
+    Species.KABUTO.value,
+    Species.KABUTOPS.value,
+    Species.SNORLAX.value,
+    Species.DRATINI.value,
+    Species.DRAGONAIR.value,
+    Species.DRAGONITE.value,
+    Species.MEW.value,
 }
 
 STRENGTH_SPECIES_IDS = {
-    SPECIES_IDS["CHARMANDER"],
-    SPECIES_IDS["CHARMELEON"],
-    SPECIES_IDS["CHARIZARD"],
-    SPECIES_IDS["SQUIRTLE"],
-    SPECIES_IDS["WARTORTLE"],
-    SPECIES_IDS["BLASTOISE"],
-    SPECIES_IDS["EKANS"],
-    SPECIES_IDS["ARBOK"],
-    SPECIES_IDS["SANDSHREW"],
-    SPECIES_IDS["SANDSLASH"],
-    SPECIES_IDS["NIDOQUEEN"],
-    SPECIES_IDS["NIDOKING"],
-    SPECIES_IDS["CLEFAIRY"],
-    SPECIES_IDS["CLEFABLE"],
-    SPECIES_IDS["JIGGLYPUFF"],
-    SPECIES_IDS["WIGGLYTUFF"],
-    SPECIES_IDS["PSYDUCK"],
-    SPECIES_IDS["GOLDUCK"],
-    SPECIES_IDS["MANKEY"],
-    SPECIES_IDS["PRIMEAPE"],
-    SPECIES_IDS["POLIWHIRL"],
-    SPECIES_IDS["POLIWRATH"],
-    SPECIES_IDS["MACHOP"],
-    SPECIES_IDS["MACHOKE"],
-    SPECIES_IDS["MACHAMP"],
-    SPECIES_IDS["GEODUDE"],
-    SPECIES_IDS["GRAVELER"],
-    SPECIES_IDS["GOLEM"],
-    SPECIES_IDS["SLOWPOKE"],
-    SPECIES_IDS["SLOWBRO"],
-    SPECIES_IDS["SEEL"],
-    SPECIES_IDS["DEWGONG"],
-    SPECIES_IDS["GENGAR"],
-    SPECIES_IDS["ONIX"],
-    SPECIES_IDS["KRABBY"],
-    SPECIES_IDS["KINGLER"],
-    SPECIES_IDS["EXEGGUTOR"],
-    SPECIES_IDS["CUBONE"],
-    SPECIES_IDS["MAROWAK"],
-    SPECIES_IDS["HITMONLEE"],
-    SPECIES_IDS["HITMONCHAN"],
-    SPECIES_IDS["LICKITUNG"],
-    SPECIES_IDS["RHYHORN"],
-    SPECIES_IDS["RHYDON"],
-    SPECIES_IDS["CHANSEY"],
-    SPECIES_IDS["KANGASKHAN"],
-    SPECIES_IDS["ELECTABUZZ"],
-    SPECIES_IDS["MAGMAR"],
-    SPECIES_IDS["PINSIR"],
-    SPECIES_IDS["TAUROS"],
-    SPECIES_IDS["GYARADOS"],
-    SPECIES_IDS["LAPRAS"],
-    SPECIES_IDS["SNORLAX"],
-    SPECIES_IDS["DRAGONITE"],
-    SPECIES_IDS["MEWTWO"],
-    SPECIES_IDS["MEW"],
+    Species.CHARMANDER.value,
+    Species.CHARMELEON.value,
+    Species.CHARIZARD.value,
+    Species.SQUIRTLE.value,
+    Species.WARTORTLE.value,
+    Species.BLASTOISE.value,
+    Species.EKANS.value,
+    Species.ARBOK.value,
+    Species.SANDSHREW.value,
+    Species.SANDSLASH.value,
+    Species.NIDOQUEEN.value,
+    Species.NIDOKING.value,
+    Species.CLEFAIRY.value,
+    Species.CLEFABLE.value,
+    Species.JIGGLYPUFF.value,
+    Species.WIGGLYTUFF.value,
+    Species.PSYDUCK.value,
+    Species.GOLDUCK.value,
+    Species.MANKEY.value,
+    Species.PRIMEAPE.value,
+    Species.POLIWHIRL.value,
+    Species.POLIWRATH.value,
+    Species.MACHOP.value,
+    Species.MACHOKE.value,
+    Species.MACHAMP.value,
+    Species.GEODUDE.value,
+    Species.GRAVELER.value,
+    Species.GOLEM.value,
+    Species.SLOWPOKE.value,
+    Species.SLOWBRO.value,
+    Species.SEEL.value,
+    Species.DEWGONG.value,
+    Species.GENGAR.value,
+    Species.ONIX.value,
+    Species.KRABBY.value,
+    Species.KINGLER.value,
+    Species.EXEGGUTOR.value,
+    Species.CUBONE.value,
+    Species.MAROWAK.value,
+    Species.HITMONLEE.value,
+    Species.HITMONCHAN.value,
+    Species.LICKITUNG.value,
+    Species.RHYHORN.value,
+    Species.RHYDON.value,
+    Species.CHANSEY.value,
+    Species.KANGASKHAN.value,
+    Species.ELECTABUZZ.value,
+    Species.MAGMAR.value,
+    Species.PINSIR.value,
+    Species.TAUROS.value,
+    Species.GYARADOS.value,
+    Species.LAPRAS.value,
+    Species.SNORLAX.value,
+    Species.DRAGONITE.value,
+    Species.MEWTWO.value,
+    Species.MEW.value,
 }

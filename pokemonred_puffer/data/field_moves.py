@@ -1,3 +1,13 @@
-FIELD_MOVES = ["CUT", "FLY", "SURF", "SURF", "STRENGTH", "FLASH", "DIG", "TELEPORT", "SOFTBOILED"]
+from enum import Enum
 
-FIELD_MOVES_MAP = {i + 1: v for i, v in enumerate(FIELD_MOVES)}
+
+class FieldMoves(Enum):
+    CUT = 1
+    FLY = 2
+    SURF = 3
+    SURF_2 = 4
+    STRENGTH = 5
+    FLASH = 6
+    DIG = 7
+    TELEPORT = 8
+    SOFTBOILED = 9
