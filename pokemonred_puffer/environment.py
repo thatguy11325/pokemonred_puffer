@@ -809,7 +809,8 @@ class RedGymEnv(Env):
             return
 
         in_overworld = self.read_m("wCurMapTileset") == Tilesets.OVERWORLD.value
-        if in_overworld:
+        in_plateau = self.read_m("wCurMapTileset") == Tilesets.PLATEAU.value
+        if in_overworld or in_plateau:
             _, wTileMap = self.pyboy.symbol_lookup("wTileMap")
             tileMap = self.pyboy.memory[wTileMap : wTileMap + 20 * 18]
             tileMap = np.array(tileMap, dtype=np.uint8)
@@ -828,30 +829,10 @@ class RedGymEnv(Env):
             direction = self.read_m("wSpritePlayerStateData1FacingDirection")
 
             if not (
-                (
-                    direction == 0x4
-                    and action == WindowEvent.PRESS_ARROW_UP
-                    and in_overworld
-                    and 0x14 in up
-                )
-                or (
-                    direction == 0x0
-                    and action == WindowEvent.PRESS_ARROW_DOWN
-                    and in_overworld
-                    and 0x14 in down
-                )
-                or (
-                    direction == 0x8
-                    and action == WindowEvent.PRESS_ARROW_LEFT
-                    and in_overworld
-                    and 0x14 in left
-                )
-                or (
-                    direction == 0xC
-                    and action == WindowEvent.PRESS_ARROW_RIGHT
-                    and in_overworld
-                    and 0x14 in right
-                )
+                (direction == 0x4 and action == WindowEvent.PRESS_ARROW_UP and 0x14 in up)
+                or (direction == 0x0 and action == WindowEvent.PRESS_ARROW_DOWN and 0x14 in down)
+                or (direction == 0x8 and action == WindowEvent.PRESS_ARROW_LEFT and 0x14 in left)
+                or (direction == 0xC and action == WindowEvent.PRESS_ARROW_RIGHT and 0x14 in right)
             ):
                 return
 
@@ -960,7 +941,6 @@ class RedGymEnv(Env):
                 picture_id = self.read_m(f"wSprite{sprite_id:02}StateData1PictureID")
                 mapY = self.read_m(f"wSprite{sprite_id:02}StateData2MapY")
                 mapX = self.read_m(f"wSprite{sprite_id:02}StateData2MapX")
-                print((picture_id, mapY, mapX) + self.get_game_coords())
                 if solution := STRENGTH_SOLUTIONS.get(
                     (picture_id, mapY, mapX) + self.get_game_coords(), []
                 ):
