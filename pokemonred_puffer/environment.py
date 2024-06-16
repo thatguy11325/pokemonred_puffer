@@ -477,7 +477,8 @@ class RedGymEnv(Env):
         # player_x, player_y, map_n = self.get_game_coords()
         _, wBagItems = self.pyboy.symbol_lookup("wBagItems")
         bag = np.array(self.pyboy.memory[wBagItems : wBagItems + 40])
-        numBagItems = self.pyboy.symbol_lookup("wNumBagItems")
+        numBagItems = self.read_m("wNumBagItems")
+        # item ids start at 1 so using 0 as the nothing value is okay
         bag[2 * numBagItems :] = 0
 
         return {
