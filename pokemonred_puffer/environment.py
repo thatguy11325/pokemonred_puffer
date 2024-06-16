@@ -476,13 +476,9 @@ class RedGymEnv(Env):
     def _get_obs(self):
         # player_x, player_y, map_n = self.get_game_coords()
         _, wBagItems = self.pyboy.symbol_lookup("wBagItems")
-        bag = self.pyboy.memory[wBagItems : wBagItems + 40]
-        try:
-            end_of_bag = 2 * list(bag[::2]).index(0xFF)
-        except ValueError:
-            end_of_bag = len(bag)
-        bag = np.array(bag, dtype=np.uint8)
-        bag[end_of_bag:] = 0
+        bag = np.array(self.pyboy.memory[wBagItems : wBagItems + 40])
+        numBagItems = self.pyboy.symbol_lookup("wNumBagItems")
+        bag[2 * numBagItems :] = 0
 
         return {
             **self.render(),
