@@ -1059,7 +1059,6 @@ class RedGymEnv(Env):
     def agent_stats(self, action):
         levels = [self.read_m(f"wPartyMon{i+1}Level") for i in range(self.read_m("wPartyCount"))]
         badges = self.read_m("wObtainedBadges")
-        breakpoint()
         return {
             "stats": {
                 "step": self.step_count + self.reset_count * self.max_steps,
