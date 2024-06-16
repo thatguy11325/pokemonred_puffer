@@ -476,13 +476,12 @@ class RedGymEnv(Env):
     def _get_obs(self):
         # player_x, player_y, map_n = self.get_game_coords()
         _, wBagItems = self.pyboy.symbol_lookup("wBagItems")
-        bag = np.array(self.pyboy.memory[wBagItems : wBagItems + 40])
+        bag = np.array(self.pyboy.memory[wBagItems : wBagItems + 40], dtype=np.uint8)
         numBagItems = self.read_m("wNumBagItems")
         # item ids start at 1 so using 0 as the nothing value is okay
         bag[2 * numBagItems :] = 0
 
-        return {
-            **self.render(),
+        return self.render() | {
             "direction": np.array(
                 self.read_m("wSpritePlayerStateData1FacingDirection") // 4, dtype=np.uint8
             ),
@@ -495,8 +494,8 @@ class RedGymEnv(Env):
             "map_id": np.array(self.read_m(0xD35E), dtype=np.uint8),
             "badges": np.array(self.read_short("wObtainedBadges").bit_count(), dtype=np.uint8),
             "wJoyIgnore": np.array(self.read_m("wJoyIgnore"), dtype=np.uint8),
-            "bag_items": bag[::2],
-            "bag_quantity": bag[1::2],
+            "bag_items": bag[::2].copy(),
+            "bag_quantity": bag[1::2].copy(),
         }
 
     def set_perfect_iv_dvs(self):
