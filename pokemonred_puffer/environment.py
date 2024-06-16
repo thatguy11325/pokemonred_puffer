@@ -1195,7 +1195,7 @@ class RedGymEnv(Env):
         return self.pyboy.memory[addr : addr + EVENTS_FLAGS_LENGTH]
 
     def get_badges(self):
-        return self.read_short("wObtainedBadges").bit_count()
+        return self.read_m("wObtainedBadges").bit_count()
 
     def read_party(self):
         _, addr = self.pyboy.symbol_lookup("wPartySpecies")
