@@ -924,7 +924,6 @@ class RedGymEnv(Env):
                     picture_id = self.read_m(f"wSprite{sprite_id:02}StateData1PictureID")
                     mapY = self.read_m(f"wSprite{sprite_id:02}StateData2MapY")
                     mapX = self.read_m(f"wSprite{sprite_id:02}StateData2MapX")
-                    print((picture_id, mapY, mapX) + self.get_game_coords())
                     if solution := STRENGTH_SOLUTIONS.get(
                         (picture_id, mapY, mapX) + self.get_game_coords(), []
                     ):
@@ -1148,7 +1147,7 @@ class RedGymEnv(Env):
         return (self.read_m(0xD362), self.read_m(0xD361), self.read_m(0xD35E))
 
     def update_seen_coords(self):
-        if not self.read_m("wJoyIgnore"):
+        if not (self.read_m("wd736") & 0b1000_0000):
             x_pos, y_pos, map_n = self.get_game_coords()
             self.seen_coords[(x_pos, y_pos, map_n)] = 1
             self.explore_map[local_to_global(y_pos, x_pos, map_n)] = 1
