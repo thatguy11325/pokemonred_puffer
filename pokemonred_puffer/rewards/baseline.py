@@ -35,21 +35,24 @@ class BaselineRewardEnv(RedGymEnv):
             "taught_cut": 4 * int(self.check_if_party_has_hm(0xF)),
             "cut_coords": sum(self.cut_coords.values()) * 1.0,
             "cut_tiles": sum(self.cut_tiles.values()) * 1.0,
-            "met_bill": 5 * int(self.read_bit(0xD7F1, 0)),
-            "used_cell_separator_on_bill": 5 * int(self.read_bit(0xD7F2, 3)),
-            "ss_ticket": 5 * int(self.read_bit(0xD7F2, 4)),
-            "met_bill_2": 5 * int(self.read_bit(0xD7F2, 5)),
-            "bill_said_use_cell_separator": 5 * int(self.read_bit(0xD7F2, 6)),
-            "left_bills_house_after_helping": 5 * int(self.read_bit(0xD7F2, 7)),
-            "got_hm01": 5 * int(self.read_bit(0xD803, 0)),
-            "rubbed_captains_back": 5 * int(self.read_bit(0xD803, 1)),
+            "met_bill": 5 * int(self.events.get_event("EVENT_MET_BILL")),
+            "used_cell_separator_on_bill": 5
+            * int(self.events.get_event("EVENT_USED_CELL_SEPARATOR_ON_BILL")),
+            "ss_ticket": 5 * int(self.events.get_event("EVENT_GOT_SS_TICKET")),
+            "met_bill_2": 5 * int(self.events.get_event("EVENT_MET_BILL_2")),
+            "bill_said_use_cell_separator": 5
+            * int(self.events.get_event("EVENT_BILL_SAID_USE_CELL_SEPARATOR")),
+            "left_bills_house_after_helping": 5
+            * int(self.events.get_event("EVENT_LEFT_BILLS_HOUSE_AFTER_HELPING")),
+            "got_hm01": 5 * int(self.events.get_event("EVENT_GOT_HM01")),
+            "rubbed_captains_back": 5 * int(self.events.get_event("EVENT_RUBBED_CAPTAINS_BACK")),
             "start_menu": self.seen_start_menu * 0.01,
             "pokemon_menu": self.seen_pokemon_menu * 0.1,
             "stats_menu": self.seen_stats_menu * 0.1,
             "bag_menu": self.seen_bag_menu * 0.1,
             "action_bag_menu": self.seen_action_bag_menu * 0.1,
             # "blackout_check": self.blackout_check * 0.001,
-            "rival3": self.reward_config["event"] * int(self.read_m(0xD665) == 4),
+            "rival3": self.reward_config["event"] * int(self.read_m("wSSAnne2FCurScript") == 4),
         }
 
     def update_max_event_rew(self):
@@ -85,15 +88,18 @@ class TeachCutReplicationEnv(BaselineRewardEnv):
     def get_game_state_reward(self):
         return {
             "event": self.reward_config["event"] * self.update_max_event_rew(),
-            "met_bill": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F1, 0)),
+            "met_bill": self.reward_config["bill_saved"]
+            * int(self.events.get_event("EVENT_MET_BILL")),
             "used_cell_separator_on_bill": self.reward_config["bill_saved"]
-            * int(self.read_bit(0xD7F2, 3)),
-            "ss_ticket": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F2, 4)),
-            "met_bill_2": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F2, 5)),
+            * int(self.events.get_event("EVENT_USED_CELL_SEPARATOR_ON_BILL")),
+            "ss_ticket": self.reward_config["bill_saved"]
+            * int(self.events.get_event("EVENT_GOT_SS_TICKET")),
+            "met_bill_2": self.reward_config["bill_saved"]
+            * int(self.events.get_event("EVENT_MET_BILL_2")),
             "bill_said_use_cell_separator": self.reward_config["bill_saved"]
-            * int(self.read_bit(0xD7F2, 6)),
+            * int(self.events.get_event("EVENT_BILL_SAID_USE_CELL_SEPARATOR")),
             "left_bills_house_after_helping": self.reward_config["bill_saved"]
-            * int(self.read_bit(0xD7F2, 7)),
+            * int(self.events.get_event("EVENT_LEFT_BILLS_HOUSE_AFTER_HELPING")),
             "seen_pokemon": self.reward_config["seen_pokemon"] * sum(self.seen_pokemon),
             "caught_pokemon": self.reward_config["caught_pokemon"] * sum(self.caught_pokemon),
             "moves_obtained": self.reward_config["moves_obtained"] * sum(self.moves_obtained),
@@ -107,7 +113,7 @@ class TeachCutReplicationEnv(BaselineRewardEnv):
             "pokemon_menu": self.reward_config["pokemon_menu"] * self.seen_pokemon_menu,
             "stats_menu": self.reward_config["stats_menu"] * self.seen_stats_menu,
             "bag_menu": self.reward_config["bag_menu"] * self.seen_bag_menu,
-            "rival3": self.reward_config["event"] * int(self.read_m(0xD665) == 4),
+            "rival3": self.reward_config["event"] * int(self.read_m("wSSAnne2FCurScript") == 4),
         }
 
 
@@ -115,17 +121,23 @@ class TeachCutReplicationEnvFork(BaselineRewardEnv):
     def get_game_state_reward(self):
         return {
             "event": self.reward_config["event"] * self.update_max_event_rew(),
-            "met_bill": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F1, 0)),
+            "met_bill": self.reward_config["bill_saved"]
+            * int(self.events.get_event("EVENT_MET_BILL")),
             "used_cell_separator_on_bill": (
-                self.reward_config["bill_saved"] * int(self.read_bit(0xD7F2, 3))
+                self.reward_config["bill_saved"]
+                * int(self.events.get_event("EVENT_USED_CELL_SEPARATOR_ON_BILL"))
             ),
-            "ss_ticket": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F2, 4)),
-            "met_bill_2": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F2, 5)),
+            "ss_ticket": self.reward_config["bill_saved"]
+            * int(self.events.get_event("EVENT_USED_CELL_SEPARATOR_ON_BILL")),
+            "met_bill_2": self.reward_config["bill_saved"]
+            * int(self.events.get_event("EVENT_MET_BILL_2")),
             "bill_said_use_cell_separator": (
-                self.reward_config["bill_saved"] * int(self.read_bit(0xD7F2, 6))
+                self.reward_config["bill_saved"]
+                * int(self.events.get_event("EVENT_BILL_SAID_USE_CELL_SEPARATOR"))
             ),
             "left_bills_house_after_helping": (
-                self.reward_config["bill_saved"] * int(self.read_bit(0xD7F2, 7))
+                self.reward_config["bill_saved"]
+                * int(self.events.get_event("EVENT_LEFT_BILLS_HOUSE_AFTER_HELPING"))
             ),
             "moves_obtained": self.reward_config["moves_obtained"] * sum(self.moves_obtained),
             "hm_count": self.reward_config["hm_count"] * self.get_hm_count(),
@@ -167,15 +179,18 @@ class CutWithObjectRewardsEnv(BaselineRewardEnv):
     def get_game_state_reward(self):
         return {
             "event": self.reward_config["event"] * self.update_max_event_rew(),
-            "met_bill": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F1, 0)),
+            "met_bill": self.reward_config["bill_saved"]
+            * int(self.events.get_event("EVENT_MET_BILL")),
             "used_cell_separator_on_bill": self.reward_config["bill_saved"]
-            * int(self.read_bit(0xD7F2, 3)),
-            "ss_ticket": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F2, 4)),
-            "met_bill_2": self.reward_config["bill_saved"] * int(self.read_bit(0xD7F2, 5)),
+            * int(self.events.get_event("EVENT_LEFT_BILLS_HOUSE_AFTER_HELPING")),
+            "ss_ticket": self.reward_config["bill_saved"]
+            * int(self.events.get_event("EVENT_GOT_SS_TICKET")),
+            "met_bill_2": self.reward_config["bill_saved"]
+            * int(self.events.get_event("EVENT_MET_BILL_2")),
             "bill_said_use_cell_separator": self.reward_config["bill_saved"]
-            * int(self.read_bit(0xD7F2, 6)),
+            * int(self.events.get_event("EVENT_BILL_SAID_USE_CELL_SEPARATOR")),
             "left_bills_house_after_helping": self.reward_config["bill_saved"]
-            * int(self.read_bit(0xD7F2, 7)),
+            * int(self.events.get_event("EVENT_LEFT_BILLS_HOUSE_AFTER_HELPING")),
             "seen_pokemon": self.reward_config["seen_pokemon"] * sum(self.seen_pokemon),
             "caught_pokemon": self.reward_config["caught_pokemon"] * sum(self.caught_pokemon),
             "moves_obtained": self.reward_config["moves_obtained"] * sum(self.moves_obtained),
@@ -189,9 +204,9 @@ class CutWithObjectRewardsEnv(BaselineRewardEnv):
             "pokemon_menu": self.reward_config["pokemon_menu"] * self.seen_pokemon_menu,
             "stats_menu": self.reward_config["stats_menu"] * self.seen_stats_menu,
             "bag_menu": self.reward_config["bag_menu"] * self.seen_bag_menu,
-            "rival3": self.reward_config["event"] * int(self.read_m(0xD665) == 4),
+            "rival3": self.reward_config["event"] * int(self.read_m("wSSAnne2FCurScript") == 4),
             "rocket_hideout_found": self.reward_config["rocket_hideout_found"]
-            * int(self.read_bit(0xD77E, 1)),
+            * int(self.events.get_event("EVENT_FOUND_ROCKET_HIDEOUT")),
             "explore_hidden_objs": sum(self.seen_hidden_objs.values())
             * self.reward_config["explore_hidden_objs"],
             "seen_action_bag_menu": self.seen_action_bag_menu

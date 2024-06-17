@@ -16,7 +16,12 @@ from pyboy.utils import WindowEvent
 # from skimage.transform import resize
 
 import pufferlib
-from pokemonred_puffer.data.events import EVENT_FLAGS_START, EVENTS_FLAGS_LENGTH, MUSEUM_TICKET
+from pokemonred_puffer.data.events import (
+    EVENT_FLAGS_START,
+    EVENTS_FLAGS_LENGTH,
+    MUSEUM_TICKET,
+    EventFlags,
+)
 from pokemonred_puffer.data.field_moves import FieldMoves
 from pokemonred_puffer.data.items import (
     HM_ITEM_IDS,
@@ -280,6 +285,7 @@ class RedGymEnv(Env):
         self.cut_explore_map *= 0
         self.reset_mem()
 
+        self.events = EventFlags(self.pyboy)
         self.update_pokedex()
         self.update_tm_hm_moves_obtained()
         self.taught_cut = self.check_if_party_has_hm(0xF)
@@ -496,7 +502,7 @@ class RedGymEnv(Env):
             ),
             "blackout_map_id": np.array(self.read_m("wLastBlackoutMap"), dtype=np.uint8),
             "battle_type": np.array(self.read_m("wIsInBattle") + 1, dtype=np.uint8),
-            "cut_event": np.array(self.read_bit(0xD803, 0), dtype=np.uint8),
+            "cut_event": np.array(self.events.get_event("EVENT_GOT_HM01"), dtype=np.uint8),
             "cut_in_party": np.array(self.check_if_party_has_hm(0xF), dtype=np.uint8),
             # "x": np.array(player_x, dtype=np.uint8),
             # "y": np.array(player_y, dtype=np.uint8),
@@ -541,6 +547,7 @@ class RedGymEnv(Env):
             self.pyboy.memory[wPlayerMoney : wPlayerMoney + 3] = int(10000).to_bytes(3, "little")
 
         self.run_action_on_emulator(action)
+        self.events = EventFlags(self.pyboy)
         self.update_seen_coords()
         self.update_health()
         self.update_pokedex()
@@ -592,26 +599,26 @@ class RedGymEnv(Env):
             self.pyboy.send_input(VALID_RELEASE_ACTIONS[action], delay=8)
         self.pyboy.tick(self.action_freq, render=True)
 
-        if self.read_bit(0xD803, 0):
+        if self.events.get_event("EVENT_GOT_HM01"):
             if self.auto_teach_cut and not self.check_if_party_has_hm(0x0F):
                 self.teach_hm(TmHmMoves.CUT.value, 30, CUT_SPECIES_IDS)
             if self.auto_use_cut:
                 self.cut_if_next()
 
-        if self.read_bit(0xD78E, 0):
+        if self.events.get_event("EVENT_GOT_HM03"):
             if self.auto_teach_surf and not self.check_if_party_has_hm(0x39):
                 self.teach_hm(TmHmMoves.SURF.value, 15, SURF_SPECIES_IDS)
             if self.auto_use_surf:
                 self.surf_if_attempt(VALID_ACTIONS[action])
 
-        if self.read_bit(0xD857, 0):
+        if self.events.get_event("EVENT_GOT_HM04"):
             if self.auto_teach_strength and not self.check_if_party_has_hm(0x46):
                 self.teach_hm(TmHmMoves.STRENGTH.value, 15, STRENGTH_SPECIES_IDS)
             if self.auto_solve_strength_puzzles:
                 self.solve_missable_strength_puzzle()
                 self.solve_switch_strength_puzzle()
 
-        if self.read_bit(0xD76C, 0) and self.auto_pokeflute:
+        if self.events.get_event("EVENT_GOT_POKE_FLUTE") and self.auto_pokeflute:
             self.use_pokeflute()
 
     def party_has_cut_capable_mon(self):
@@ -1088,14 +1095,20 @@ class RedGymEnv(Env):
                 "seen_pokemon": int(sum(self.seen_pokemon)),
                 "moves_obtained": int(sum(self.moves_obtained)),
                 "opponent_level": self.max_opponent_level,
-                "met_bill": int(self.read_bit(0xD7F1, 0)),
-                "used_cell_separator_on_bill": int(self.read_bit(0xD7F2, 3)),
-                "ss_ticket": int(self.read_bit(0xD7F2, 4)),
-                "met_bill_2": int(self.read_bit(0xD7F2, 5)),
-                "bill_said_use_cell_separator": int(self.read_bit(0xD7F2, 6)),
-                "left_bills_house_after_helping": int(self.read_bit(0xD7F2, 7)),
-                "got_hm01": int(self.read_bit(0xD803, 0)),
-                "rubbed_captains_back": int(self.read_bit(0xD803, 1)),
+                "met_bill": int(self.events.get_event("EVENT_MET_BILL")),
+                "used_cell_separator_on_bill": int(
+                    self.events.get_event("EVENT_USED_CELL_SEPARATOR_ON_BILL")
+                ),
+                "ss_ticket": int(self.events.get_event("EVENT_GOT_SS_TICKET")),
+                "met_bill_2": int(self.events.get_event("EVENT_MET_BILL_2")),
+                "bill_said_use_cell_separator": int(
+                    self.events.get_event("EVENT_BILL_SAID_USE_CELL_SEPARATOR")
+                ),
+                "left_bills_house_after_helping": int(
+                    self.events.get_event("EVENT_LEFT_BILLS_HOUSE_AFTER_HELPING")
+                ),
+                "got_hm01": int(self.events.get_event("EVENT_GOT_HM01")),
+                "rubbed_captains_back": int(self.events.get_event("EVENT_RUBBED_CAPTAINS_BACK")),
                 "taught_cut": int(self.check_if_party_has_hm(0xF)),
                 "cut_coords": sum(self.cut_coords.values()),
                 "cut_tiles": len(self.cut_tiles),
@@ -1110,7 +1123,7 @@ class RedGymEnv(Env):
                 "blackout_count": self.blackout_count,
                 "pokecenter": np.sum(self.pokecenters),
                 "rival3": int(self.read_m(0xD665) == 4),
-                "rocket_hideout_found": int(self.read_bit(0xD77E, 1)),
+                "rocket_hideout_found": self.events.get_event("EVENT_FOUND_ROCKET_HIDEOUT"),
             }
             | {f"badge_{i+1}": bool(badges & (1 << i)) for i in range(8)},
             "reward": self.get_game_state_reward(),
