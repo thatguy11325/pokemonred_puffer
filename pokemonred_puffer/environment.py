@@ -13,7 +13,7 @@ import numpy as np
 from gymnasium import Env, spaces
 from pyboy import PyBoy
 from pyboy.utils import WindowEvent
-from skimage.transform import resize
+# from skimage.transform import resize
 
 import pufferlib
 from pokemonred_puffer.data.events import EVENT_FLAGS_START, EVENTS_FLAGS_LENGTH, MUSEUM_TICKET
@@ -106,6 +106,7 @@ class RedGymEnv(Env):
         self.action_space = ACTION_SPACE
 
         # Obs space-related. TODO: avoid hardcoding?
+        self.global_map_shape = GLOBAL_MAP_SHAPE
         if self.reduce_res:
             self.screen_output_shape = (72, 80, 1)
         else:
@@ -116,6 +117,7 @@ class RedGymEnv(Env):
                 self.screen_output_shape[1] // 4,
                 1,
             )
+            self.global_map_shape = (self.global_map_shape[0], self.global_map_shape[1] // 4, 1)
         self.coords_pad = 12
         self.enc_freqs = 8
 
@@ -148,6 +150,9 @@ class RedGymEnv(Env):
                 # "global_map": spaces.Box(
                 #     low=0, high=255, shape=self.screen_output_shape, dtype=np.uint8
                 # ),
+                "global_map": spaces.Box(
+                    low=0, high=255, shape=self.global_map_shape, dtype=np.uint8
+                ),
                 # Discrete is more apt, but pufferlib is slower at processing Discrete
                 "direction": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
                 "blackout_map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
@@ -423,10 +428,14 @@ class RedGymEnv(Env):
             )
         ).astype(np.uint8)
         visited_mask = np.expand_dims(visited_mask, -1)
-        """
 
         global_map = np.expand_dims(
             255 * resize(self.explore_map, game_pixels_render.shape, anti_aliasing=False),
+            axis=-1,
+        ).astype(np.uint8)
+        """
+        global_map = np.expand_dims(
+            255 * self.explore_map,
             axis=-1,
         ).astype(np.uint8)
 
@@ -464,13 +473,14 @@ class RedGymEnv(Env):
                     << np.array([6, 4, 2, 0], dtype=np.uint8)
                 )
                 .sum(axis=1, dtype=np.uint8)
-                .reshape(game_pixels_render.shape)
+                .reshape(self.global_map_shape)
+                .astype(np.uint8)
             )
 
         return {
             "screen": game_pixels_render,
             "visited_mask": visited_mask,
-            # "global_map": global_map,
+            "global_map": global_map,
         }
 
     def _get_obs(self):
