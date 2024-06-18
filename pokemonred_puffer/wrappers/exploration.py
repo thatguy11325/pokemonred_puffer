@@ -1,10 +1,11 @@
 from collections import OrderedDict
+import random
 import gymnasium as gym
 import numpy as np
 
 import pufferlib
 from pokemonred_puffer.environment import RedGymEnv
-from pokemonred_puffer.global_map import local_to_global
+from pokemonred_puffer.global_map import GLOBAL_MAP_SHAPE, local_to_global
 
 
 class LRUCache:
@@ -92,4 +93,57 @@ class MaxLengthWrapper(gym.Wrapper):
 
     def reset(self, *args, **kwargs):
         self.cache.clear()
+        return self.env.reset(*args, **kwargs)
+
+
+class OnResetExplorationWrapper(gym.Wrapper):
+    def __init__(self, env: RedGymEnv, reward_config: pufferlib.namespace):
+        super().__init__(env)
+        self.full_reset_frequency = reward_config.full_reset_frequency
+        self.jitter = reward_config.jitter
+        self.counter = 0
+
+    def reset(self, *args, **kwargs):
+        if (self.counter + random.randint(0, self.jitter)) >= self.full_reset_frequency:
+            self.counter = 0
+            self.env.unwrapped.explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
+            self.env.unwrapped.cut_explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
+            self.env.unwrapped.seen_coords.clear()
+            self.env.unwrapped.seen_map_ids *= 0
+            self.env.unwrapped.seen_npcs.clear()
+            self.env.unwrapped.cut_coords.clear()
+            self.env.unwrapped.cut_tiles.clear()
+        self.counter += 1
+        return self.env.reset(*args, **kwargs)
+
+
+class OnResetLowerToFixedValueWrapper(gym.Wrapper):
+    def __init__(self, env: RedGymEnv, reward_config: pufferlib.namespace):
+        super().__init__(env)
+        self.fixed_value = reward_config.fixed_value
+
+    def reset(self, *args, **kwargs):
+        self.env.unwrapped.seen_coords.update(
+            (k, self.fixed_value["coords"])
+            for k, v in self.env.unwrapped.seen_coords.items()
+            if v > 0
+        )
+        self.env.unwrapped.seen_map_ids[self.env.unwrapped.seen_map_ids > 0] = self.fixed_value[
+            "map_ids"
+        ]
+        self.env.unwrapped.seen_npcs.update(
+            (k, self.fixed_value["npc"]) for k, v in self.env.unwrapped.seen_npcs.items() if v > 0
+        )
+        self.env.unwrapped.cut_tiles.update(
+            (k, self.fixed_value["cut"]) for k, v in self.env.unwrapped.seen_npcs.items() if v > 0
+        )
+        self.env.unwrapped.cut_coords.update(
+            (k, self.fixed_value["cut"]) for k, v in self.env.unwrapped.seen_npcs.items() if v > 0
+        )
+        self.env.unwrapped.explore_map[self.env.unwrapped.explore_map > 0] = self.fixed_value[
+            "explore"
+        ]
+        self.env.unwrapped.cut_explore_map[self.env.unwrapped.cut_explore_map > 0] = (
+            self.fixed_value["cut"]
+        )
         return self.env.reset(*args, **kwargs)

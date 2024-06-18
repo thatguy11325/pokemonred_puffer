@@ -7,15 +7,17 @@ debug:
   env:
     headless: False
     stream_wrapper: False
-    init_state: cut
+    init_state: victory_road
     max_steps: 1_000_000
+    disable_wild_encounters: True
+    disable_ai_actions: True
   train:
     device: cpu
     compile: False
     compile_mode: default
-    num_envs: 4
+    num_envs: 1
     envs_per_worker: 1
-    envs_per_batch: 4
+    envs_per_batch: 1
     batch_size: 16
     batch_rows: 4
     bptt_horizon: 2
@@ -28,8 +30,8 @@ debug:
     env_pool: False
     log_frequency: 5000
     load_optimizer_state: False
-    swarm_frequency: 10
-    swarm_keep_pct: .1
+    # swarm_frequency: 10
+    # swarm_keep_pct: .1
 
 env:
   headless: True
@@ -47,6 +49,20 @@ env:
   reduce_res: True
   two_bit: True
   log_frequency: 2000
+  auto_flash: True
+  disable_wild_encounters: True
+  disable_ai_actions: False
+  auto_teach_cut: True
+  auto_use_cut: True
+  auto_use_surf: True
+  auto_teach_surf: True
+  auto_teach_strength: True
+  auto_solve_strength_puzzles: True
+  auto_remove_all_nonuseful_items: True
+  auto_pokeflute: True
+  infinite_money: True
+  use_global_map: False
+
 
 train:
   seed: 1
@@ -84,13 +100,13 @@ train:
   save_checkpoint: False
   checkpoint_interval: 200
   save_overlay: True
-  overlay_interval: 200
+  overlay_interval: 100
   cpu_offload: True
   pool_kernel: [0]
   load_optimizer_state: False
 
-  swarm_frequency: 500
-  swarm_keep_pct: .8
+  # swarm_frequency: 500
+  # swarm_keep_pct: .8
 
 wrappers:
   baseline:
@@ -108,16 +124,38 @@ wrappers:
           bag_menu: 0.998
           action_bag_menu: 0.998
         forgetting_frequency: 10
+    - exploration.OnResetExplorationWrapper:
+        full_reset_frequency: 1
   
   finite_coords:
     - stream_wrapper.StreamWrapper:
         user: thatguy
     - exploration.MaxLengthWrapper:
         capacity: 1750
+    - exploration.OnResetExplorationWrapper:
+        full_reset_frequency: 1
+        jitter: 0
 
   stream_only:
     - stream_wrapper.StreamWrapper:
         user: thatguy 
+    - exploration.OnResetExplorationWrapper:
+        full_reset_frequency: 1
+        jitter: 1
+
+  fixed_reset_value:
+    - stream_wrapper.StreamWrapper:
+        user: thatguy 
+    - exploration.OnResetLowerToFixedValueWrapper:
+        fixed_value:
+          coords: 0.33
+          map_ids: 0.33
+          npc: 0.33
+          cut: 0.33
+          explore: 0.33
+    - exploration.OnResetExplorationWrapper:
+        full_reset_frequency: 25
+        jitter: 0
 
 rewards:
   baseline.BaselineRewardEnv:
@@ -139,6 +177,7 @@ rewards:
       pokemon_menu: 0.1
       stats_menu: 0.1
       bag_menu: 0.1
+
   baseline.TeachCutReplicationEnvFork:
     reward:
       event: 1.0
@@ -157,25 +196,26 @@ rewards:
       explore_npcs: 0.02
       explore_hidden_objs: 0.02
 
-  baseline.RockTunnelReplicationEnv:
+  baseline.CutWithObjectRewardsEnv:
     reward:
-      level: 1.0
-      exploration: 0.02
-      taught_cut: 10.0
-      event: 3.0
+      event: 1.0
+      bill_saved: 5.0
       seen_pokemon: 4.0
       caught_pokemon: 4.0
       moves_obtained: 4.0
-      cut_coords: 1.0
-      cut_tiles: 1.0
-      start_menu: 0.005
-      pokemon_menu: 0.05
-      stats_menu: 0.05
-      bag_menu: 0.05
-      pokecenter: 5.0
-      # Really an addition to event reward
-      badges: 2.0
-      bill_saved: 2.0
+      hm_count: 10.0
+      level: 1.0
+      badges: 10.0
+      exploration: 0.02
+      cut_coords: 0.0
+      cut_tiles: 0.0
+      start_menu: 0.00
+      pokemon_menu: 0.0
+      stats_menu: 0.0
+      bag_menu: 0.1
+      rocket_hideout_found: 5.0
+      explore_hidden_objs: 0.02
+      seen_action_bag_menu: 0.1
 
 
 
