@@ -103,6 +103,7 @@ class RedGymEnv(Env):
         self.auto_remove_all_nonuseful_items = env_config.auto_remove_all_nonuseful_items
         self.auto_pokeflute = env_config.auto_pokeflute
         self.infinite_money = env_config.infinite_money
+        self.use_global_map = env_config.use_global_map
         self.action_space = ACTION_SPACE
 
         # Obs space-related. TODO: avoid hardcoding?
@@ -139,38 +140,34 @@ class RedGymEnv(Env):
             v: i for i, v in enumerate([40, 0, 12, 1, 13, 51, 2, 54, 14, 59, 60, 61, 15, 3, 65])
         }
 
-        self.observation_space = spaces.Dict(
-            {
-                "screen": spaces.Box(
-                    low=0, high=255, shape=self.screen_output_shape, dtype=np.uint8
-                ),
-                "visited_mask": spaces.Box(
-                    low=0, high=255, shape=self.screen_output_shape, dtype=np.uint8
-                ),
-                # "global_map": spaces.Box(
-                #     low=0, high=255, shape=self.screen_output_shape, dtype=np.uint8
-                # ),
-                "global_map": spaces.Box(
-                    low=0, high=255, shape=self.global_map_shape, dtype=np.uint8
-                ),
-                # Discrete is more apt, but pufferlib is slower at processing Discrete
-                "direction": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
-                "blackout_map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
-                "battle_type": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
-                "cut_event": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
-                "cut_in_party": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
-                # "x": spaces.Box(low=0, high=255, shape=(1,), dtype=np.u`int8),
-                # "y": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
-                "map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
-                # "badges": spaces.Box(low=0, high=np.iinfo(np.uint16).max, shape=(1,), dtype=np.uint16),
-                "badges": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
-                "wJoyIgnore": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
-                "bag_items": spaces.Box(
-                    low=0, high=max(Items._value2member_map_.keys()), shape=(20,), dtype=np.uint8
-                ),
-                "bag_quantity": spaces.Box(low=0, high=100, shape=(20,), dtype=np.uint8),
-            }
-        )
+        obs_dict = {
+            "screen": spaces.Box(low=0, high=255, shape=self.screen_output_shape, dtype=np.uint8),
+            "visited_mask": spaces.Box(
+                low=0, high=255, shape=self.screen_output_shape, dtype=np.uint8
+            ),
+            # Discrete is more apt, but pufferlib is slower at processing Discrete
+            "direction": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
+            "blackout_map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
+            "battle_type": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
+            "cut_event": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
+            "cut_in_party": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
+            # "x": spaces.Box(low=0, high=255, shape=(1,), dtype=np.u`int8),
+            # "y": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
+            "map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
+            # "badges": spaces.Box(low=0, high=np.iinfo(np.uint16).max, shape=(1,), dtype=np.uint16),
+            "badges": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
+            "wJoyIgnore": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
+            "bag_items": spaces.Box(
+                low=0, high=max(Items._value2member_map_.keys()), shape=(20,), dtype=np.uint8
+            ),
+            "bag_quantity": spaces.Box(low=0, high=100, shape=(20,), dtype=np.uint8),
+        }
+
+        if self.use_global_map:
+            obs_dict["global_map"] = spaces.Box(
+                low=0, high=255, shape=self.global_map_shape, dtype=np.uint8
+            )
+        self.observation_space = spaces.Dict(obs_dict)
 
         self.pyboy = PyBoy(
             env_config.gb_path,
@@ -434,10 +431,11 @@ class RedGymEnv(Env):
             axis=-1,
         ).astype(np.uint8)
         """
-        global_map = np.expand_dims(
-            255 * self.explore_map,
-            axis=-1,
-        ).astype(np.uint8)
+        if self.use_global_map:
+            global_map = np.expand_dims(
+                255 * self.explore_map,
+                axis=-1,
+            ).astype(np.uint8)
 
         if self.two_bit:
             game_pixels_render = (
@@ -463,25 +461,24 @@ class RedGymEnv(Env):
                 .reshape(game_pixels_render.shape)
                 .astype(np.uint8)
             )
-            global_map = (
-                (
-                    np.digitize(
-                        global_map.reshape((-1, 4)),
-                        np.array([0, 64, 128, 255], dtype=np.uint8),
-                        right=True,
-                    ).astype(np.uint8)
-                    << np.array([6, 4, 2, 0], dtype=np.uint8)
+            if self.use_global_map:
+                global_map = (
+                    (
+                        np.digitize(
+                            global_map.reshape((-1, 4)),
+                            np.array([0, 64, 128, 255], dtype=np.uint8),
+                            right=True,
+                        ).astype(np.uint8)
+                        << np.array([6, 4, 2, 0], dtype=np.uint8)
+                    )
+                    .sum(axis=1, dtype=np.uint8)
+                    .reshape(self.global_map_shape)
                 )
-                .sum(axis=1, dtype=np.uint8)
-                .reshape(self.global_map_shape)
-                .astype(np.uint8)
-            )
 
         return {
             "screen": game_pixels_render,
             "visited_mask": visited_mask,
-            "global_map": global_map,
-        }
+        } | ({"global_map": global_map} if self.use_global_map else {})
 
     def _get_obs(self):
         # player_x, player_y, map_n = self.get_game_coords()

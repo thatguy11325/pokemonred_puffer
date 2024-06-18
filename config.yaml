@@ -61,6 +61,7 @@ env:
   auto_remove_all_nonuseful_items: True
   auto_pokeflute: True
   infinite_money: True
+  use_global_map: False
 
 
 train:
