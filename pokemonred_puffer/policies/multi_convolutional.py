@@ -1,17 +1,14 @@
+import pufferlib.emulation
+import pufferlib.models
+import pufferlib.pytorch
 import torch
 from torch import nn
-
-import pufferlib.models
-from pufferlib.emulation import unpack_batched_obs
 
 from pokemonred_puffer.data.items import Items
 from pokemonred_puffer.environment import PIXEL_VALUES
 
-unpack_batched_obs = torch.compiler.disable(unpack_batched_obs)
 
 # Because torch.nn.functional.one_hot cannot be traced by torch as of 2.2.0
-
-
 def one_hot(tensor, num_classes):
     index = torch.arange(0, num_classes, device=tensor.device)
     return (tensor.view([*tensor.shape, 1]) == index.view([1] * tensor.ndim + [num_classes])).to(
@@ -19,21 +16,25 @@ def one_hot(tensor, num_classes):
     )
 
 
-class RecurrentMultiConvolutionalWrapper(pufferlib.models.RecurrentWrapper):
+class MultiConvolutionalRNN(pufferlib.models.LSTMWrapper):
     def __init__(self, env, policy, input_size=512, hidden_size=512, num_layers=1):
         super().__init__(env, policy, input_size, hidden_size, num_layers)
 
 
-class MultiConvolutionalPolicy(pufferlib.models.Policy):
+# We dont inherit from the pufferlib convolutional because we wont be able
+# to easily call its __init__ due to our usage of lazy layers
+# All that really means is a slightly different forward
+class MultiConvolutionalPolicy(nn.Module):
     def __init__(
         self,
-        env,
-        hidden_size=512,
+        env: pufferlib.emulation.GymnasiumPufferEnv,
+        hidden_size: int = 512,
         channels_last: bool = True,
         downsample: int = 1,
     ):
-        super().__init__(env)
-        self.num_actions = self.action_space.n
+        super().__init__()
+        self.dtype = pufferlib.pytorch.nativize_dtype(env.emulated)
+        self.num_actions = env.single_action_space.n
         self.channels_last = channels_last
         self.downsample = downsample
         self.screen_network = nn.Sequential(
@@ -45,15 +46,8 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
             nn.ReLU(),
             nn.Flatten(),
         )
-        self.global_map_network = nn.Sequential(
-            nn.LazyConv2d(32, 8, stride=4),
-            nn.ReLU(),
-            nn.LazyConv2d(64, 4, stride=2),
-            nn.ReLU(),
-            nn.LazyConv2d(64, 3, stride=1),
-            nn.ReLU(),
-            nn.Flatten(),
-        )
+        # if channels_last:
+        #     self.screen_network = self.screen_network.to(memory_format=torch.channels_last)
 
         self.encode_linear = nn.Sequential(
             nn.LazyLinear(hidden_size),
@@ -65,6 +59,21 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
 
         self.two_bit = env.unwrapped.env.two_bit
         self.use_global_map = env.unwrapped.env.use_global_map
+
+        if self.use_global_map:
+            self.global_map_network = nn.Sequential(
+                nn.LazyConv2d(32, 8, stride=4),
+                nn.ReLU(),
+                nn.LazyConv2d(64, 4, stride=2),
+                nn.ReLU(),
+                nn.LazyConv2d(64, 3, stride=1),
+                nn.ReLU(),
+                nn.Flatten(),
+            )
+            # if channels_last:
+            #     self.global_map_network = self.global_map_network.to(
+            #         memory_format=torch.channels_last
+            #    )
 
         self.register_buffer(
             "screen_buckets", torch.tensor(PIXEL_VALUES, dtype=torch.uint8), persistent=False
@@ -91,8 +100,14 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
             item_count, int(item_count**0.25 + 1), dtype=torch.float32
         )
 
+    def forward(self, observations):
+        hidden, lookup = self.encode_observations(observations)
+        actions, value = self.decode_actions(hidden, lookup)
+        return actions, value
+
     def encode_observations(self, observations):
-        observations = unpack_batched_obs(observations, self.unflatten_context)
+        observations = observations.type(torch.uint8)  # Undo bad cleanrl cast
+        observations = pufferlib.pytorch.nativize_tensor(observations, self.dtype)
 
         screen = observations["screen"]
         visited_mask = observations["visited_mask"]
@@ -140,8 +155,10 @@ class MultiConvolutionalPolicy(pufferlib.models.Policy):
         image_observation = torch.cat((screen, visited_mask), dim=-1)
         if self.channels_last:
             image_observation = image_observation.permute(0, 3, 1, 2)
+            # image_observation = image_observation.to( memory_format=torch.channels_last)
             if self.use_global_map:
                 global_map = global_map.permute(0, 3, 1, 2)
+                # global_map = global_map.to(memory_format=torch.channels_last)
         if self.downsample > 1:
             image_observation = image_observation[:, :, :: self.downsample, :: self.downsample]
 

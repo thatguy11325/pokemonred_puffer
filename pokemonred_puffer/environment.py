@@ -73,8 +73,6 @@ class RedGymEnv(Env):
     def __init__(self, env_config: pufferlib.namespace):
         # TODO: Dont use pufferlib.namespace. It seems to confuse __init__
         self.video_dir = Path(env_config.video_dir)
-        self.session_path = Path(env_config.session_path)
-        self.video_path = self.video_dir / self.session_path
         self.save_final_state = env_config.save_final_state
         self.print_rewards = env_config.print_rewards
         self.headless = env_config.headless
@@ -586,6 +584,7 @@ class RedGymEnv(Env):
         # TODO: Add video saving logic
 
         if not self.disable_ai_actions:
+            self.pyboy.button()
             self.pyboy.send_input(VALID_ACTIONS[action])
             self.pyboy.send_input(VALID_RELEASE_ACTIONS[action], delay=8)
         self.pyboy.tick(self.action_freq, render=True)
