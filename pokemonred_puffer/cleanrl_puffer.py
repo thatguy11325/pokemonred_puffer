@@ -12,6 +12,7 @@ import numpy as np
 import pufferlib
 import pufferlib.emulation
 import pufferlib.frameworks.cleanrl
+import pufferlib.pytorch
 import pufferlib.utils
 import pufferlib.vector
 
@@ -178,12 +179,6 @@ class CleanPuffeRL:
 
         if self.config.compile:
             self.policy = torch.compile(self.policy, mode=self.config.compile_mode)
-            self.policy.get_value = torch.compile(
-                self.policy.get_value, mode=self.config.compile_mode
-            )
-            self.policy.get_action_and_value = torch.compile(
-                self.policy.get_action_and_value, mode=self.config.compile_mode
-            )
 
         self.optimizer = torch.optim.Adam(
             self.policy.parameters(), lr=self.config.learning_rate, eps=1e-5
@@ -418,7 +413,9 @@ class CleanPuffeRL:
                 with self.profile.learn:
                     self.optimizer.zero_grad()
                     loss.backward()
-                    torch.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+                    torch.nn.utils.clip_grad_norm_(
+                        self.policy.parameters(), self.config.max_grad_norm
+                    )
                     self.optimizer.step()
                     if self.config.device == "cuda":
                         torch.cuda.synchronize()
