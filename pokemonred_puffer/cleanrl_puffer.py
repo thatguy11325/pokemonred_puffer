@@ -39,45 +39,51 @@ def rollout(
     agent_kwargs,
     model_path=None,
     device="cuda",
-    verbose=True,
 ):
-    env = env_creator(**env_kwargs)
+    # We are just using Serial vecenv to give a consistent
+    # single-agent/multi-agent API for evaluation
+    try:
+        env = pufferlib.vector.make(
+            env_creator, env_kwargs={"render_mode": "rgb_array", **env_kwargs}
+        )
+    except:  # noqa: E722
+        env = pufferlib.vector.make(env_creator, env_kwargs=env_kwargs)
+
     if model_path is None:
         agent = agent_creator(env, **agent_kwargs)
     else:
         agent = torch.load(model_path, map_location=device)
 
-    terminal = truncated = True
+    ob, info = env.reset()
+    driver = env.driver_env
+    os.system("clear")
+    state = None
 
     while True:
-        if terminal or truncated:
-            if verbose:
-                print("---  Reset  ---")
+        render = driver.render()
+        if driver.render_mode == "ansi":
+            print("\033[0;0H" + render + "\n")
+            time.sleep(0.6)
+        elif driver.render_mode == "rgb_array":
+            import cv2
 
-            ob, info = env.reset()
-            state = None
-            step = 0
-            return_val = 0
+            render = cv2.cvtColor(render, cv2.COLOR_RGB2BGR)
+            cv2.imshow("frame", render)
+            cv2.waitKey(1)
+            time.sleep(1 / 24)
 
-        ob = torch.tensor(ob, device=device).unsqueeze(0)
         with torch.no_grad():
+            ob = torch.from_numpy(ob).to(device)
             if hasattr(agent, "lstm"):
-                action, _, _, _, state = agent.get_action_and_value(ob, state)
+                action, _, _, _, state = agent(ob, state)
             else:
-                action, _, _, _ = agent.get_action_and_value(ob)
+                action, _, _, _ = agent(ob)
 
-        ob, reward, terminal, truncated, _ = env.step(action[0].item())
-        return_val += reward
+            action = action.cpu().numpy().reshape(env.action_space.shape)
 
-        chars = env.render()
-        print("\033c", end="")
-        print(chars)
-
-        if verbose:
-            print(f"Step: {step} Reward: {reward:.4f} Return: {return_val:.2f}")
-
-        time.sleep(0.5)
-        step += 1
+        ob, reward = env.step(action)[:2]
+        reward = reward.mean()
+        print(f"Reward: {reward:.4f}")
 
 
 def seed_everything(seed, torch_deterministic):

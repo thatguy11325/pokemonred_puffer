@@ -1,5 +1,7 @@
 import argparse
+import functools
 import importlib
+import os
 import sys
 from multiprocessing import Queue
 from types import ModuleType
@@ -15,6 +17,7 @@ import pufferlib.vector
 import yaml
 
 import wandb
+from pokemonred_puffer import cleanrl_puffer
 from pokemonred_puffer.cleanrl_puffer import CleanPuffeRL
 from pokemonred_puffer.environment import RedGymEnv
 from pokemonred_puffer.wrappers.async_io import AsyncWrapper
@@ -77,17 +80,20 @@ def load_from_config(args: argparse.ArgumentParser):
 def make_env_creator(
     wrapper_classes: list[tuple[str, ModuleType]],
     reward_class: RedGymEnv,
+    async_wrapper: bool = True,
 ) -> Callable[[pufferlib.namespace, pufferlib.namespace], pufferlib.emulation.GymnasiumPufferEnv]:
     def env_creator(
         env_config: pufferlib.namespace,
         wrappers_config: list[dict[str, Any]],
         reward_config: pufferlib.namespace,
-        async_config: dict[str, Queue],
+        async_config: dict[str, Queue] | None = None,
     ) -> pufferlib.emulation.GymnasiumPufferEnv:
         env = reward_class(env_config, reward_config)
         for cfg, (_, wrapper_class) in zip(wrappers_config, wrapper_classes):
             env = wrapper_class(env, pufferlib.namespace(**[x for x in cfg.values()][0]))
-        env = AsyncWrapper(env, async_config["send_queues"], async_config["recv_queues"])
+        if async_wrapper and async_config:
+            print("HEOLAFDAF")
+            env = AsyncWrapper(env, async_config["send_queues"], async_config["recv_queues"])
         env = pufferlib.postprocess.EpisodeStats(env)
         return pufferlib.emulation.GymnasiumPufferEnv(env=env)
 
@@ -96,9 +102,7 @@ def make_env_creator(
 
 # Returns env_creator, agent_creator
 def setup_agent(
-    wrappers: list[str],
-    reward_name: str,
-    policy_name: str,
+    wrappers: list[str], reward_name: str, async_wrapper: bool = True
 ) -> Callable[[pufferlib.namespace, pufferlib.namespace], pufferlib.emulation.GymnasiumPufferEnv]:
     # TODO: Make this less dependent on the name of this repo and its file structure
     wrapper_classes = [
@@ -117,7 +121,7 @@ def setup_agent(
         importlib.import_module(f"pokemonred_puffer.rewards.{reward_module}"), reward_class_name
     )
     # NOTE: This assumes reward_module has RewardWrapper(RedGymEnv) class
-    env_creator = make_env_creator(wrapper_classes, reward_class)
+    env_creator = make_env_creator(wrapper_classes, reward_class, async_wrapper)
 
     return env_creator
 
@@ -232,7 +236,9 @@ if __name__ == "__main__":
         help="Wrappers to use _in order of instantiation_.",
     )
     # TODO: Add evaluate
-    parser.add_argument("--mode", type=str, default="train", choices=["train"])
+    parser.add_argument(
+        "--mode", type=str, default="train", choices=["train", "autotune", "evaluate"]
+    )
     parser.add_argument(
         "--eval-model-path", type=str, default=None, help="Path to model to evaluate"
     )
@@ -278,7 +284,8 @@ if __name__ == "__main__":
     args = update_args(args)
     args.train.exp_id = f"pokemon-red-{str(uuid.uuid4())[:8]}"
 
-    env_creator = setup_agent(args.wrappers[args.wrappers_name], args.reward_name, args.policy_name)
+    async_wrapper = args.mode == "train"
+    env_creator = setup_agent(args.wrappers[args.wrappers_name], args.reward_name, async_wrapper)
 
     wandb_client = None
     if args.track:
@@ -286,3 +293,31 @@ if __name__ == "__main__":
 
     if args.mode == "train":
         train(args, env_creator, wandb_client)
+    elif args.mode == "autotune":
+        env_kwargs = {
+            "env_config": args.env,
+            "wrappers_config": args.wrappers[args.wrappers_name],
+            "reward_config": args.rewards[args.reward_name]["reward"],
+            "async_config": {},
+        }
+        pufferlib.vector.autotune(
+            functools.partial(env_creator, **env_kwargs), batch_size=args.train.env_batch_size
+        )
+    elif args.mode == "evaluate":
+        env_kwargs = {
+            "env_config": args.env,
+            "wrappers_config": args.wrappers[args.wrappers_name],
+            "reward_config": args.rewards[args.reward_name]["reward"],
+            "async_config": {},
+        }
+        try:
+            cleanrl_puffer.rollout(
+                env_creator,
+                env_kwargs,
+                agent_creator=make_policy,
+                agent_kwargs={"args": args},
+                model_path=args.eval_model_path,
+                device=args.train.device,
+            )
+        except KeyboardInterrupt:
+            os._exit(0)
