@@ -92,9 +92,9 @@ train:
   bptt_horizon: 16 
   vf_clip_coef: 0.1
 
-  num_envs: 96
-  num_workers: 96
-  env_batch_size: 32
+  num_envs: 288
+  num_workers: 24
+  batch_size: 72
   env_pool: True
   zero_copy: False
 
@@ -113,6 +113,8 @@ train:
   # swarm_keep_pct: .8
 
 wrappers:
+  empty: []
+
   baseline:
     - stream_wrapper.StreamWrapper:
         user: thatguy

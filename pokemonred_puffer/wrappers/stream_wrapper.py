@@ -30,6 +30,14 @@ class StreamWrapper(gym.Wrapper):
         else:
             raise Exception("Could not find emulator!")
 
+    def __del__(self):
+        try:
+            for task in asyncio.all_tasks():
+                task.cancel()
+            self.loop.close()
+        except RuntimeError:
+            pass
+
     def step(self, action):
         x_pos = self.env.unwrapped.read_m("wXCoord")
         y_pos = self.env.unwrapped.read_m("wYCoord")
