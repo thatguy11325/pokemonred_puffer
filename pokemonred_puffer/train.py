@@ -289,7 +289,7 @@ if __name__ == "__main__":
 
     wandb_client = None
     if args.track:
-        wandb_client = init_wandb(args).id
+        wandb_client = init_wandb(args)
 
     if args.mode == "train":
         train(args, env_creator, wandb_client)
