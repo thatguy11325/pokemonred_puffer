@@ -32,6 +32,7 @@ class StreamWrapper(gym.Wrapper):
 
     def __del__(self):
         try:
+            self.loop.run_until_complete()
             for task in asyncio.all_tasks():
                 task.cancel()
             self.loop.close()
