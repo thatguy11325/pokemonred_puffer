@@ -487,7 +487,7 @@ class CleanPuffeRL:
             artifact = wandb.Artifact(artifact_name, type="model")
             model_path = self.save_checkpoint()
             artifact.add_file(model_path)
-            self.wandb_client.run.log_artifact(artifact)
+            self.wandb_client.log_artifact(artifact)
             self.wandb_client.finish()
 
     def save_checkpoint(self):
