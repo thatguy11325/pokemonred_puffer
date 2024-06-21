@@ -136,20 +136,22 @@ class CleanPuffeRL:
     epoch: int = 0
     stats: dict = field(default_factory=lambda: {})
     msg: str = ""
+    infos: dict = defaultdict(list)
 
     def __post_init__(self):
         seed_everything(self.config.seed, self.config.torch_deterministic)
-        print_dashboard(
-            self.config.env,
-            self.utilization,
-            0,
-            0,
-            self.profile,
-            self.losses,
-            {},
-            self.msg,
-            clear=True,
-        )
+        if self.config.verbose:
+            print_dashboard(
+                self.config.env,
+                self.utilization,
+                0,
+                0,
+                self.profile,
+                self.losses,
+                {},
+                self.msg,
+                clear=True,
+            )
 
         self.vecenv.async_reset(self.config.seed)
         obs_shape = self.vecenv.single_observation_space.shape
@@ -197,8 +199,6 @@ class CleanPuffeRL:
             (self.config.num_envs, *GLOBAL_MAP_SHAPE), dtype=np.float32
         )
         self.taught_cut = False
-
-        self.infos = {}
         self.log = False
 
     @pufferlib.utils.profile
@@ -211,15 +211,14 @@ class CleanPuffeRL:
             hasattr(self.config, "swarm_frequency")
             and hasattr(self.config, "swarm_keep_pct")
             and self.update % self.config.swarm_frequency == 0
-            and "learner" in self.infos
-            and "reward/event" in self.infos["learner"]
+            and "reward/event" in self.infos
         ):
             # collect the top swarm_keep_pct % of envs
             largest = [
                 x[0]
                 for x in heapq.nlargest(
                     math.ceil(self.config.num_envs * self.config.swarm_keep_pct),
-                    enumerate(self.infos["learner"]["reward/event"]),
+                    enumerate(self.infos["reward/event"]),
                     key=lambda x: x[1],
                 )
             ]
@@ -231,9 +230,9 @@ class CleanPuffeRL:
                 if i not in largest:
                     new_state = random.choice(largest)
                     print(
-                        f'\t {i+1} -> {new_state+1}, event scores: {self.infos["learner"]["reward/event"][i]} -> {self.infos["learner"]["reward/event"][new_state]}'
+                        f'\t {i+1} -> {new_state+1}, event scores: {self.infos["reward/event"][i]} -> {self.infos["reward/event"][new_state]}'
                     )
-                    self.env_recv_queues[i + 1].put(self.infos["learner"]["state"][new_state])
+                    self.env_recv_queues[i + 1].put(self.infos["state"][new_state])
                     waiting_for.append(i + 1)
                     # Now copy the hidden state over
                     # This may be a little slow, but so is this whole process
@@ -245,7 +244,6 @@ class CleanPuffeRL:
 
         with self.profile.eval_misc:
             policy = self.policy
-            infos = defaultdict(list)
             lstm_h, lstm_c = self.experience.lstm_h, self.experience.lstm_c
 
         while not self.experience.full:
@@ -285,7 +283,7 @@ class CleanPuffeRL:
 
                 for i in info:
                     for k, v in pufferlib.utils.unroll_nested_dict(i):
-                        infos[k].append(v)
+                        self.infos[k].append(v)
 
             with self.profile.env:
                 self.vecenv.send(actions)
@@ -293,20 +291,20 @@ class CleanPuffeRL:
         with self.profile.eval_misc:
             self.stats = {}
 
-            for k, v in self.infos["learner"].items():
+            for k, v in self.infos.items():
                 # Moves into models... maybe. Definitely moves.
                 # You could also just return infos and have it in demo
-                if "pokemon_exploration_map" in infos and self.config.save_overlay is True:
+                if "pokemon_exploration_map" in self.infos and self.config.save_overlay is True:
                     if self.update % self.config.overlay_interval == 0:
                         overlay = make_pokemon_red_overlay(
-                            np.stack(infos["pokemon_exploration_map"], axis=0)
+                            np.stack(self.infos["pokemon_exploration_map"], axis=0)
                         )
                         if self.wandb_client is not None:
                             self.stats["Media/aggregate_exploration_map"] = self.wandb_client.Image(
                                 overlay
                             )
 
-                for k, v in infos.items():
+                for k, v in self.infos.items():
                     if "_map" in k and self.wandb_client is not None:
                         self.stats[f"Media/{k}"] = self.wandb.Image(v[0])
                         continue
