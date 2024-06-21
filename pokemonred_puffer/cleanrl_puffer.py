@@ -302,7 +302,7 @@ class CleanPuffeRL:
 
                 for k, v in self.infos.items():
                     if "_map" in k and self.wandb_client is not None:
-                        self.stats[f"Media/{k}"] = self.wandb.Image(v[0])
+                        self.stats[f"Media/{k}"] = self.wandb_client.Image(v[0])
                         continue
                     elif "state" in k:
                         pass
