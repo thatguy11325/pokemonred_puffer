@@ -129,9 +129,9 @@ class CleanPuffeRL:
     env_send_queues: list[Queue]
     env_recv_queues: list[Queue]
     wandb_client: wandb.wandb_sdk.wandb_run.Run | None = None
-    profile: Profile = Profile()
-    losses: Losses = Losses()
-    utilization: Utilization = Utilization()
+    profile: Profile = field(default_factory=lambda: Profile())
+    losses: Losses = field(default_factory=lambda: Losses())
+    utilization: Utilization = field(default_factory=lambda: Utilization())
     global_step: int = 0
     epoch: int = 0
     stats: dict = field(default_factory=lambda: {})
