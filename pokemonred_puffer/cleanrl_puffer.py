@@ -297,13 +297,8 @@ class CleanPuffeRL:
                         )
                         if self.wandb_client is not None:
                             self.stats["Media/aggregate_exploration_map"] = wandb.Image(overlay)
-
-                for k, v in self.infos.items():
-                    if "_map" in k and self.wandb_client is not None:
-                        self.stats[f"Media/{k}"] = wandb.Image(v[0])
-                        continue
                     elif "state" in k:
-                        pass
+                        continue
 
                     try:  # TODO: Better checks on log data types
                         self.stats[k] = np.mean(v)
