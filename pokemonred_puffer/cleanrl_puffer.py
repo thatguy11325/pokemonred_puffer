@@ -136,7 +136,7 @@ class CleanPuffeRL:
     epoch: int = 0
     stats: dict = field(default_factory=lambda: {})
     msg: str = ""
-    infos: dict = defaultdict(list)
+    infos: dict = field(default_factory=lambda: defaultdict(list))
 
     def __post_init__(self):
         seed_everything(self.config.seed, self.config.torch_deterministic)
