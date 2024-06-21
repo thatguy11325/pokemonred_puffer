@@ -584,7 +584,6 @@ class RedGymEnv(Env):
         # TODO: Add video saving logic
 
         if not self.disable_ai_actions:
-            self.pyboy.button()
             self.pyboy.send_input(VALID_ACTIONS[action])
             self.pyboy.send_input(VALID_RELEASE_ACTIONS[action], delay=8)
         self.pyboy.tick(self.action_freq, render=True)
