@@ -200,6 +200,7 @@ def train(
 
     args.train.env = "Pokemon Red"
     with CleanPuffeRL(
+        exp_name=args.exp_name,
         config=args.train,
         vecenv=vecenv,
         policy=policy,

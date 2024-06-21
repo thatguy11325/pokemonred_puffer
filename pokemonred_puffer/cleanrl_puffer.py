@@ -124,6 +124,7 @@ class Losses:
 
 @dataclass
 class CleanPuffeRL:
+    exp_name: str
     config: argparse.Namespace
     vecenv: pufferlib.vector.Serial | pufferlib.vector.Multiprocessing
     policy: nn.Module
