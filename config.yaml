@@ -94,7 +94,7 @@ train:
 
   num_envs: 288
   num_workers: 24
-  batch_size: 72
+  env_batch_size: 72
   env_pool: True
   zero_copy: False
 
