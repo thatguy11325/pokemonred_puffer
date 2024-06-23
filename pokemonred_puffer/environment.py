@@ -1063,7 +1063,7 @@ class RedGymEnv(Env):
     def agent_stats(self, action):
         levels = [self.read_m(f"wPartyMon{i+1}Level") for i in range(self.read_m("wPartyCount"))]
         badges = self.read_m("wObtainedBadges")
-        explore_map = self.explore_map[self.explore_map]
+        explore_map = self.explore_map
         explore_map[explore_map > 0] = 1
         return {
             "stats": {
