@@ -306,10 +306,13 @@ class RedGymEnv(Env):
         self.total_reward = sum([val for _, val in self.progress_reward.items()])
 
         self.first = False
-        state = io.BytesIO()
-        self.pyboy.save_state(state)
-        state.seek(0)
-        return self._get_obs(), {"state": state.read()}
+        infos = {}
+        if self.save_state:
+            state = io.BytesIO()
+            self.pyboy.save_state(state)
+            state.seek(0)
+            infos |= {"state": state.read()}
+        return self._get_obs(), infos
 
     def init_mem(self):
         # Maybe I should preallocate a giant matrix for all map ids
