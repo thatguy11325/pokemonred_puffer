@@ -283,7 +283,7 @@ class CleanPuffeRL:
                 actions = actions.cpu().numpy()
                 mask = torch.as_tensor(mask)  # * policy.mask)
                 o = o if self.config.cpu_offload else o_device
-                if self.config.num_workers == 1:
+                if self.config.num_envs == 1:
                     actions = np.expand_dims(actions, 0)
                     logprob = logprob.unsqueeze(0)
                 self.experience.store(o, value, actions, logprob, r, d, env_id, mask)
@@ -314,10 +314,10 @@ class CleanPuffeRL:
                     elif "state" in k:
                         continue
 
-                    try:  # TODO: Better checks on log data types
-                        self.stats[k] = np.mean(v)
-                    except:  # noqa: E722
-                        continue
+                try:  # TODO: Better checks on log data types
+                    self.stats[k] = np.mean(v)
+                except:  # noqa: E722
+                    continue
 
             if self.config.verbose:
                 self.msg = f"Model Size: {abbreviate(count_params(self.policy))} parameters"
