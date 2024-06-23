@@ -204,9 +204,6 @@ class CleanPuffeRL:
         for k in list(self.infos.keys()):
             if k != "state":
                 del self.infos[k]
-            elif len(self.infos["state"]) > 0:
-                # just in case
-                self.infos["state"] = self.infos["state"][-1]
 
         # now for a tricky bit:
         # if we have swarm_frequency, we will take the top swarm_keep_pct envs and evenly distribute
