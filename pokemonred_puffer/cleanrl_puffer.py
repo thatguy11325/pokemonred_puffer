@@ -213,7 +213,8 @@ class CleanPuffeRL:
         # their states to the bottom 90%.
         # we do this here so the environment can remain "pure"
         if (
-            hasattr(self.config, "swarm_frequency")
+            self.config.async_wrapper
+            and hasattr(self.config, "swarm_frequency")
             and hasattr(self.config, "swarm_keep_pct")
             and self.epoch % self.config.swarm_frequency == 0
             and "reward/event" in self.infos
