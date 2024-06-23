@@ -133,7 +133,6 @@ class CleanPuffeRL:
     wandb_client: wandb.wandb_sdk.wandb_run.Run | None = None
     profile: Profile = field(default_factory=lambda: Profile())
     losses: Losses = field(default_factory=lambda: Losses())
-    utilization: Utilization = field(default_factory=lambda: Utilization())
     global_step: int = 0
     epoch: int = 0
     stats: dict = field(default_factory=lambda: {})
@@ -154,6 +153,8 @@ class CleanPuffeRL:
                 self.msg,
                 clear=True,
             )
+
+            self.utilization = Utilization()
 
         self.vecenv.async_reset(self.config.seed)
         obs_shape = self.vecenv.single_observation_space.shape
@@ -199,6 +200,14 @@ class CleanPuffeRL:
 
     @pufferlib.utils.profile
     def evaluate(self):
+        # Clear all self.infos except for the state
+        for k in list(self.infos.keys()):
+            if k != "state":
+                del self.infos[k]
+            elif len(self.infos["state"]) > 0:
+                # just in case
+                self.infos["state"] = self.infos["state"][-1]
+
         # now for a tricky bit:
         # if we have swarm_frequency, we will take the top swarm_keep_pct envs and evenly distribute
         # their states to the bottom 90%.
@@ -208,6 +217,7 @@ class CleanPuffeRL:
             and hasattr(self.config, "swarm_keep_pct")
             and self.epoch % self.config.swarm_frequency == 0
             and "reward/event" in self.infos
+            and "state" in self.infos
         ):
             # collect the top swarm_keep_pct % of envs
             largest = [
@@ -275,11 +285,17 @@ class CleanPuffeRL:
                 actions = actions.cpu().numpy()
                 mask = torch.as_tensor(mask)  # * policy.mask)
                 o = o if self.config.cpu_offload else o_device
+                if self.config.num_workers == 1:
+                    actions = np.expand_dims(actions, 0)
+                    logprob = logprob.unsqueeze(0)
                 self.experience.store(o, value, actions, logprob, r, d, env_id, mask)
 
                 for i in info:
                     for k, v in pufferlib.utils.unroll_nested_dict(i):
-                        self.infos[k].append(v)
+                        if k == "state":
+                            self.infos[k] = [v]
+                        else:
+                            self.infos[k].append(v)
 
             with self.profile.env:
                 self.vecenv.send(actions)
@@ -441,16 +457,17 @@ class CleanPuffeRL:
 
             done_training = self.global_step >= self.config.total_timesteps
             if self.profile.update(self) or done_training:
-                print_dashboard(
-                    self.config.env,
-                    self.utilization,
-                    self.global_step,
-                    self.epoch,
-                    self.profile,
-                    self.losses,
-                    self.stats,
-                    self.msg,
-                )
+                if self.config.verbose:
+                    print_dashboard(
+                        self.config.env,
+                        self.utilization,
+                        self.global_step,
+                        self.epoch,
+                        self.profile,
+                        self.losses,
+                        self.stats,
+                        self.msg,
+                    )
 
                 if (
                     self.wandb_client is not None
@@ -475,7 +492,8 @@ class CleanPuffeRL:
 
     def close(self):
         self.vecenv.close()
-        self.utilization.stop()
+        if self.config.verbose:
+            self.utilization.stop()
 
         if self.wandb_client is not None:
             artifact_name = f"{self.exp_name}_model"

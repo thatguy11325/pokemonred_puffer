@@ -102,6 +102,7 @@ class RedGymEnv(Env):
         self.auto_pokeflute = env_config.auto_pokeflute
         self.infinite_money = env_config.infinite_money
         self.use_global_map = env_config.use_global_map
+        self.save_state = env_config.save_state
         self.action_space = ACTION_SPACE
 
         # Obs space-related. TODO: avoid hardcoding?
@@ -552,7 +553,7 @@ class RedGymEnv(Env):
         self.pokecenters[self.read_m("wLastBlackoutMap")] = 1
         info = {}
 
-        if self.get_events_sum() > self.max_event_rew:
+        if self.save_state and self.get_events_sum() > self.max_event_rew:
             state = io.BytesIO()
             self.pyboy.save_state(state)
             state.seek(0)
