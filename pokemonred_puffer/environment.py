@@ -1063,6 +1063,7 @@ class RedGymEnv(Env):
     def agent_stats(self, action):
         levels = [self.read_m(f"wPartyMon{i+1}Level") for i in range(self.read_m("wPartyCount"))]
         badges = self.read_m("wObtainedBadges")
+        explore_map = self.explore_map[self.explore_map > 0] = 1
         return {
             "stats": {
                 "step": self.step_count + self.reset_count * self.max_steps,
@@ -1113,7 +1114,7 @@ class RedGymEnv(Env):
             | {f"badge_{i+1}": bool(badges & (1 << i)) for i in range(8)},
             "reward": self.get_game_state_reward(),
             "reward/reward_sum": sum(self.get_game_state_reward().values()),
-            "pokemon_exploration_map": self.explore_map,
+            "pokemon_exploration_map": explore_map,
             "cut_exploration_map": self.cut_explore_map,
         }
 
@@ -1159,6 +1160,8 @@ class RedGymEnv(Env):
         if not (self.read_m("wd736") & 0b1000_0000):
             x_pos, y_pos, map_n = self.get_game_coords()
             self.seen_coords[(x_pos, y_pos, map_n)] = 1
+            # TODO: Turn into a wrapper?
+            self.explore_map[self.explore_map > 0] = 0.5
             self.explore_map[local_to_global(y_pos, x_pos, map_n)] = 1
             # self.seen_global_coords[local_to_global(y_pos, x_pos, map_n)] = 1
             self.seen_map_ids[map_n] = 1

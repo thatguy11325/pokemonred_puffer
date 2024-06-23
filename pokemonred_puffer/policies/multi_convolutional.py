@@ -69,6 +69,8 @@ class MultiConvolutionalPolicy(nn.Module):
                 nn.LazyConv2d(64, 3, stride=1),
                 nn.ReLU(),
                 nn.Flatten(),
+                nn.LazyLinear(480),
+                nn.ReLU(),
             )
             # if channels_last:
             #     self.global_map_network = self.global_map_network.to(

@@ -12,6 +12,7 @@ debug:
     log_frequency: 1
     disable_wild_encounters: True
     disable_ai_actions: True
+    use_global_map: True
   train:
     device: cpu
     compile: False
