@@ -284,7 +284,7 @@ if __name__ == "__main__":
     args = update_args(args)
     args.train.exp_id = f"pokemon-red-{str(uuid.uuid4())[:8]}"
 
-    async_wrapper = args.mode == "train"
+    async_wrapper = args.train.async_wrapper
     env_creator = setup_agent(args.wrappers[args.wrappers_name], args.reward_name, async_wrapper)
 
     wandb_client = None
