@@ -52,7 +52,7 @@ env:
   perfect_ivs: True
   reduce_res: True
   two_bit: True
-  log_frequency: 2000
+  log_frequency: 1000
   auto_flash: True
   disable_wild_encounters: True
   disable_ai_actions: False
@@ -102,13 +102,13 @@ train:
   env_pool: True
   zero_copy: False
 
-  verbose: True
+  verbose: False
   data_dir: runs
   save_checkpoint: False
   checkpoint_interval: 200
   save_overlay: True
   overlay_interval: 100
-  cpu_offload: True
+  cpu_offload: False
   pool_kernel: [0]
   load_optimizer_state: False
   use_rnn: True
