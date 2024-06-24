@@ -155,18 +155,19 @@ class RedGymEnv(Env):
             "direction": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
             "blackout_map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
             "battle_type": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
-            "cut_event": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
             "cut_in_party": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
             # "x": spaces.Box(low=0, high=255, shape=(1,), dtype=np.u`int8),
             # "y": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
             "map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
             # "badges": spaces.Box(low=0, high=np.iinfo(np.uint16).max, shape=(1,), dtype=np.uint16),
-            "badges": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
             "wJoyIgnore": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
             "bag_items": spaces.Box(
                 low=0, high=max(Items._value2member_map_.keys()), shape=(20,), dtype=np.uint8
             ),
             "bag_quantity": spaces.Box(low=0, high=100, shape=(20,), dtype=np.uint8),
+        } | {
+            event: spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8)
+            for event in REQUIRED_EVENTS
         }
 
         if self.use_global_map:
@@ -498,22 +499,24 @@ class RedGymEnv(Env):
         # item ids start at 1 so using 0 as the nothing value is okay
         bag[2 * numBagItems :] = 0
 
-        return self.render() | {
-            "direction": np.array(
-                self.read_m("wSpritePlayerStateData1FacingDirection") // 4, dtype=np.uint8
-            ),
-            "blackout_map_id": np.array(self.read_m("wLastBlackoutMap"), dtype=np.uint8),
-            "battle_type": np.array(self.read_m("wIsInBattle") + 1, dtype=np.uint8),
-            "cut_event": np.array(self.events.get_event("EVENT_GOT_HM01"), dtype=np.uint8),
-            "cut_in_party": np.array(self.check_if_party_has_hm(0xF), dtype=np.uint8),
-            # "x": np.array(player_x, dtype=np.uint8),
-            # "y": np.array(player_y, dtype=np.uint8),
-            "map_id": np.array(self.read_m(0xD35E), dtype=np.uint8),
-            "badges": np.array(self.read_short("wObtainedBadges").bit_count(), dtype=np.uint8),
-            "wJoyIgnore": np.array(self.read_m("wJoyIgnore"), dtype=np.uint8),
-            "bag_items": bag[::2].copy(),
-            "bag_quantity": bag[1::2].copy(),
-        }
+        return (
+            self.render()
+            | {
+                "direction": np.array(
+                    self.read_m("wSpritePlayerStateData1FacingDirection") // 4, dtype=np.uint8
+                ),
+                "blackout_map_id": np.array(self.read_m("wLastBlackoutMap"), dtype=np.uint8),
+                "battle_type": np.array(self.read_m("wIsInBattle") + 1, dtype=np.uint8),
+                "cut_in_party": np.array(self.check_if_party_has_hm(0xF), dtype=np.uint8),
+                # "x": np.array(player_x, dtype=np.uint8),
+                # "y": np.array(player_y, dtype=np.uint8),
+                "map_id": np.array(self.read_m(0xD35E), dtype=np.uint8),
+                "wJoyIgnore": np.array(self.read_m("wJoyIgnore"), dtype=np.uint8),
+                "bag_items": bag[::2].copy(),
+                "bag_quantity": bag[1::2].copy(),
+            }
+            | {event: np.array(self.events.get_event(event)) for event in REQUIRED_EVENTS}
+        )
 
     def set_perfect_iv_dvs(self):
         party_size = self.read_m("wPartyCount")

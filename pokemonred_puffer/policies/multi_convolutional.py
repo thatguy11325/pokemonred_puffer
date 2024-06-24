@@ -4,6 +4,7 @@ import pufferlib.pytorch
 import torch
 from torch import nn
 
+from pokemonred_puffer.data.events import REQUIRED_EVENTS
 from pokemonred_puffer.data.items import Items
 from pokemonred_puffer.environment import PIXEL_VALUES
 
@@ -91,7 +92,7 @@ class MultiConvolutionalPolicy(nn.Module):
         self.register_buffer(
             "unpack_shift", torch.tensor([6, 4, 2, 0], dtype=torch.uint8), persistent=False
         )
-        self.register_buffer("badge_buffer", torch.arange(8) + 1, persistent=False)
+        # self.register_buffer("badge_buffer", torch.arange(8) + 1, persistent=False)
 
         # pokemon has 0xF7 map ids
         # Lets start with 4 dims for now. Could try 8
@@ -144,7 +145,7 @@ class MultiConvolutionalPolicy(nn.Module):
                     .flatten()
                     .int(),
                 ).reshape(restored_global_map_shape)
-        badges = self.badge_buffer <= observations["badges"]
+        # badges = self.badge_buffer <= observations["badges"]
         map_id = self.map_embeddings(observations["map_id"].long())
         blackout_map_id = self.map_embeddings(observations["blackout_map_id"].long())
         # The bag quantity can be a value between 1 and 99
@@ -170,17 +171,18 @@ class MultiConvolutionalPolicy(nn.Module):
                 one_hot(observations["direction"].long(), 4).float().squeeze(1),
                 # one_hot(observations["reset_map_id"].long(), 0xF7).float().squeeze(1),
                 one_hot(observations["battle_type"].long(), 4).float().squeeze(1),
-                observations["cut_event"].float(),
+                # observations["cut_event"].float(),
                 observations["cut_in_party"].float(),
                 # observations["x"].float(),
                 # observations["y"].float(),
                 # one_hot(observations["map_id"].long(), 0xF7).float().squeeze(1),
-                badges.float().squeeze(1),
+                # badges.float().squeeze(1),
                 map_id.squeeze(1),
                 blackout_map_id.squeeze(1),
                 observations["wJoyIgnore"].float(),
                 items.flatten(start_dim=1),
-            ),
+            )
+            + tuple(observations[event].float() for event in REQUIRED_EVENTS),
             dim=-1,
         )
         if self.use_global_map:

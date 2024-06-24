@@ -260,14 +260,12 @@ class CutWithObjectRewardRequiredEventsEnv(BaselineRewardEnv):
                 "rival3": self.reward_config["event"] * int(self.read_m("wSSAnne2FCurScript") == 4),
             }
             | {
-                event: self.events.get_event(event) * self.reward_config["required_event"]
+                event: self.reward_config["required_event"] * float(self.events.get_event(event))
                 for event in REQUIRED_EVENTS
             }
             | {
-                "required_items": {
-                    item.name: int(item.value in bag_item_ids) * self.reward_config["required_item"]
-                    for item in REQUIRED_ITEMS
-                },
+                item.name: self.reward_config["required_item"] * float(item.value in bag_item_ids)
+                for item in REQUIRED_ITEMS
             }
         )
 

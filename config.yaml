@@ -227,7 +227,7 @@ rewards:
       bag_menu: 0.1
       rocket_hideout_found: 5.0
       explore_hidden_objs: 0.02
-      seen_action_bag_menu: 0.1G
+      seen_action_bag_menu: 0.1
   
   baseline.CutWithObjectRewardRequiredEventsEnv:
     reward:
