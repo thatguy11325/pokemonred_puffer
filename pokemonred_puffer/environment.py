@@ -1113,7 +1113,7 @@ class RedGymEnv(Env):
                 "pokecenter": np.sum(self.pokecenters),
             }
             | {f"badge_{i+1}": bool(badges & (1 << i)) for i in range(8)},
-            "events": {self.events.get_event(event) for event in REQUIRED_EVENTS}
+            "events": {event: self.events.get_event(event) for event in REQUIRED_EVENTS}
             | {"rival3": int(self.read_m(0xD665) == 4)},
             "reward": self.get_game_state_reward(),
             "reward/reward_sum": sum(self.get_game_state_reward().values()),
