@@ -29,6 +29,7 @@ from pokemonred_puffer.data.items import (
     KEY_ITEM_IDS,
     MAX_ITEM_CAPACITY,
     REQUIRED_ITEMS,
+    USEFUL_ITEMS,
     Items,
 )
 from pokemonred_puffer.data.strength_puzzles import STRENGTH_SOLUTIONS
@@ -1128,6 +1129,7 @@ class RedGymEnv(Env):
             "events": {event: self.events.get_event(event) for event in REQUIRED_EVENTS}
             | {"rival3": int(self.read_m(0xD665) == 4)},
             "required_items": {item.name: item.value in bag_item_ids for item in REQUIRED_ITEMS},
+            "useful_items": {item.name: item.value in bag_item_ids for item in USEFUL_ITEMS},
             "reward": self.get_game_state_reward(),
             "reward/reward_sum": sum(self.get_game_state_reward().values()),
             "pokemon_exploration_map": explore_map,

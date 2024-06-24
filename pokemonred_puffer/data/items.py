@@ -162,8 +162,15 @@ class Items(Enum):
     TM_50 = 0xFA
 
 
-REQUIRED_ITEMS = {
+USEFUL_ITEMS = {
+    Items.LEMONADE,
+    Items.FRESH_WATER,
+    Items.SODA_POP,
     Items.BICYCLE,
+    Items.BIKE_VOUCHER,
+}
+
+REQUIRED_ITEMS = {
     Items.POKEDEX,
     Items.BOULDERBADGE,
     Items.CASCADEBADGE,
@@ -175,7 +182,6 @@ REQUIRED_ITEMS = {
     Items.EARTHBADGE,
     Items.SECRET_KEY,
     # Items.ITEM_2C,
-    Items.BIKE_VOUCHER,
     Items.CARD_KEY,
     Items.S_S_TICKET,
     Items.GOLD_TEETH,

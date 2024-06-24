@@ -2,7 +2,7 @@ import numpy as np
 import pufferlib
 
 from pokemonred_puffer.data.events import REQUIRED_EVENTS
-from pokemonred_puffer.data.items import REQUIRED_ITEMS
+from pokemonred_puffer.data.items import REQUIRED_ITEMS, USEFUL_ITEMS
 from pokemonred_puffer.environment import (
     EVENT_FLAGS_START,
     EVENTS_FLAGS_LENGTH,
@@ -266,6 +266,10 @@ class CutWithObjectRewardRequiredEventsEnv(BaselineRewardEnv):
             | {
                 item.name: self.reward_config["required_item"] * float(item.value in bag_item_ids)
                 for item in REQUIRED_ITEMS
+            }
+            | {
+                item.name: self.reward_config["useful_item"] * float(item.value in bag_item_ids)
+                for item in USEFUL_ITEMS
             }
         )
 
