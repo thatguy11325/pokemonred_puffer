@@ -241,13 +241,14 @@ rewards:
       exploration: 0.02
       cut_coords: 0.0
       cut_tiles: 0.0
-      start_menu: 0.00
+      start_menu: 0.0
       pokemon_menu: 0.0
       stats_menu: 0.0
       bag_menu: 0.0
       explore_hidden_objs: 0.02
-      seen_action_bag_menu: 0.1
+      seen_action_bag_menu: 0.0
       required_event: 5.0
+      required_item: 5.0
 
 
 

@@ -28,6 +28,7 @@ from pokemonred_puffer.data.items import (
     HM_ITEM_IDS,
     KEY_ITEM_IDS,
     MAX_ITEM_CAPACITY,
+    REQUIRED_ITEMS,
     Items,
 )
 from pokemonred_puffer.data.strength_puzzles import STRENGTH_SOLUTIONS
@@ -1073,6 +1074,14 @@ class RedGymEnv(Env):
         badges = self.read_m("wObtainedBadges")
         explore_map = self.explore_map
         explore_map[explore_map > 0] = 1
+
+        _, wBagItems = self.pyboy.symbol_lookup("wBagItems")
+        bag = np.array(self.pyboy.memory[wBagItems : wBagItems + 40], dtype=np.uint8)
+        numBagItems = self.read_m("wNumBagItems")
+        # item ids start at 1 so using 0 as the nothing value is okay
+        bag[2 * numBagItems :] = 0
+        bag_item_ids = bag[::2]
+
         return {
             "stats": {
                 "step": self.step_count + self.reset_count * self.max_steps,
@@ -1115,6 +1124,7 @@ class RedGymEnv(Env):
             | {f"badge_{i+1}": bool(badges & (1 << i)) for i in range(8)},
             "events": {event: self.events.get_event(event) for event in REQUIRED_EVENTS}
             | {"rival3": int(self.read_m(0xD665) == 4)},
+            "required_items": {item.name: item.value in bag_item_ids for item in REQUIRED_ITEMS},
             "reward": self.get_game_state_reward(),
             "reward/reward_sum": sum(self.get_game_state_reward().values()),
             "pokemon_exploration_map": explore_map,
