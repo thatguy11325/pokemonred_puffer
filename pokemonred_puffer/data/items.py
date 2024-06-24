@@ -162,6 +162,32 @@ class Items(Enum):
     TM_50 = 0xFA
 
 
+REQUIRED_ITEMS = {
+    Items.BICYCLE,
+    Items.POKEDEX,
+    Items.BOULDERBADGE,
+    Items.CASCADEBADGE,
+    Items.THUNDERBADGE,
+    Items.RAINBOWBADGE,
+    Items.SOULBADGE,
+    Items.MARSHBADGE,
+    Items.VOLCANOBADGE,
+    Items.EARTHBADGE,
+    Items.SECRET_KEY,
+    # Items.ITEM_2C,
+    Items.BIKE_VOUCHER,
+    Items.CARD_KEY,
+    Items.S_S_TICKET,
+    Items.GOLD_TEETH,
+    Items.OAKS_PARCEL,
+    Items.SILPH_SCOPE,
+    Items.POKE_FLUTE,
+    Items.LIFT_KEY,
+    Items.HM_01,
+    Items.HM_03,
+    Items.HM_04,
+}
+
 KEY_ITEM_IDS = {
     Items.TOWN_MAP.value,
     Items.BICYCLE.value,

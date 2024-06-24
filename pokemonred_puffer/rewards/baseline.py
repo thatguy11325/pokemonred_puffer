@@ -1,10 +1,14 @@
+import numpy as np
 import pufferlib
+
 from pokemonred_puffer.data.events import REQUIRED_EVENTS
+from pokemonred_puffer.data.items import REQUIRED_ITEMS
 from pokemonred_puffer.environment import (
     EVENT_FLAGS_START,
     EVENTS_FLAGS_LENGTH,
     RedGymEnv,
 )
+
 
 MUSEUM_TICKET = (0xD754, 0)
 
@@ -226,30 +230,46 @@ class CutWithObjectRewardsEnv(BaselineRewardEnv):
 
 class CutWithObjectRewardRequiredEventsEnv(BaselineRewardEnv):
     def get_game_state_reward(self):
-        return {
-            "event": self.reward_config["event"] * self.update_max_event_rew(),
-            "seen_pokemon": self.reward_config["seen_pokemon"] * sum(self.seen_pokemon),
-            "caught_pokemon": self.reward_config["caught_pokemon"] * sum(self.caught_pokemon),
-            "moves_obtained": self.reward_config["moves_obtained"] * sum(self.moves_obtained),
-            "hm_count": self.reward_config["hm_count"] * self.get_hm_count(),
-            "level": self.reward_config["level"] * self.get_levels_reward(),
-            "badges": self.reward_config["badges"] * self.get_badges(),
-            "exploration": self.reward_config["exploration"] * sum(self.seen_coords.values()),
-            "cut_coords": self.reward_config["cut_coords"] * sum(self.cut_coords.values()),
-            "cut_tiles": self.reward_config["cut_tiles"] * sum(self.cut_tiles.values()),
-            "start_menu": self.reward_config["start_menu"] * self.seen_start_menu,
-            "pokemon_menu": self.reward_config["pokemon_menu"] * self.seen_pokemon_menu,
-            "stats_menu": self.reward_config["stats_menu"] * self.seen_stats_menu,
-            "bag_menu": self.reward_config["bag_menu"] * self.seen_bag_menu,
-            "explore_hidden_objs": sum(self.seen_hidden_objs.values())
-            * self.reward_config["explore_hidden_objs"],
-            "seen_action_bag_menu": self.seen_action_bag_menu
-            * self.reward_config["seen_action_bag_menu"],
-            "rival3": self.reward_config["event"] * int(self.read_m("wSSAnne2FCurScript") == 4),
-        } | {
-            event: self.events.get_event(event) * self.reward_config["required_event"]
-            for event in REQUIRED_EVENTS
-        }
+        _, wBagItems = self.pyboy.symbol_lookup("wBagItems")
+        bag = np.array(self.pyboy.memory[wBagItems : wBagItems + 40], dtype=np.uint8)
+        numBagItems = self.read_m("wNumBagItems")
+        # item ids start at 1 so using 0 as the nothing value is okay
+        bag[2 * numBagItems :] = 0
+        bag_item_ids = bag[::2]
+
+        return (
+            {
+                "event": self.reward_config["event"] * self.update_max_event_rew(),
+                "seen_pokemon": self.reward_config["seen_pokemon"] * sum(self.seen_pokemon),
+                "caught_pokemon": self.reward_config["caught_pokemon"] * sum(self.caught_pokemon),
+                "moves_obtained": self.reward_config["moves_obtained"] * sum(self.moves_obtained),
+                "hm_count": self.reward_config["hm_count"] * self.get_hm_count(),
+                "level": self.reward_config["level"] * self.get_levels_reward(),
+                "badges": self.reward_config["badges"] * self.get_badges(),
+                "exploration": self.reward_config["exploration"] * sum(self.seen_coords.values()),
+                "cut_coords": self.reward_config["cut_coords"] * sum(self.cut_coords.values()),
+                "cut_tiles": self.reward_config["cut_tiles"] * sum(self.cut_tiles.values()),
+                "start_menu": self.reward_config["start_menu"] * self.seen_start_menu,
+                "pokemon_menu": self.reward_config["pokemon_menu"] * self.seen_pokemon_menu,
+                "stats_menu": self.reward_config["stats_menu"] * self.seen_stats_menu,
+                "bag_menu": self.reward_config["bag_menu"] * self.seen_bag_menu,
+                "explore_hidden_objs": sum(self.seen_hidden_objs.values())
+                * self.reward_config["explore_hidden_objs"],
+                "seen_action_bag_menu": self.seen_action_bag_menu
+                * self.reward_config["seen_action_bag_menu"],
+                "rival3": self.reward_config["event"] * int(self.read_m("wSSAnne2FCurScript") == 4),
+            }
+            | {
+                event: self.events.get_event(event) * self.reward_config["required_event"]
+                for event in REQUIRED_EVENTS
+            }
+            | {
+                "required_items": {
+                    item.name: int(item.value in bag_item_ids) * self.reward_config["required_item"]
+                    for item in REQUIRED_ITEMS
+                },
+            }
+        )
 
     def get_levels_reward(self):
         party_size = self.read_m("wPartyCount")
