@@ -73,8 +73,6 @@ class RedGymEnv(Env):
     def __init__(self, env_config: pufferlib.namespace):
         # TODO: Dont use pufferlib.namespace. It seems to confuse __init__
         self.video_dir = Path(env_config.video_dir)
-        self.session_path = Path(env_config.session_path)
-        self.video_path = self.video_dir / self.session_path
         self.save_final_state = env_config.save_final_state
         self.print_rewards = env_config.print_rewards
         self.headless = env_config.headless
@@ -104,6 +102,7 @@ class RedGymEnv(Env):
         self.auto_pokeflute = env_config.auto_pokeflute
         self.infinite_money = env_config.infinite_money
         self.use_global_map = env_config.use_global_map
+        self.save_state = env_config.save_state
         self.action_space = ACTION_SPACE
 
         # Obs space-related. TODO: avoid hardcoding?
@@ -307,10 +306,13 @@ class RedGymEnv(Env):
         self.total_reward = sum([val for _, val in self.progress_reward.items()])
 
         self.first = False
-        state = io.BytesIO()
-        self.pyboy.save_state(state)
-        state.seek(0)
-        return self._get_obs(), {"state": state.read()}
+        infos = {}
+        if self.save_state:
+            state = io.BytesIO()
+            self.pyboy.save_state(state)
+            state.seek(0)
+            infos |= {"state": state.read()}
+        return self._get_obs(), infos
 
     def init_mem(self):
         # Maybe I should preallocate a giant matrix for all map ids
@@ -554,7 +556,7 @@ class RedGymEnv(Env):
         self.pokecenters[self.read_m("wLastBlackoutMap")] = 1
         info = {}
 
-        if self.get_events_sum() > self.max_event_rew:
+        if self.save_state and self.get_events_sum() > self.max_event_rew:
             state = io.BytesIO()
             self.pyboy.save_state(state)
             state.seek(0)
@@ -1061,6 +1063,8 @@ class RedGymEnv(Env):
     def agent_stats(self, action):
         levels = [self.read_m(f"wPartyMon{i+1}Level") for i in range(self.read_m("wPartyCount"))]
         badges = self.read_m("wObtainedBadges")
+        explore_map = self.explore_map
+        explore_map[explore_map > 0] = 1
         return {
             "stats": {
                 "step": self.step_count + self.reset_count * self.max_steps,
@@ -1111,7 +1115,7 @@ class RedGymEnv(Env):
             | {f"badge_{i+1}": bool(badges & (1 << i)) for i in range(8)},
             "reward": self.get_game_state_reward(),
             "reward/reward_sum": sum(self.get_game_state_reward().values()),
-            "pokemon_exploration_map": self.explore_map,
+            "pokemon_exploration_map": explore_map,
             "cut_exploration_map": self.cut_explore_map,
         }
 
@@ -1157,6 +1161,8 @@ class RedGymEnv(Env):
         if not (self.read_m("wd736") & 0b1000_0000):
             x_pos, y_pos, map_n = self.get_game_coords()
             self.seen_coords[(x_pos, y_pos, map_n)] = 1
+            # TODO: Turn into a wrapper?
+            self.explore_map[self.explore_map > 0] = 0.5
             self.explore_map[local_to_global(y_pos, x_pos, map_n)] = 1
             # self.seen_global_coords[local_to_global(y_pos, x_pos, map_n)] = 1
             self.seen_map_ids[map_n] = 1
