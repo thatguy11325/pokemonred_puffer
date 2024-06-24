@@ -3,7 +3,6 @@ import os
 import cv2
 import matplotlib.colors as mcolors
 import numpy as np
-import torch
 
 KANTO_MAP_PATH = os.path.join(os.path.dirname(__file__), "kanto_map_dsv.png")
 BACKGROUND = np.array(cv2.imread(KANTO_MAP_PATH))
@@ -36,7 +35,3 @@ def make_pokemon_red_overlay(counts: np.ndarray):
     render = np.clip(render, 0, 255).astype(np.uint8)
 
     return render
-
-
-if torch.cuda.is_available():
-    make_pokemon_red_overlay = torch.compile(make_pokemon_red_overlay)

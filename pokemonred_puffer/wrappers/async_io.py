@@ -15,7 +15,7 @@ class AsyncWrapper(gym.Wrapper):
         # Now we will spawn a thread that will listen for updates
         # and send back when the new state has been loaded
         # this is a slow process and should rarely happen.
-        self.thread = threading.Thread(target=self.update)
+        self.thread = threading.Thread(target=self.update, daemon=True)
         self.thread.start()
         # TODO: Figure out if there's a safe way to exit the thread
 

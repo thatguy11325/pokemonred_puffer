@@ -17,9 +17,9 @@ dependencies = [
     "numpy",
     "opencv-python",
     "pyboy>=2",
-    "pufferlib[cleanrl]>=0.7.3,<1.0.0",
+    "pufferlib[cleanrl]>=1.0.0",
     "scikit-image",
-    "torch>=2.1",
+    "torch>=2.3",
     "torchvision",
     "wandb",
     "websockets"
