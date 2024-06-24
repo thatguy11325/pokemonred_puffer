@@ -227,9 +227,9 @@ rewards:
       bag_menu: 0.1
       rocket_hideout_found: 5.0
       explore_hidden_objs: 0.02
-      seen_action_bag_menu: 0.1
+      seen_action_bag_menu: 0.1G
   
-  baseline.CutWithObjectRewardsRequiredEventsEnv:
+  baseline.CutWithObjectRewardRequiredEventsEnv:
     reward:
       event: 1.0
       seen_pokemon: 4.0
@@ -244,7 +244,7 @@ rewards:
       start_menu: 0.00
       pokemon_menu: 0.0
       stats_menu: 0.0
-      bag_menu: 0.1
+      bag_menu: 0.0
       explore_hidden_objs: 0.02
       seen_action_bag_menu: 0.1
       required_event: 5.0
