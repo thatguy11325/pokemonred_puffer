@@ -142,6 +142,7 @@ class CleanPuffeRL:
     def __post_init__(self):
         seed_everything(self.config.seed, self.config.torch_deterministic)
         if self.config.verbose:
+            self.utilization = Utilization()
             print_dashboard(
                 self.config.env,
                 self.utilization,
@@ -153,8 +154,6 @@ class CleanPuffeRL:
                 self.msg,
                 clear=True,
             )
-
-            self.utilization = Utilization()
 
         self.vecenv.async_reset(self.config.seed)
         obs_shape = self.vecenv.single_observation_space.shape
