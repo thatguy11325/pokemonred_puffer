@@ -249,6 +249,7 @@ rewards:
       seen_action_bag_menu: 0.0
       required_event: 5.0
       required_item: 5.0
+      useful_item: 1.0
 
 
 
