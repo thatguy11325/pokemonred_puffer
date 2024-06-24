@@ -20,6 +20,7 @@ from pokemonred_puffer.data.events import (
     EVENT_FLAGS_START,
     EVENTS_FLAGS_LENGTH,
     MUSEUM_TICKET,
+    REQUIRED_EVENTS,
     EventFlags,
 )
 from pokemonred_puffer.data.field_moves import FieldMoves
@@ -1095,37 +1096,25 @@ class RedGymEnv(Env):
                 "seen_pokemon": int(sum(self.seen_pokemon)),
                 "moves_obtained": int(sum(self.moves_obtained)),
                 "opponent_level": self.max_opponent_level,
-                "met_bill": int(self.events.get_event("EVENT_MET_BILL")),
-                "used_cell_separator_on_bill": int(
-                    self.events.get_event("EVENT_USED_CELL_SEPARATOR_ON_BILL")
-                ),
-                "ss_ticket": int(self.events.get_event("EVENT_GOT_SS_TICKET")),
-                "met_bill_2": int(self.events.get_event("EVENT_MET_BILL_2")),
-                "bill_said_use_cell_separator": int(
-                    self.events.get_event("EVENT_BILL_SAID_USE_CELL_SEPARATOR")
-                ),
-                "left_bills_house_after_helping": int(
-                    self.events.get_event("EVENT_LEFT_BILLS_HOUSE_AFTER_HELPING")
-                ),
-                "got_hm01": int(self.events.get_event("EVENT_GOT_HM01")),
-                "rubbed_captains_back": int(self.events.get_event("EVENT_RUBBED_CAPTAINS_BACK")),
                 "taught_cut": int(self.check_if_party_has_hm(0xF)),
                 "cut_coords": sum(self.cut_coords.values()),
                 "cut_tiles": len(self.cut_tiles),
-                "start_menu": self.seen_start_menu,
-                "pokemon_menu": self.seen_pokemon_menu,
-                "stats_menu": self.seen_stats_menu,
-                "bag_menu": self.seen_bag_menu,
-                "action_bag_menu": self.seen_action_bag_menu,
+                "menu": {
+                    "start_menu": self.seen_start_menu,
+                    "pokemon_menu": self.seen_pokemon_menu,
+                    "stats_menu": self.seen_stats_menu,
+                    "bag_menu": self.seen_bag_menu,
+                    "action_bag_menu": self.seen_action_bag_menu,
+                },
                 "blackout_check": self.blackout_check,
                 "item_count": self.read_m(0xD31D),
                 "reset_count": self.reset_count,
                 "blackout_count": self.blackout_count,
                 "pokecenter": np.sum(self.pokecenters),
-                "rival3": int(self.read_m(0xD665) == 4),
-                "rocket_hideout_found": self.events.get_event("EVENT_FOUND_ROCKET_HIDEOUT"),
             }
             | {f"badge_{i+1}": bool(badges & (1 << i)) for i in range(8)},
+            "events": {self.events.get_event(event) for event in REQUIRED_EVENTS}
+            | {"rival3": int(self.read_m(0xD665) == 4)},
             "reward": self.get_game_state_reward(),
             "reward/reward_sum": sum(self.get_game_state_reward().values()),
             "pokemon_exploration_map": explore_map,

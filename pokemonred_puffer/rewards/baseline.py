@@ -1,4 +1,5 @@
 import pufferlib
+from pokemonred_puffer.data.events import REQUIRED_EVENTS
 from pokemonred_puffer.environment import (
     EVENT_FLAGS_START,
     EVENTS_FLAGS_LENGTH,
@@ -211,6 +212,43 @@ class CutWithObjectRewardsEnv(BaselineRewardEnv):
             * self.reward_config["explore_hidden_objs"],
             "seen_action_bag_menu": self.seen_action_bag_menu
             * self.reward_config["seen_action_bag_menu"],
+        }
+
+    def get_levels_reward(self):
+        party_size = self.read_m("wPartyCount")
+        party_levels = [self.read_m(f"wPartyMon{i+1}Level") for i in range(party_size)]
+        self.max_level_sum = max(self.max_level_sum, sum(party_levels))
+        if self.max_level_sum < 15:
+            return self.max_level_sum
+        else:
+            return 15 + (self.max_level_sum - 15) / 4
+
+
+class CutWithObjectRewardRequiredEventsEnv(BaselineRewardEnv):
+    def get_game_state_reward(self):
+        return {
+            "event": self.reward_config["event"] * self.update_max_event_rew(),
+            "seen_pokemon": self.reward_config["seen_pokemon"] * sum(self.seen_pokemon),
+            "caught_pokemon": self.reward_config["caught_pokemon"] * sum(self.caught_pokemon),
+            "moves_obtained": self.reward_config["moves_obtained"] * sum(self.moves_obtained),
+            "hm_count": self.reward_config["hm_count"] * self.get_hm_count(),
+            "level": self.reward_config["level"] * self.get_levels_reward(),
+            "badges": self.reward_config["badges"] * self.get_badges(),
+            "exploration": self.reward_config["exploration"] * sum(self.seen_coords.values()),
+            "cut_coords": self.reward_config["cut_coords"] * sum(self.cut_coords.values()),
+            "cut_tiles": self.reward_config["cut_tiles"] * sum(self.cut_tiles.values()),
+            "start_menu": self.reward_config["start_menu"] * self.seen_start_menu,
+            "pokemon_menu": self.reward_config["pokemon_menu"] * self.seen_pokemon_menu,
+            "stats_menu": self.reward_config["stats_menu"] * self.seen_stats_menu,
+            "bag_menu": self.reward_config["bag_menu"] * self.seen_bag_menu,
+            "explore_hidden_objs": sum(self.seen_hidden_objs.values())
+            * self.reward_config["explore_hidden_objs"],
+            "seen_action_bag_menu": self.seen_action_bag_menu
+            * self.reward_config["seen_action_bag_menu"],
+            "rival3": self.reward_config["event"] * int(self.read_m("wSSAnne2FCurScript") == 4),
+        } | {
+            event: self.events.get_event(event) * self.reward_config["required_event"]
+            for event in REQUIRED_EVENTS
         }
 
     def get_levels_reward(self):
