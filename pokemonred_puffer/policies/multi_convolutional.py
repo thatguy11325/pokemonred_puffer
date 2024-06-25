@@ -181,6 +181,8 @@ class MultiConvolutionalPolicy(nn.Module):
                 blackout_map_id.squeeze(1),
                 observations["wJoyIgnore"].float(),
                 items.flatten(start_dim=1),
+                observations["rival_3"].float(),
+                observations["game_corner_rocket"].float(),
             )
             + tuple(observations[event].float() for event in REQUIRED_EVENTS),
             dim=-1,

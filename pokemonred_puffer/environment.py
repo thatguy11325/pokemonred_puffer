@@ -32,6 +32,7 @@ from pokemonred_puffer.data.items import (
     USEFUL_ITEMS,
     Items,
 )
+from pokemonred_puffer.data.missable_objects import MissableFlags
 from pokemonred_puffer.data.strength_puzzles import STRENGTH_SOLUTIONS
 from pokemonred_puffer.data.tilesets import Tilesets
 from pokemonred_puffer.data.tm_hm import (
@@ -166,6 +167,8 @@ class RedGymEnv(Env):
                 low=0, high=max(Items._value2member_map_.keys()), shape=(20,), dtype=np.uint8
             ),
             "bag_quantity": spaces.Box(low=0, high=100, shape=(20,), dtype=np.uint8),
+            "rival_3": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
+            "game_corner_rocket": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
         } | {
             event: spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8)
             for event in REQUIRED_EVENTS
@@ -290,6 +293,7 @@ class RedGymEnv(Env):
         self.reset_mem()
 
         self.events = EventFlags(self.pyboy)
+        self.missables = MissableFlags(self.pyboy)
         self.update_pokedex()
         self.update_tm_hm_moves_obtained()
         self.taught_cut = self.check_if_party_has_hm(0xF)
@@ -515,6 +519,10 @@ class RedGymEnv(Env):
                 "wJoyIgnore": np.array(self.read_m("wJoyIgnore"), dtype=np.uint8),
                 "bag_items": bag[::2].copy(),
                 "bag_quantity": bag[1::2].copy(),
+                "rival_3": np.array(self.read_m("wSSAnne2FCurScript") == 4, dtype=np.uint8),
+                "game_corner_rocket": np.array(
+                    self.missables.get_missable("HS_GAME_CORNER_ROCKET"), dtype=np.uint8
+                ),
             }
             | {event: np.array(self.events.get_event(event)) for event in REQUIRED_EVENTS}
         )
@@ -554,6 +562,7 @@ class RedGymEnv(Env):
 
         self.run_action_on_emulator(action)
         self.events = EventFlags(self.pyboy)
+        self.missables = MissableFlags(self.pyboy)
         self.update_seen_coords()
         self.update_health()
         self.update_pokedex()
@@ -1127,7 +1136,10 @@ class RedGymEnv(Env):
             }
             | {f"badge_{i+1}": bool(badges & (1 << i)) for i in range(8)},
             "events": {event: self.events.get_event(event) for event in REQUIRED_EVENTS}
-            | {"rival3": int(self.read_m(0xD665) == 4)},
+            | {
+                "rival3": int(self.read_m(0xD665) == 4),
+                "game_corner_rocket": self.missables.get_missable("HS_GAME_CORNER_ROCKET"),
+            },
             "required_items": {item.name: item.value in bag_item_ids for item in REQUIRED_ITEMS},
             "useful_items": {item.name: item.value in bag_item_ids for item in USEFUL_ITEMS},
             "reward": self.get_game_state_reward(),
