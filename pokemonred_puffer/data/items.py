@@ -171,15 +171,6 @@ USEFUL_ITEMS = {
 }
 
 REQUIRED_ITEMS = {
-    Items.POKEDEX,
-    Items.BOULDERBADGE,
-    Items.CASCADEBADGE,
-    Items.THUNDERBADGE,
-    Items.RAINBOWBADGE,
-    Items.SOULBADGE,
-    Items.MARSHBADGE,
-    Items.VOLCANOBADGE,
-    Items.EARTHBADGE,
     Items.SECRET_KEY,
     # Items.ITEM_2C,
     Items.CARD_KEY,
