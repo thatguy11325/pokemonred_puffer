@@ -7,7 +7,7 @@ EVENTS_FLAGS_LENGTH = 320
 MUSEUM_TICKET = (0xD754, 0)
 
 
-class Flags_bits(LittleEndianStructure):
+class EventFlagsBits(LittleEndianStructure):
     _fields_ = [
         ("EVENT_FOLLOWED_OAK_INTO_LAB", c_uint8, 1),
         ("EVENT_001", c_uint8, 1),
@@ -2573,7 +2573,7 @@ class Flags_bits(LittleEndianStructure):
 
 
 class EventFlags(Union):
-    _fields_ = [("b", Flags_bits), ("asbytes", c_uint8 * 320)]
+    _fields_ = [("b", EventFlagsBits), ("asbytes", c_uint8 * 320)]
 
     def __init__(self, emu: PyBoy):
         super().__init__()
