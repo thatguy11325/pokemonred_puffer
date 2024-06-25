@@ -1,5 +1,6 @@
 import asyncio
 import json
+from multiprocessing import Lock, shared_memory
 
 import gymnasium as gym
 import websockets
@@ -9,8 +10,25 @@ from pokemonred_puffer.environment import RedGymEnv
 
 
 class StreamWrapper(gym.Wrapper):
+    env_id = shared_memory.SharedMemory(create=True, size=4)
+    lock = Lock()
+
     def __init__(self, env: RedGymEnv, config: pufferlib.namespace):
         super().__init__(env)
+        with RedGymEnv.lock:
+            env_id = (
+                (int(RedGymEnv.env_id.buf[0]) << 24)
+                + (int(RedGymEnv.env_id.buf[1]) << 16)
+                + (int(RedGymEnv.env_id.buf[2]) << 8)
+                + (int(RedGymEnv.env_id.buf[3]))
+            )
+            self.env_id = env_id
+            env_id += 1
+            RedGymEnv.env_id.buf[0] = (env_id >> 24) & 0xFF
+            RedGymEnv.env_id.buf[1] = (env_id >> 16) & 0xFF
+            RedGymEnv.env_id.buf[2] = (env_id >> 8) & 0xFF
+            RedGymEnv.env_id.buf[3] = (env_id) & 0xFF
+
         self.user = config.user
         self.ws_address = "wss://transdimensional.xyz/broadcast"
         self.stream_metadata = {
