@@ -15,7 +15,7 @@ def make_pokemon_red_overlay(counts: np.ndarray):
     # The clip scaling needs to be re-calibrated since my
     # overlay is from the global map with fading
     scaled = np.ascontiguousarray(np.sum(counts, axis=0).astype(np.float32))
-    scaled = scaled / np.max(counts)
+    scaled = scaled / np.max(scaled)
     nonzero = np.ascontiguousarray(np.where(scaled > 0, 1, 0).astype(np.float32))
     # scaled = np.clip(counts, 0, 1000) / 1000.0
 
