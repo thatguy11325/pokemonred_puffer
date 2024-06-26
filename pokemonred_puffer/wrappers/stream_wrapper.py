@@ -15,25 +15,25 @@ class StreamWrapper(gym.Wrapper):
 
     def __init__(self, env: RedGymEnv, config: pufferlib.namespace):
         super().__init__(env)
-        with RedGymEnv.lock:
+        with StreamWrapper.lock:
             env_id = (
-                (int(RedGymEnv.env_id.buf[0]) << 24)
-                + (int(RedGymEnv.env_id.buf[1]) << 16)
-                + (int(RedGymEnv.env_id.buf[2]) << 8)
-                + (int(RedGymEnv.env_id.buf[3]))
+                (int(StreamWrapper.env_id.buf[0]) << 24)
+                + (int(StreamWrapper.env_id.buf[1]) << 16)
+                + (int(StreamWrapper.env_id.buf[2]) << 8)
+                + (int(StreamWrapper.env_id.buf[3]))
             )
             self.env_id = env_id
             env_id += 1
-            RedGymEnv.env_id.buf[0] = (env_id >> 24) & 0xFF
-            RedGymEnv.env_id.buf[1] = (env_id >> 16) & 0xFF
-            RedGymEnv.env_id.buf[2] = (env_id >> 8) & 0xFF
-            RedGymEnv.env_id.buf[3] = (env_id) & 0xFF
+            StreamWrapper.env_id.buf[0] = (env_id >> 24) & 0xFF
+            StreamWrapper.env_id.buf[1] = (env_id >> 16) & 0xFF
+            StreamWrapper.env_id.buf[2] = (env_id >> 8) & 0xFF
+            StreamWrapper.env_id.buf[3] = (env_id) & 0xFF
 
         self.user = config.user
         self.ws_address = "wss://transdimensional.xyz/broadcast"
         self.stream_metadata = {
             "user": self.user,
-            "env_id": env.env_id,
+            "env_id": self.env_id,
         }
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)

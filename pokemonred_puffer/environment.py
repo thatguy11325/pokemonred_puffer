@@ -754,45 +754,38 @@ class RedGymEnv(Env):
             # Gym trees apparently get the same tile map as outside bushes
             # GYM = 7
             if (in_overworld and 0x3D in up) or (in_erika_gym and 0x50 in up):
-                self.pyboy.send_input(WindowEvent.PRESS_ARROW_UP)
-                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_UP, delay=8)
+                self.pyboy.button("UP", delay=8)
                 self.pyboy.tick(self.action_freq, render=True)
             elif (in_overworld and 0x3D in down) or (in_erika_gym and 0x50 in down):
-                self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
-                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
+                self.pyboy.button("DOWN", delay=8)
                 self.pyboy.tick(self.action_freq, render=True)
             elif (in_overworld and 0x3D in left) or (in_erika_gym and 0x50 in left):
-                self.pyboy.send_input(WindowEvent.PRESS_ARROW_LEFT)
-                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_LEFT, delay=8)
+                self.pyboy.button("LEFT", delay=8)
                 self.pyboy.tick(self.action_freq, render=True)
             elif (in_overworld and 0x3D in right) or (in_erika_gym and 0x50 in right):
-                self.pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
-                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_RIGHT, delay=8)
+                self.pyboy.button("RIGHT", delay=8)
                 self.pyboy.tick(self.action_freq, render=True)
             else:
                 return
+            breakpoint()
 
             # open start menu
-            self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
-            self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START, delay=8)
+            self.pyboy.button("START", delay=8)
             self.pyboy.tick(self.action_freq, render=True)
             # scroll to pokemon
             # 1 is the item index for pokemon
             for _ in range(24):
                 if self.pyboy.memory[self.pyboy.symbol_lookup("wCurrentMenuItem")[1]] == 1:
                     break
-                self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
-                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
+                self.pyboy.button("DOWN", delay=8)
                 self.pyboy.tick(self.action_freq, render=True)
-            self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-            self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, delay=8)
+            self.pyboy.button("A", delay=8)
             self.pyboy.tick(self.action_freq, render=True)
 
             # find pokemon with cut
             # We run this over all pokemon so we dont end up in an infinite for loop
             for _ in range(7):
-                self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
-                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
+                self.pyboy.button("DOWN", delay=8)
                 self.pyboy.tick(self.action_freq, render=True)
                 party_mon = self.pyboy.memory[self.pyboy.symbol_lookup("wCurrentMenuItem")[1]]
                 _, addr = self.pyboy.symbol_lookup(f"wPartyMon{party_mon%6+1}Moves")
@@ -800,8 +793,7 @@ class RedGymEnv(Env):
                     break
 
             # Enter submenu
-            self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-            self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, delay=8)
+            self.pyboy.button("A", delay=8)
             self.pyboy.tick(4 * self.action_freq, render=True)
 
             # Scroll until the field move is found
@@ -812,14 +804,12 @@ class RedGymEnv(Env):
                 current_item = self.read_m("wCurrentMenuItem")
                 if current_item < 4 and FieldMoves.CUT.value == field_moves[current_item]:
                     break
-                self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
-                self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
+                self.pyboy.button("DOWN", delay=8)
                 self.pyboy.tick(self.action_freq, render=True)
 
             # press a bunch of times
             for _ in range(5):
-                self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-                self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, delay=8)
+                self.pyboy.button("A", delay=8)
                 self.pyboy.tick(4 * self.action_freq, render=True)
 
     def surf_if_attempt(self, action: WindowEvent):

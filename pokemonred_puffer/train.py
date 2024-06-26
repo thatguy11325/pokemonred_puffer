@@ -93,7 +93,6 @@ def make_env_creator(
             env = wrapper_class(env, pufferlib.namespace(**[x for x in cfg.values()][0]))
         if async_wrapper and async_config:
             env = AsyncWrapper(env, async_config["send_queues"], async_config["recv_queues"])
-        # env = pufferlib.postprocess.EpisodeStats(env)
         return pufferlib.emulation.GymnasiumPufferEnv(env=env)
 
     return env_creator
