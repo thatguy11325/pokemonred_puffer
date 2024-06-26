@@ -118,7 +118,8 @@ train:
   # swarm_keep_pct: .8
 
 wrappers:
-  empty: []
+  empty:
+    - episode_stats.EpisodeStatsWrapper: {}
 
   baseline:
     - stream_wrapper.StreamWrapper:
