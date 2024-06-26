@@ -22,15 +22,15 @@ debug:
     env_batch_size: 4
     env_pool: True
     zero_copy: False
-    batch_size: 128
+    batch_size: 4
     minibatch_size: 4
     batch_rows: 4
     bptt_horizon: 2
     total_timesteps: 100_000_000
     save_checkpoint: True
     checkpoint_interval: 4
-    save_overlay: False
-    overlay_interval: 4
+    save_overlay: True
+    overlay_interval: 1
     verbose: False
     env_pool: False
     load_optimizer_state: False
