@@ -767,7 +767,6 @@ class RedGymEnv(Env):
                 self.pyboy.tick(self.action_freq, render=True)
             else:
                 return
-            breakpoint()
 
             # open start menu
             self.pyboy.button("START", delay=8)
