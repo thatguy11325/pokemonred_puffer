@@ -22,7 +22,7 @@ debug:
     env_batch_size: 4
     env_pool: True
     zero_copy: False
-    batch_size: 4
+    batch_size: 128
     minibatch_size: 4
     batch_rows: 4
     bptt_horizon: 2
@@ -149,6 +149,7 @@ wrappers:
         jitter: 0
 
   stream_only:
+    - episode_stats.EpisodeStatsWrapper: {}
     - stream_wrapper.StreamWrapper:
         user: thatguy 
     - exploration.OnResetExplorationWrapper:

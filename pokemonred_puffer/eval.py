@@ -3,11 +3,13 @@ import os
 import cv2
 import matplotlib.colors as mcolors
 import numpy as np
+from numba import jit
 
 KANTO_MAP_PATH = os.path.join(os.path.dirname(__file__), "kanto_map_dsv.png")
 BACKGROUND = np.array(cv2.imread(KANTO_MAP_PATH))
 
 
+@jit(nopython=True, nogil=True, parallel=True)
 def make_pokemon_red_overlay(counts: np.ndarray):
     # TODO: Rethink how this scaling works
     # Divide by number of elements > 0
