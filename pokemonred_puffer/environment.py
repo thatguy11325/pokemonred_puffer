@@ -40,6 +40,7 @@ from pokemonred_puffer.data.tm_hm import (
     SURF_SPECIES_IDS,
     TmHmMoves,
 )
+from pokemonred_puffer.data.wd728 import Wd728Flags
 from pokemonred_puffer.global_map import GLOBAL_MAP_SHAPE, local_to_global
 
 PIXEL_VALUES = np.array([0, 85, 153, 255], dtype=np.uint8)
@@ -165,6 +166,7 @@ class RedGymEnv(Env):
             "bag_quantity": spaces.Box(low=0, high=100, shape=(20,), dtype=np.uint8),
             "rival_3": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
             "game_corner_rocket": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
+            "saffron_guard": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
         } | {
             event: spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8)
             for event in REQUIRED_EVENTS
@@ -277,6 +279,7 @@ class RedGymEnv(Env):
 
         self.events = EventFlags(self.pyboy)
         self.missables = MissableFlags(self.pyboy)
+        self.wd728 = Wd728Flags(self.pyboy)
         self.update_pokedex()
         self.update_tm_hm_moves_obtained()
         self.taught_cut = self.check_if_party_has_hm(0xF)
@@ -505,6 +508,9 @@ class RedGymEnv(Env):
                 "rival_3": np.array(self.read_m("wSSAnne2FCurScript") == 4, dtype=np.uint8),
                 "game_corner_rocket": np.array(
                     self.missables.get_missable("HS_GAME_CORNER_ROCKET"), dtype=np.uint8
+                ),
+                "saffron_guard": np.array(
+                    self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK"), dtype=np.uint8
                 ),
             }
             | {event: np.array(self.events.get_event(event)) for event in REQUIRED_EVENTS}
@@ -1111,6 +1117,7 @@ class RedGymEnv(Env):
             | {
                 "rival3": int(self.read_m(0xD665) == 4),
                 "game_corner_rocket": self.missables.get_missable("HS_GAME_CORNER_ROCKET"),
+                "saffron_guard": self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK"),
             },
             "required_items": {item.name: item.value in bag_item_ids for item in REQUIRED_ITEMS},
             "useful_items": {item.name: item.value in bag_item_ids for item in USEFUL_ITEMS},

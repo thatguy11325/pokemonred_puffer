@@ -183,6 +183,7 @@ class MultiConvolutionalPolicy(nn.Module):
                 items.flatten(start_dim=1),
                 observations["rival_3"].float(),
                 observations["game_corner_rocket"].float(),
+                observations["saffron_guard"].float(),
             )
             + tuple(observations[event].float() for event in REQUIRED_EVENTS),
             dim=-1,

@@ -257,9 +257,12 @@ class CutWithObjectRewardRequiredEventsEnv(BaselineRewardEnv):
                 * self.reward_config["explore_hidden_objs"],
                 "seen_action_bag_menu": self.seen_action_bag_menu
                 * self.reward_config["seen_action_bag_menu"],
-                "rival3": self.reward_config["event"] * int(self.read_m("wSSAnne2FCurScript") == 4),
-                "game_corner_rocket": self.reward_config["event"]
+                "rival3": self.reward_config["required_event"]
+                * int(self.read_m("wSSAnne2FCurScript") == 4),
+                "game_corner_rocket": self.reward_config["required_event"]
                 * float(self.missables.get_missable("HS_GAME_CORNER_ROCKET")),
+                "saffron_guard": self.reward_config["required_event"]
+                * float(self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK")),
             }
             | {
                 event: self.reward_config["required_event"] * float(self.events.get_event(event))
