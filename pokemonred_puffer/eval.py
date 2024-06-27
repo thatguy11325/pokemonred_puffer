@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 from numba import jit
 
+
 KANTO_MAP_PATH = os.path.join(os.path.dirname(__file__), "kanto_map_dsv.png")
 BACKGROUND = np.array(cv2.imread(KANTO_MAP_PATH))
 
@@ -27,14 +28,14 @@ def make_pokemon_red_overlay(counts: np.ndarray):
 
     # Upscale to 16x16
     kernel = np.ascontiguousarray(np.ones((16, 16), dtype=np.uint8))
-    h = np.ascontiguousarray(overlay[..., 0])
-    s = np.ascontiguousarray(overlay[..., 1])
-    v = np.ascontiguousarray(overlay[..., 2])
-    h = np.kron(h, kernel).astype(np.uint8)
-    s = np.kron(s, kernel).astype(np.uint8)
-    v = np.kron(v, kernel).astype(np.uint8)
-    overlay = np.stack((h, s, v), axis=-1)
-    mask = np.kron(nonzero, np.ascontiguousarray(kernel[..., 0])).astype(np.uint8)
+    r = np.ascontiguousarray(overlay[..., 0])
+    g = np.ascontiguousarray(overlay[..., 1])
+    b = np.ascontiguousarray(overlay[..., 2])
+    r = np.kron(r, kernel).astype(np.uint8)
+    g = np.kron(g, kernel).astype(np.uint8)
+    b = np.kron(b, kernel).astype(np.uint8)
+    overlay = np.stack((r, g, b), axis=-1)
+    mask = np.kron(nonzero, np.ascontiguousarray(kernel)).astype(np.uint8)
     mask = np.stack((mask, mask, mask), axis=-1) != 0
 
     # Combine with background
