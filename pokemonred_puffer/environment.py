@@ -218,6 +218,7 @@ class RedGymEnv(Env):
         # self.pyboy.hook_register(None, "UsedCut.canCut", self.cut_hook, context=False)
         if self.disable_wild_encounters:
             self.setup_disable_wild_encounters()
+        self.pyboy.hook_register(None, "AnimateHealingMachine", self.pokecenter_heal_hook, None)
 
     def setup_disable_wild_encounters(self):
         bank, addr = self.pyboy.symbol_lookup("TryDoWildEncounter.gotWildEncounterType")
@@ -331,6 +332,7 @@ class RedGymEnv(Env):
         self.seen_stats_menu = 0
         self.seen_bag_menu = 0
         self.seen_action_bag_menu = 0
+        self.pokecenter_heal = 0
 
     def reset_mem(self):
         self.seen_start_menu = 0
@@ -338,6 +340,7 @@ class RedGymEnv(Env):
         self.seen_stats_menu = 0
         self.seen_bag_menu = 0
         self.seen_action_bag_menu = 0
+        self.pokecenter_heal = 0
 
     def render(self):
         # (144, 160, 3)
@@ -1032,6 +1035,9 @@ class RedGymEnv(Env):
     def blackout_update_hook(self, *args, **kwargs):
         self.blackout_check = self.read_m("wLastBlackoutMap")
 
+    def pokecenter_heal_hook(self, *args, **kwargs):
+        self.pokecenter_heal = 1
+
     def cut_hook(self, context):
         player_direction = self.pyboy.memory[
             self.pyboy.symbol_lookup("wSpritePlayerStateData1FacingDirection")[1]
@@ -1113,6 +1119,7 @@ class RedGymEnv(Env):
                 "reset_count": self.reset_count,
                 "blackout_count": self.blackout_count,
                 "pokecenter": np.sum(self.pokecenters),
+                "pokecenter_heal": self.pokecenter_heal,
             }
             | {f"badge_{i+1}": bool(badges & (1 << i)) for i in range(8)},
             "events": {event: self.events.get_event(event) for event in REQUIRED_EVENTS}

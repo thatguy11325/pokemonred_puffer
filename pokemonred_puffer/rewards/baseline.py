@@ -257,6 +257,7 @@ class CutWithObjectRewardRequiredEventsEnv(BaselineRewardEnv):
                 * self.reward_config["explore_hidden_objs"],
                 "seen_action_bag_menu": self.seen_action_bag_menu
                 * self.reward_config["seen_action_bag_menu"],
+                "pokecenter_heal": self.pokecenter_heal * self.reward_config["pokecenter_heal"],
                 "rival3": self.reward_config["required_event"]
                 * int(self.read_m("wSSAnne2FCurScript") == 4),
                 "game_corner_rocket": self.reward_config["required_event"]
