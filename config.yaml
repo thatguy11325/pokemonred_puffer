@@ -12,7 +12,8 @@ debug:
     log_frequency: 1
     disable_wild_encounters: True
     disable_ai_actions: True
-    use_global_map: True
+    use_global_map: False
+    reduce_res: False
   train:
     device: cpu
     compile: False
@@ -29,7 +30,7 @@ debug:
     total_timesteps: 100_000_000
     save_checkpoint: True
     checkpoint_interval: 4
-    save_overlay: True
+    save_overlay: False
     overlay_interval: 1
     verbose: False
     env_pool: False

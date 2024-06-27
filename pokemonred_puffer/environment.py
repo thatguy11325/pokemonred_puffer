@@ -1125,6 +1125,7 @@ class RedGymEnv(Env):
             "useful_items": {item.name: item.value in bag_item_ids for item in USEFUL_ITEMS},
             "reward": self.get_game_state_reward(),
             "reward/reward_sum": sum(self.get_game_state_reward().values()),
+            # Remove padding
             "pokemon_exploration_map": self.explore_map,
             # "cut_exploration_map": self.cut_explore_map,
         }
