@@ -309,7 +309,9 @@ class CleanPuffeRL:
                             np.stack(self.infos["pokemon_exploration_map"], axis=0)
                         )
                         if self.wandb_client is not None:
-                            self.stats["Media/aggregate_exploration_map"] = wandb.Image(overlay)
+                            self.stats["Media/aggregate_exploration_map"] = wandb.Image(
+                                overlay, file_type="jpg"
+                            )
                     elif "state" in k:
                         continue
 
