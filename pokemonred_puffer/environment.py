@@ -109,6 +109,7 @@ class RedGymEnv(Env):
         self.infinite_money = env_config.infinite_money
         self.use_global_map = env_config.use_global_map
         self.save_state = env_config.save_state
+        self.animate_scripts = env_config.animate_scripts
         self.action_space = ACTION_SPACE
 
         # Obs space-related. TODO: avoid hardcoding?
@@ -783,22 +784,22 @@ class RedGymEnv(Env):
 
             # open start menu
             self.pyboy.button("START", delay=8)
-            self.pyboy.tick(self.action_freq, render=True)
+            self.pyboy.tick(self.action_freq, self.animate_scripts)
             # scroll to pokemon
             # 1 is the item index for pokemon
             for _ in range(24):
                 if self.pyboy.memory[self.pyboy.symbol_lookup("wCurrentMenuItem")[1]] == 1:
                     break
                 self.pyboy.button("DOWN", delay=8)
-                self.pyboy.tick(self.action_freq, render=True)
+                self.pyboy.tick(self.action_freq, render=self.animate_scripts)
             self.pyboy.button("A", delay=8)
-            self.pyboy.tick(self.action_freq, render=True)
+            self.pyboy.tick(self.action_freq, self.animate_scripts)
 
             # find pokemon with cut
             # We run this over all pokemon so we dont end up in an infinite for loop
             for _ in range(7):
                 self.pyboy.button("DOWN", delay=8)
-                self.pyboy.tick(self.action_freq, render=True)
+                self.pyboy.tick(self.action_freq, self.animate_scripts)
                 party_mon = self.pyboy.memory[self.pyboy.symbol_lookup("wCurrentMenuItem")[1]]
                 _, addr = self.pyboy.symbol_lookup(f"wPartyMon{party_mon%6+1}Moves")
                 if 0xF in self.pyboy.memory[addr : addr + 4]:
@@ -806,7 +807,7 @@ class RedGymEnv(Env):
 
             # Enter submenu
             self.pyboy.button("A", delay=8)
-            self.pyboy.tick(4 * self.action_freq, render=True)
+            self.pyboy.tick(4 * self.action_freq, self.animate_scripts)
 
             # Scroll until the field move is found
             _, wFieldMoves = self.pyboy.symbol_lookup("wFieldMoves")
@@ -817,12 +818,12 @@ class RedGymEnv(Env):
                 if current_item < 4 and FieldMoves.CUT.value == field_moves[current_item]:
                     break
                 self.pyboy.button("DOWN", delay=8)
-                self.pyboy.tick(self.action_freq, render=True)
+                self.pyboy.tick(self.action_freq, self.animate_scripts)
 
             # press a bunch of times
             for _ in range(5):
                 self.pyboy.button("A", delay=8)
-                self.pyboy.tick(4 * self.action_freq, render=True)
+                self.pyboy.tick(4 * self.action_freq, self.animate_scripts)
 
     def surf_if_attempt(self, action: WindowEvent):
         if not (
@@ -869,7 +870,7 @@ class RedGymEnv(Env):
             # open start menu
             self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
             self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START, delay=8)
-            self.pyboy.tick(self.action_freq, render=True)
+            self.pyboy.tick(self.action_freq, self.animate_scripts)
             # scroll to pokemon
             # 1 is the item index for pokemon
             for _ in range(24):
@@ -877,17 +878,17 @@ class RedGymEnv(Env):
                     break
                 self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
                 self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
-                self.pyboy.tick(self.action_freq, render=True)
+                self.pyboy.tick(self.action_freq, self.animate_scripts)
             self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
             self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, delay=8)
-            self.pyboy.tick(self.action_freq, render=True)
+            self.pyboy.tick(self.action_freq, self.animate_scripts)
 
             # find pokemon with surf
             # We run this over all pokemon so we dont end up in an infinite for loop
             for _ in range(7):
                 self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
                 self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
-                self.pyboy.tick(self.action_freq, render=True)
+                self.pyboy.tick(self.action_freq, self.animate_scripts)
                 party_mon = self.pyboy.memory[self.pyboy.symbol_lookup("wCurrentMenuItem")[1]]
                 _, addr = self.pyboy.symbol_lookup(f"wPartyMon{party_mon%6+1}Moves")
                 if 0x39 in self.pyboy.memory[addr : addr + 4]:
@@ -896,7 +897,7 @@ class RedGymEnv(Env):
             # Enter submenu
             self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
             self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, delay=8)
-            self.pyboy.tick(4 * self.action_freq, render=True)
+            self.pyboy.tick(4 * self.action_freq, self.animate_scripts)
 
             # Scroll until the field move is found
             _, wFieldMoves = self.pyboy.symbol_lookup("wFieldMoves")
@@ -911,13 +912,13 @@ class RedGymEnv(Env):
                     break
                 self.pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
                 self.pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay=8)
-                self.pyboy.tick(self.action_freq, render=True)
+                self.pyboy.tick(self.action_freq, self.animate_scripts)
 
             # press a bunch of times
             for _ in range(5):
                 self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
                 self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, delay=8)
-                self.pyboy.tick(4 * self.action_freq, render=True)
+                self.pyboy.tick(4 * self.action_freq, self.animate_scripts)
 
     def solve_missable_strength_puzzle(self):
         in_cavern = self.read_m("wCurMapTileset") == Tilesets.CAVERN.value
@@ -955,7 +956,7 @@ class RedGymEnv(Env):
                                 self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]
                             ] = 0xFF
                             self.pyboy.button(button, 8)
-                            self.pyboy.tick(self.action_freq * 1.5, render=True)
+                            self.pyboy.tick(self.action_freq * 1.5, self.animate_scripts)
                         self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = (
                             current_repel_steps
                         )
@@ -985,7 +986,7 @@ class RedGymEnv(Env):
                             0xFF
                         )
                         self.pyboy.button(button, 8)
-                        self.pyboy.tick(self.action_freq * 2, render=True)
+                        self.pyboy.tick(self.action_freq * 2, self.animate_scripts)
                     self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = (
                         current_repel_steps
                     )
