@@ -30,7 +30,7 @@ debug:
     total_timesteps: 100_000_000
     save_checkpoint: True
     checkpoint_interval: 4
-    save_overlay: False
+    save_overlay: True
     overlay_interval: 1
     verbose: False
     env_pool: False

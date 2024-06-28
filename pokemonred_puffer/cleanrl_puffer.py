@@ -304,14 +304,14 @@ class CleanPuffeRL:
                 # Moves into models... maybe. Definitely moves.
                 # You could also just return infos and have it in demo
                 if "pokemon_exploration_map" in k and self.config.save_overlay is True:
-                    if self.epoch % self.config.overlay_interval == 0:
+                    if True or self.epoch % self.config.overlay_interval == 0:
                         overlay = make_pokemon_red_overlay(np.stack(self.infos[k], axis=0))
                         if self.wandb_client is not None:
                             self.stats["Media/aggregate_exploration_map"] = wandb.Image(
                                 overlay, file_type="jpg"
                             )
-                    elif "state" in k:
-                        continue
+                elif "state" in k:
+                    continue
 
                 try:  # TODO: Better checks on log data types
                     self.stats[k] = np.mean(v)

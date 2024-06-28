@@ -4,12 +4,12 @@ import cv2
 import numpy as np
 from numba import jit
 
-from pokemonred_puffer.global_map import MAP_PAD
+from pokemonred_puffer.global_map import PAD
 
 
 KANTO_MAP_PATH = os.path.join(os.path.dirname(__file__), "kanto_map_dsv.png")
 BACKGROUND = np.array(cv2.imread(KANTO_MAP_PATH))
-BACKGROUND = np.pad(BACKGROUND, MAP_PAD + ((0, 0),))
+BACKGROUND = np.pad(BACKGROUND, ((PAD * 16, PAD * 16), (PAD * 16, PAD * 16), (0, 0)))
 
 
 @jit(nopython=True, nogil=True)

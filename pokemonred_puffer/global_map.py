@@ -1,11 +1,13 @@
 import os
 import json
 
+KANTO_MAP_PATH = os.path.join(os.path.dirname(__file__), "kanto_map_dsv.png")
+
 MAP_PATH = os.path.join(os.path.dirname(__file__), "map_data.json")
-MAP_PAD = ((20, 20), (20, 20))
-GLOBAL_MAP_SHAPE = (444 + MAP_PAD[0][0] + MAP_PAD[0][1], 436 + MAP_PAD[1][0] + MAP_PAD[1][1])
-MAP_ROW_OFFSET = MAP_PAD[0][0]
-MAP_COL_OFFSET = MAP_PAD[1][0]
+PAD = 20
+GLOBAL_MAP_SHAPE = (444 + PAD * 2, 436 + PAD * 2)
+MAP_ROW_OFFSET = PAD
+MAP_COL_OFFSET = PAD
 
 with open(MAP_PATH) as map_data:
     MAP_DATA = json.load(map_data)["regions"]
