@@ -1180,13 +1180,14 @@ class RedGymEnv(Env):
         return (self.read_m(0xD362), self.read_m(0xD361), self.read_m(0xD35E))
 
     def update_seen_coords(self):
-        if not (self.read_m("wd736") & 0b1000_0000):
-            x_pos, y_pos, map_n = self.get_game_coords()
-            self.seen_coords[(x_pos, y_pos, map_n)] = 1
-            # TODO: Turn into a wrapper?
-            self.explore_map[local_to_global(y_pos, x_pos, map_n)] = 1
-            # self.seen_global_coords[local_to_global(y_pos, x_pos, map_n)] = 1
-            self.seen_map_ids[map_n] = 1
+        inc = 0.25 if (self.read_m("wd736") & 0b1000_0000) else 1
+
+        x_pos, y_pos, map_n = self.get_game_coords()
+        self.seen_coords[(x_pos, y_pos, map_n)] = inc
+        # TODO: Turn into a wrapper?
+        self.explore_map[local_to_global(y_pos, x_pos, map_n)] = inc
+        # self.seen_global_coords[local_to_global(y_pos, x_pos, map_n)] = 1
+        self.seen_map_ids[map_n] = 1
 
     def get_explore_map(self):
         explore_map = np.zeros(GLOBAL_MAP_SHAPE)
