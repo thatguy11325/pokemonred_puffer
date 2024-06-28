@@ -14,7 +14,8 @@ debug:
     disable_ai_actions: True
     use_global_map: False
     reduce_res: False
-  train:
+    animate_scripts: True
+train:
     device: cpu
     compile: False
     compile_mode: default
@@ -68,6 +69,8 @@ env:
   infinite_money: True
   use_global_map: False
   save_state: False
+  animate_scripts: False
+
 
 
 train:
