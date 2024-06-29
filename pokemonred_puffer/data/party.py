@@ -4,6 +4,7 @@ from pyboy import PyBoy
 
 
 class BoxStruct(Structure):
+    _pack_ = 1
     _fields_ = [
         ("Species", c_uint8),
         ("HP", c_uint16),
@@ -26,6 +27,7 @@ class BoxStruct(Structure):
 
 
 class PartyStruct(Structure):
+    _pack_ = 1
     _fields_ = BoxStruct._fields_ + [
         ("Level", c_uint8),
         ("MaxHP", c_uint16),
