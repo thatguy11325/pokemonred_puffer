@@ -31,6 +31,7 @@ from pokemonred_puffer.data.items import (
     USEFUL_ITEMS,
     Items,
 )
+from pokemonred_puffer.data.map import MapIds
 from pokemonred_puffer.data.missable_objects import MissableFlags
 from pokemonred_puffer.data.strength_puzzles import STRENGTH_SOLUTIONS
 from pokemonred_puffer.data.tilesets import Tilesets
@@ -668,7 +669,21 @@ class RedGymEnv(Env):
 
     def use_pokeflute(self):
         in_overworld = self.read_m("wCurMapTileset") == Tilesets.OVERWORLD.value
-        if in_overworld:
+        # not in battle
+        _, _, map_id = self.get_game_coords()
+        if (
+            in_overworld
+            and self.read_m(0xD057) == 0
+            and map_id in (MapIds.ROUTE_12.value, MapIds.ROUTE_16.value)
+            and not (
+                self.events.get_event("EVENT_BEAT_ROUTE12_SNORLAX")
+                and map_id == MapIds.ROUTE_12.value
+            )
+            and not (
+                self.events.get_event("EVENT_BEAT_ROUTE16_SNORLAX")
+                and map_id == MapIds.ROUTE_16.value
+            )
+        ):
             _, wBagItems = self.pyboy.symbol_lookup("wBagItems")
             bag_items = self.pyboy.memory[wBagItems : wBagItems + 40]
             if Items.POKE_FLUTE.value not in bag_items[::2]:
@@ -755,7 +770,7 @@ class RedGymEnv(Env):
         # https://github.com/pret/pokered/blob/d38cf5281a902b4bd167a46a7c9fd9db436484a7/constants/tileset_constants.asm#L11C8-L11C11
         in_erika_gym = self.read_m("wCurMapTileset") == Tilesets.GYM.value
         in_overworld = self.read_m("wCurMapTileset") == Tilesets.OVERWORLD.value
-        if in_erika_gym or in_overworld:
+        if self.read_m(0xD057) == 0 and (in_erika_gym or in_overworld):
             _, wTileMap = self.pyboy.symbol_lookup("wTileMap")
             tileMap = self.pyboy.memory[wTileMap : wTileMap + 20 * 18]
             tileMap = np.array(tileMap, dtype=np.uint8)
@@ -830,7 +845,8 @@ class RedGymEnv(Env):
 
     def surf_if_attempt(self, action: WindowEvent):
         if not (
-            self.read_m("wWalkBikeSurfState") != 2
+            self.read_m(0xD057) == 0
+            and self.read_m("wWalkBikeSurfState") != 2
             and self.check_if_party_has_hm(0x39)
             and action
             in [
@@ -925,7 +941,7 @@ class RedGymEnv(Env):
 
     def solve_missable_strength_puzzle(self):
         in_cavern = self.read_m("wCurMapTileset") == Tilesets.CAVERN.value
-        if in_cavern:
+        if self.read_m(0xD057) == 0 and in_cavern:
             _, wMissableObjectFlags = self.pyboy.symbol_lookup("wMissableObjectFlags")
             _, wMissableObjectList = self.pyboy.symbol_lookup("wMissableObjectList")
             missable_objects_list = self.pyboy.memory[
@@ -969,7 +985,7 @@ class RedGymEnv(Env):
 
     def solve_switch_strength_puzzle(self):
         in_cavern = self.read_m("wCurMapTileset") == Tilesets.CAVERN.value
-        if in_cavern:
+        if self.read_m(0xD057) == 0 and in_cavern:
             for sprite_id in range(1, self.read_m("wNumSprites") + 1):
                 picture_id = self.read_m(f"wSprite{sprite_id:02}StateData1PictureID")
                 mapY = self.read_m(f"wSprite{sprite_id:02}StateData2MapY")
