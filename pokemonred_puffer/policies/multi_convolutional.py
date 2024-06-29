@@ -173,7 +173,7 @@ class MultiConvolutionalPolicy(nn.Module):
 
         # party network
         species = self.species_embeddings(observations["species"].squeeze(1).long()).float()
-        status = one_hot(observations["status"].long(), 7).squeeze(1)
+        status = one_hot(observations["status"].long(), 7).squeeze(1).float()
         type1 = self.type_embeddings(observations["type1"].squeeze(1).long()).float()
         type2 = self.type_embeddings(observations["type2"].squeeze(1).long()).float()
         moves = (
