@@ -33,6 +33,7 @@ from pokemonred_puffer.data.items import (
 )
 from pokemonred_puffer.data.map import MapIds
 from pokemonred_puffer.data.missable_objects import MissableFlags
+from pokemonred_puffer.data.party import PartyMons
 from pokemonred_puffer.data.strength_puzzles import STRENGTH_SOLUTIONS
 from pokemonred_puffer.data.tilesets import Tilesets
 from pokemonred_puffer.data.tm_hm import (
@@ -564,6 +565,7 @@ class RedGymEnv(Env):
         self.run_action_on_emulator(action)
         self.events = EventFlags(self.pyboy)
         self.missables = MissableFlags(self.pyboy)
+        self.party = PartyMons(self.pyboy)
         self.update_seen_coords()
         self.update_health()
         self.update_pokedex()
