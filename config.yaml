@@ -15,7 +15,7 @@ debug:
     use_global_map: False
     reduce_res: False
     animate_scripts: True
-train:
+  train:
     device: cpu
     compile: False
     compile_mode: default
