@@ -170,6 +170,19 @@ class RedGymEnv(Env):
             "rival_3": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
             "game_corner_rocket": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
             "saffron_guard": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
+            # This could be a dict within a sequence, but we'll do it like this and concat later
+            "species": spaces.Box(low=0, high=0xBE, shape=(6,), dtype=np.uint8),
+            "hp": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint16),
+            "status": spaces.Box(low=0, high=7, shape=(6,), dtype=np.uint8),
+            "type1": spaces.Box(low=0, high=0x1A, shape=(6,), dtype=np.uint8),
+            "type2": spaces.Box(low=0, high=0x1A, shape=(6,), dtype=np.uint8),
+            "level": spaces.Box(low=0, high=100, shape=(6,), dtype=np.uint8),
+            "maxHP": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint16),
+            "attack": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint16),
+            "defense": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint16),
+            "speed": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint16),
+            "special": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint16),
+            "moves": spaces.Box(low=0, high=0xA4, shape=(6, 4), dtype=np.uint8),
         } | {
             event: spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8)
             for event in REQUIRED_EVENTS
@@ -284,6 +297,7 @@ class RedGymEnv(Env):
         self.events = EventFlags(self.pyboy)
         self.missables = MissableFlags(self.pyboy)
         self.wd728 = Wd728Flags(self.pyboy)
+        self.party = PartyMons(self.pyboy)
         self.update_pokedex()
         self.update_tm_hm_moves_obtained()
         self.taught_cut = self.check_if_party_has_hm(0xF)
@@ -522,6 +536,18 @@ class RedGymEnv(Env):
                 "saffron_guard": np.array(
                     self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK"), dtype=np.uint8
                 ),
+                "species": np.array([self.party[i].Species for i in range(6)], dtype=np.uint8),
+                "hp": np.array([self.party[i].HP for i in range(6)], dtype=np.uint16),
+                "status": np.array([self.party[i].Status for i in range(6)], dtype=np.uint8),
+                "type1": np.array([self.party[i].Type1 for i in range(6)], dtype=np.uint8),
+                "type2": np.array([self.party[i].Type2 for i in range(6)], dtype=np.uint8),
+                "level": np.array([self.party[i].Level for i in range(6)], dtype=np.uint8),
+                "maxHP": np.array([self.party[i].MaxHP for i in range(6)], dtype=np.uint16),
+                "attack": np.array([self.party[i].Attack for i in range(6)], dtype=np.uint16),
+                "defense": np.array([self.party[i].Defense for i in range(6)], dtype=np.uint16),
+                "speed": np.array([self.party[i].Speed for i in range(6)], dtype=np.uint16),
+                "special": np.array([self.party[i].Special for i in range(6)], dtype=np.uint16),
+                "moves": np.array([self.party[i].Moves for i in range(6)], dtype=np.uint8),
             }
             | {event: np.array(self.events.get_event(event)) for event in REQUIRED_EVENTS}
         )
@@ -565,6 +591,7 @@ class RedGymEnv(Env):
         self.run_action_on_emulator(action)
         self.events = EventFlags(self.pyboy)
         self.missables = MissableFlags(self.pyboy)
+        self.wd728 = Wd728Flags(self.pyboy)
         self.party = PartyMons(self.pyboy)
         self.update_seen_coords()
         self.update_health()
