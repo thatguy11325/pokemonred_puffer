@@ -2655,4 +2655,11 @@ REQUIRED_EVENTS = {
     "EVENT_BEAT_LANCE",
     "EVENT_BEAT_CHAMPION_RIVAL",
     "ELITE4_CHAMPION_EVENTS_END",
+    # Random trainers we need to beat
+    # lass at the entrance of route 9
+    "EVENT_BEAT_ROUTE_9_TRAINER_0",
+    # exploding graveler trainer in rock tunnel
+    "EVENT_BEAT_ROCK_TUNNEL_2_TRAINER_1",
+    # lass at the end of rock tunnel
+    "EVENT_BEAT_ROCK_TUNNEL_1_TRAINER_5",
 }
