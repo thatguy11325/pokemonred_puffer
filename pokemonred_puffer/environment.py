@@ -683,14 +683,18 @@ class RedGymEnv(Env):
         party_size = self.read_m("wPartyCount")
         for i in range(party_size):
             # PRET 1-indexes
-            _, species_addr = self.pyboy.symbol_lookup(f"wPartyMon{i+1}Species")
-            poke = self.pyboy.memory[species_addr]
             # https://github.com/pret/pokered/blob/d38cf5281a902b4bd167a46a7c9fd9db436484a7/constants/pokemon_constants.asm
-            if poke in pokemon_species_ids:
+            if self.party[i].Species in pokemon_species_ids:
+                _, move_addr = self.pyboy.symbol_lookup(f"wPartyMon{i+1}Moves")
+                _, pp_addr = self.pyboy.symbol_lookup(f"wPartyMon{i+1}PP")
                 for slot in range(4):
-                    if self.read_m(f"wPartyMon{i+1}Moves") not in {0xF, 0x13, 0x39, 0x46, 0x94}:
-                        _, move_addr = self.pyboy.symbol_lookup(f"wPartyMon{i+1}Moves")
-                        _, pp_addr = self.pyboy.symbol_lookup(f"wPartyMon{i+1}PP")
+                    if self.party[i].Moves[slot] not in {
+                        TmHmMoves.CUT.value,
+                        TmHmMoves.FLY.value,
+                        TmHmMoves.SURF.value,
+                        TmHmMoves.STRENGTH.value,
+                        TmHmMoves.FLASH.value,
+                    }:
                         self.pyboy.memory[move_addr + slot] = tmhm
                         self.pyboy.memory[pp_addr + slot] = pp
                         # fill up pp: 30/30
@@ -889,7 +893,8 @@ class RedGymEnv(Env):
 
         in_overworld = self.read_m("wCurMapTileset") == Tilesets.OVERWORLD.value
         in_plateau = self.read_m("wCurMapTileset") == Tilesets.PLATEAU.value
-        if in_overworld or in_plateau:
+        in_cavern = self.read_m("wCurMapTileset") == Tilesets.CAVERN.value
+        if in_overworld or in_plateau or in_cavern:
             _, wTileMap = self.pyboy.symbol_lookup("wTileMap")
             tileMap = self.pyboy.memory[wTileMap : wTileMap + 20 * 18]
             tileMap = np.array(tileMap, dtype=np.uint8)
