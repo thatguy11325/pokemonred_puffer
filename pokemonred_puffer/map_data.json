@@ -657,7 +657,7 @@
             ],
             "tileSize": [
                 10,
-                15
+                14
             ]
         },
         {
@@ -1316,7 +1316,7 @@
                 287
             ],
             "tileSize": [
-                49,
+                50,
                 8
             ]
         },
@@ -1389,7 +1389,7 @@
             ],
             "tileSize": [
                 4,
-                5
+                4
             ]
         },
         {
@@ -1766,18 +1766,6 @@
         },
         {
             "id": "159",
-            "name": "Sea Foam Islands 1F",
-            "coordinates": [
-                116,
-                407
-            ],
-            "tileSize": [
-                30,
-                18
-            ]
-        },
-        {
-            "id": "160",
             "name": "Sea Foam Islands B1F",
             "coordinates": [
                 116,
@@ -1789,7 +1777,7 @@
             ]
         },
         {
-            "id": "161",
+            "id": "160",
             "name": "Sea Foam Islands B2F",
             "coordinates": [
                 85,
@@ -1801,11 +1789,23 @@
             ]
         },
         {
-            "id": "162",
+            "id": "161",
             "name": "Sea Foam Islands B3F",
             "coordinates": [
                 85,
                 369
+            ],
+            "tileSize": [
+                30,
+                18
+            ]
+        },
+        {
+            "id": "162",
+            "name": "Sea Foam Islands B4F",
+            "coordinates": [
+                85,
+                350
             ],
             "tileSize": [
                 30,
@@ -2162,10 +2162,10 @@
         },
         {
             "id": "192",
-            "name": "Sea Foam Islands B4F",
+            "name": "Sea Foam Islands 1F",
             "coordinates": [
-                85,
-                350
+                116,
+                407
             ],
             "tileSize": [
                 30,
@@ -2426,18 +2426,6 @@
         },
         {
             "id": "217",
-            "name": "Safari West",
-            "coordinates": [
-                148,
-                310
-            ],
-            "tileSize": [
-                30,
-                26
-            ]
-        },
-        {
-            "id": "218",
             "name": "Safari East",
             "coordinates": [
                 208,
@@ -2449,7 +2437,7 @@
             ]
         },
         {
-            "id": "219",
+            "id": "218",
             "name": "Safari North",
             "coordinates": [
                 166,
@@ -2458,6 +2446,18 @@
             "tileSize": [
                 40,
                 36
+            ]
+        },
+		{
+            "id": "219",
+            "name": "Safari West",
+            "coordinates": [
+                148,
+                310
+            ],
+            "tileSize": [
+                30,
+                26
             ]
         },
         {
@@ -2637,7 +2637,7 @@
             ],
             "tileSize": [
                 18,
-                19
+                18
             ]
         },
         {
@@ -2649,7 +2649,7 @@
             ],
             "tileSize": [
                 4,
-                5
+                4
             ]
         },
         {
