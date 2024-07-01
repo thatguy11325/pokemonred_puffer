@@ -2662,4 +2662,10 @@ REQUIRED_EVENTS = {
     "EVENT_BEAT_ROCK_TUNNEL_2_TRAINER_1",
     # lass at the end of rock tunnel
     "EVENT_BEAT_ROCK_TUNNEL_1_TRAINER_5",
+    # Rock tunnel super nerd
+    "EVENT_BEAT_ROCK_TUNNEL_1_TRAINER_3",
+    # second rock tunnel super nerd
+    "EVENT_BEAT_ROCK_TUNNEL_2_TRAINER_7",
+    # required rock tunnel trainer
+    "EVENT_BEAT_ROCK_TUNNEL_2_TRAINER_5",
 }
