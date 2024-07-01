@@ -549,7 +549,10 @@ class RedGymEnv(Env):
                 "special": np.array([self.party[i].Special for i in range(6)], dtype=np.uint16),
                 "moves": np.array([self.party[i].Moves for i in range(6)], dtype=np.uint8),
             }
-            | {event: np.array(self.events.get_event(event)) for event in REQUIRED_EVENTS}
+            | {
+                event: np.array(self.events.get_event(event), dtype=np.uint8)
+                for event in REQUIRED_EVENTS
+            }
         )
 
     def set_perfect_iv_dvs(self):
