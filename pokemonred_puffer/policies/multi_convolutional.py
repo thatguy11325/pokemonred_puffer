@@ -4,6 +4,7 @@ import pufferlib.pytorch
 import torch
 from torch import nn
 
+from pokemonred_puffer.data.events import REQUIRED_EVENTS
 from pokemonred_puffer.data.items import Items
 from pokemonred_puffer.environment import PIXEL_VALUES
 
@@ -91,16 +92,22 @@ class MultiConvolutionalPolicy(nn.Module):
         self.register_buffer(
             "unpack_shift", torch.tensor([6, 4, 2, 0], dtype=torch.uint8), persistent=False
         )
-        self.register_buffer("badge_buffer", torch.arange(8) + 1, persistent=False)
+        # self.register_buffer("badge_buffer", torch.arange(8) + 1, persistent=False)
 
         # pokemon has 0xF7 map ids
         # Lets start with 4 dims for now. Could try 8
-        self.map_embeddings = torch.nn.Embedding(0xF7, 4, dtype=torch.float32)
+        self.map_embeddings = nn.Embedding(0xF7, 4, dtype=torch.float32)
         # N.B. This is an overestimate
         item_count = max(Items._value2member_map_.keys())
-        self.item_embeddings = torch.nn.Embedding(
+        self.item_embeddings = nn.Embedding(
             item_count, int(item_count**0.25 + 1), dtype=torch.float32
         )
+
+        # Party layers
+        self.party_network = nn.Sequential(nn.LazyLinear(6), nn.ReLU(), nn.Flatten())
+        self.species_embeddings = nn.Embedding(0xBE, int(0xBE**0.25) + 1, dtype=torch.float32)
+        self.type_embeddings = nn.Embedding(0x1A, int(0x1A**0.25) + 1, dtype=torch.float32)
+        self.moves_embeddings = nn.Embedding(0xA4, int(0xA4**0.25) + 1, dtype=torch.float32)
 
     def forward(self, observations):
         hidden, lookup = self.encode_observations(observations)
@@ -144,7 +151,7 @@ class MultiConvolutionalPolicy(nn.Module):
                     .flatten()
                     .int(),
                 ).reshape(restored_global_map_shape)
-        badges = self.badge_buffer <= observations["badges"]
+        # badges = self.badge_buffer <= observations["badges"]
         map_id = self.map_embeddings(observations["map_id"].long())
         blackout_map_id = self.map_embeddings(observations["blackout_map_id"].long())
         # The bag quantity can be a value between 1 and 99
@@ -164,23 +171,57 @@ class MultiConvolutionalPolicy(nn.Module):
         if self.downsample > 1:
             image_observation = image_observation[:, :, :: self.downsample, :: self.downsample]
 
+        # party network
+        species = self.species_embeddings(observations["species"].squeeze(1).long()).float()
+        status = one_hot(observations["status"].long(), 7).squeeze(1).float()
+        type1 = self.type_embeddings(observations["type1"].squeeze(1).long()).float()
+        type2 = self.type_embeddings(observations["type2"].squeeze(1).long()).float()
+        moves = (
+            self.moves_embeddings(observations["moves"].squeeze(1).long())
+            .float()
+            .reshape((-1, 6, 4 * self.moves_embeddings.embedding_dim))
+        )
+        party_obs = torch.cat(
+            (
+                species,
+                observations["hp"].float().unsqueeze(-1) / 714.0,
+                status,
+                type1,
+                type2,
+                observations["level"].float().unsqueeze(-1) / 100.0,
+                observations["maxHP"].float().unsqueeze(-1) / 714.0,
+                observations["attack"].float().unsqueeze(-1) / 714.0,
+                observations["defense"].float().unsqueeze(-1) / 714.0,
+                observations["speed"].float().unsqueeze(-1) / 714.0,
+                observations["special"].float().unsqueeze(-1) / 714.0,
+                moves,
+            ),
+            dim=-1,
+        )
+        party_latent = self.party_network(party_obs)
+
         cat_obs = torch.cat(
             (
                 self.screen_network(image_observation.float() / 255.0).squeeze(1),
                 one_hot(observations["direction"].long(), 4).float().squeeze(1),
                 # one_hot(observations["reset_map_id"].long(), 0xF7).float().squeeze(1),
                 one_hot(observations["battle_type"].long(), 4).float().squeeze(1),
-                observations["cut_event"].float(),
+                # observations["cut_event"].float(),
                 observations["cut_in_party"].float(),
                 # observations["x"].float(),
                 # observations["y"].float(),
                 # one_hot(observations["map_id"].long(), 0xF7).float().squeeze(1),
-                badges.float().squeeze(1),
+                # badges.float().squeeze(1),
                 map_id.squeeze(1),
                 blackout_map_id.squeeze(1),
                 observations["wJoyIgnore"].float(),
                 items.flatten(start_dim=1),
-            ),
+                observations["rival_3"].float(),
+                observations["game_corner_rocket"].float(),
+                observations["saffron_guard"].float(),
+                party_latent,
+            )
+            + tuple(observations[event].float() for event in REQUIRED_EVENTS),
             dim=-1,
         )
         if self.use_global_map:
