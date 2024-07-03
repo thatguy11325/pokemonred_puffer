@@ -1,4 +1,5 @@
 import argparse
+from functools import partial
 import heapq
 import math
 import os
@@ -138,6 +139,7 @@ class CleanPuffeRL:
     stats: dict = field(default_factory=lambda: {})
     msg: str = ""
     infos: dict = field(default_factory=lambda: defaultdict(list))
+    states: dict = field(default_factory=lambda: defaultdict(partial(deque, maxlen=5)))
 
     def __post_init__(self):
         seed_everything(self.config.seed, self.config.torch_deterministic)
@@ -199,51 +201,9 @@ class CleanPuffeRL:
 
     @pufferlib.utils.profile
     def evaluate(self):
-        # Clear all self.infos except for the state
+        # states are managed separately so dont worry about deleting them
         for k in list(self.infos.keys()):
-            if k != "state":
-                del self.infos[k]
-
-        # now for a tricky bit:
-        # if we have swarm_frequency, we will take the top swarm_keep_pct envs and evenly distribute
-        # their states to the bottom 90%.
-        # we do this here so the environment can remain "pure"
-        if (
-            self.config.async_wrapper
-            and hasattr(self.config, "swarm_frequency")
-            and hasattr(self.config, "swarm_keep_pct")
-            and self.epoch % self.config.swarm_frequency == 0
-            and "reward/event" in self.infos
-            and "state" in self.infos
-        ):
-            # collect the top swarm_keep_pct % of envs
-            largest = [
-                x[0]
-                for x in heapq.nlargest(
-                    math.ceil(self.config.num_envs * self.config.swarm_keep_pct),
-                    enumerate(self.infos["reward/event"]),
-                    key=lambda x: x[1],
-                )
-            ]
-            print("Migrating states:")
-            waiting_for = []
-            # Need a way not to reset the env id counter for the driver env
-            # Until then env ids are 1-indexed
-            for i in range(self.config.num_envs):
-                if i not in largest:
-                    new_state = random.choice(largest)
-                    print(
-                        f'\t {i+1} -> {new_state+1}, event scores: {self.infos["reward/event"][i]} -> {self.infos["reward/event"][new_state]}'
-                    )
-                    self.env_recv_queues[i + 1].put(self.infos["state"][new_state])
-                    waiting_for.append(i + 1)
-                    # Now copy the hidden state over
-                    # This may be a little slow, but so is this whole process
-                    self.next_lstm_state[0][:, i, :] = self.next_lstm_state[0][:, new_state, :]
-                    self.next_lstm_state[1][:, i, :] = self.next_lstm_state[1][:, new_state, :]
-            for i in waiting_for:
-                self.env_send_queues[i].get()
-            print("State migration complete")
+            del self.infos[k]
 
         with self.profile.eval_misc:
             policy = self.policy
@@ -289,8 +249,9 @@ class CleanPuffeRL:
 
                 for i in info:
                     for k, v in pufferlib.utils.unroll_nested_dict(i):
-                        if k == "state":
-                            self.infos[k] = [v]
+                        if "state/" in k:
+                            _, key = k.split("/")
+                            self.states[key].append(v)
                         else:
                             self.infos[k].append(v)
 
@@ -298,6 +259,51 @@ class CleanPuffeRL:
                 self.vecenv.send(actions)
 
         with self.profile.eval_misc:
+            # now for a tricky bit:
+            # if we have swarm_frequency, we will migrate the bottom
+            # % of envs in the batch (by required events count)
+            # and migrate them to a new state at random.
+            # Now this has a lot of gotchas and is really unstable
+            # E.g. Some envs could just constantly be on the bottom since they're never
+            # progressing
+            breakpoint()
+            if (
+                self.config.async_wrapper
+                and hasattr(self.config, "swarm_frequency")
+                and hasattr(self.config, "swarm_keep_pct")
+                and self.epoch % self.config.swarm_frequency == 0
+                and "required_events_count" in self.infos
+                and self.states
+            ):
+                # collect the top swarm_keep_pct % of the envs in the batch
+                largest = [
+                    x[0]
+                    for x in heapq.nlargest(
+                        math.ceil(self.config.num_envs * self.config.swarm_keep_pct),
+                        enumerate(self.infos["required_events_count"]),
+                        key=lambda x: x[1],
+                    )
+                ]
+                print("Migrating states:")
+                waiting_for = []
+                # Need a way not to reset the env id counter for the driver env
+                # Until then env ids are 1-indexed
+                for i in range(self.config.num_envs):
+                    if i not in largest:
+                        new_state = random.choice(largest)
+                        print(
+                            f'\t {i+1} -> {new_state+1}, event scores: {self.infos["reward/event"][i]} -> {self.infos["reward/event"][new_state]}'
+                        )
+                        self.env_recv_queues[i + 1].put(self.infos["state"][new_state])
+                        waiting_for.append(i + 1)
+                        # Now copy the hidden state over
+                        # This may be a little slow, but so is this whole process
+                        self.next_lstm_state[0][:, i, :] = self.next_lstm_state[0][:, new_state, :]
+                        self.next_lstm_state[1][:, i, :] = self.next_lstm_state[1][:, new_state, :]
+                for i in waiting_for:
+                    self.env_send_queues[i].get()
+                print("State migration complete")
+
             self.stats = {}
 
             for k, v in self.infos.items():
