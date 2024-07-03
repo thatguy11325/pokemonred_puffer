@@ -1,5 +1,6 @@
 from abc import abstractmethod
 import io
+from multiprocessing import Lock, shared_memory
 import os
 import random
 from collections import deque
@@ -78,6 +79,9 @@ ACTION_SPACE = spaces.Discrete(len(VALID_ACTIONS))
 
 # TODO: Make global map usage a configuration parameter
 class RedGymEnv(Env):
+    env_id = shared_memory.SharedMemory(create=True, size=4)
+    lock = Lock()
+
     def __init__(self, env_config: pufferlib.namespace):
         # TODO: Dont use pufferlib.namespace. It seems to confuse __init__
         self.video_dir = Path(env_config.video_dir)
@@ -209,6 +213,19 @@ class RedGymEnv(Env):
 
         self.first = True
 
+        with RedGymEnv.lock:
+            env_id = (
+                (int(RedGymEnv.env_id.buf[0]) << 24)
+                + (int(RedGymEnv.env_id.buf[1]) << 16)
+                + (int(RedGymEnv.env_id.buf[2]) << 8)
+                + (int(RedGymEnv.env_id.buf[3]))
+            )
+            self.env_id = env_id
+            env_id += 1
+            RedGymEnv.env_id.buf[0] = (env_id >> 24) & 0xFF
+            RedGymEnv.env_id.buf[1] = (env_id >> 16) & 0xFF
+            RedGymEnv.env_id.buf[2] = (env_id >> 8) & 0xFF
+            RedGymEnv.env_id.buf[3] = (env_id) & 0xFF
         self.init_mem()
 
     def register_hooks(self):
@@ -256,6 +273,7 @@ class RedGymEnv(Env):
         # restart game, skipping credits
         options = options or {}
 
+        infos = {}
         self.explore_map_dim = 384
         if self.first or options.get("state", None) is not None:
             self.recent_screens = deque()
@@ -305,6 +323,7 @@ class RedGymEnv(Env):
         self.base_explore = 0
         self.max_opponent_level = 0
         self.max_event_rew = 0
+        self.required_events = self.get_required_events()
         self.max_level_rew = 0
         self.max_level_sum = 0
         self.last_health = 1
@@ -324,12 +343,15 @@ class RedGymEnv(Env):
         self.total_reward = sum([val for _, val in self.progress_reward.items()])
 
         self.first = False
-        infos = {}
+
         if self.save_state:
             state = io.BytesIO()
             self.pyboy.save_state(state)
             state.seek(0)
-            infos |= {"state": state.read()}
+            infos |= {
+                "state": {hash("".join(self.required_events)): state.read()},
+                "required_events_count": len(self.required_events),
+            }
         return self._get_obs(), infos
 
     def init_mem(self):
@@ -611,11 +633,16 @@ class RedGymEnv(Env):
         self.pokecenters[self.read_m("wLastBlackoutMap")] = 1
         info = {}
 
-        if self.save_state and self.get_events_sum() > self.max_event_rew:
+        required_events = self.get_required_events()
+        new_required_events = required_events - self.required_events
+        if self.save_state and new_required_events:
+            breakpoint()
             state = io.BytesIO()
             self.pyboy.save_state(state)
             state.seek(0)
-            info["state"] = state.read()
+            info["state"] = {hash(required_events): state.read()}
+            info["required_events_count"] = len(required_events)
+        self.required_events = required_events
 
         # TODO: Make log frequency a configuration parameter
         if self.step_count % self.log_frequency == 0:
@@ -1412,6 +1439,18 @@ class RedGymEnv(Env):
         else:
             level_reward = 30 + (self.max_level_sum - 30) / 4
         return level_reward
+
+    def get_required_events(self) -> set[str]:
+        return (
+            {event for event in REQUIRED_EVENTS if self.events.get_event(event)}
+            | ({"rival3"} if (self.read_m("wSSAnne2FCurScript") == 4) else {})
+            | (
+                {"game_corner_rocket"}
+                if self.missables.get_missable("HS_GAME_CORNER_ROCKET")
+                else {}
+            )
+            | ({"saffron_guard"} if self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK") else {})
+        )
 
     def get_events_sum(self):
         # adds up all event flags, exclude museum ticket
