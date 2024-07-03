@@ -22,7 +22,12 @@ pip3 install -e .
 After installation you can start training by running
 
 ```sh
+# Run before training to test what num_envs value you should use
+python3 -m pokemonred_puffer.train  --mode autotune   --yaml config.yaml --vectorization multiprocessing -w empty -r baseline.CutWithObjectRewardRequiredEventsEnv
+# Default
 python3 -m pokemonred_puffer.train --mode train --yaml config.yaml
+# Currently used configuration
+python3 -m pokemonred_puffer.train  --mode train   --yaml config.yaml --vectorization multiprocessing  -w stream_only -r baseline.CutWithObjectRewardRequiredEventsEnv
 ```
 
 ### Modifying for Training

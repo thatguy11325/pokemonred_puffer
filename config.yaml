@@ -12,7 +12,9 @@ debug:
     log_frequency: 1
     disable_wild_encounters: True
     disable_ai_actions: True
-    use_global_map: True
+    use_global_map: False
+    reduce_res: False
+    animate_scripts: True
   train:
     device: cpu
     compile: False
@@ -22,15 +24,15 @@ debug:
     env_batch_size: 4
     env_pool: True
     zero_copy: False
-    batch_size: 4
+    batch_size: 128
     minibatch_size: 4
     batch_rows: 4
     bptt_horizon: 2
     total_timesteps: 100_000_000
     save_checkpoint: True
     checkpoint_interval: 4
-    save_overlay: False
-    overlay_interval: 4
+    save_overlay: True
+    overlay_interval: 1
     verbose: False
     env_pool: False
     load_optimizer_state: False
@@ -67,6 +69,8 @@ env:
   infinite_money: True
   use_global_map: False
   save_state: False
+  animate_scripts: False
+
 
 
 train:
@@ -118,7 +122,8 @@ train:
   # swarm_keep_pct: .8
 
 wrappers:
-  empty: []
+  empty:
+    - episode_stats.EpisodeStatsWrapper: {}
 
   baseline:
     - stream_wrapper.StreamWrapper:
@@ -168,6 +173,7 @@ wrappers:
     - exploration.OnResetExplorationWrapper:
         full_reset_frequency: 25
         jitter: 0
+    - episode_stats.EpisodeStatsWrapper: {}
 
 rewards:
   baseline.BaselineRewardEnv:
@@ -228,6 +234,29 @@ rewards:
       rocket_hideout_found: 5.0
       explore_hidden_objs: 0.02
       seen_action_bag_menu: 0.1
+  
+  baseline.CutWithObjectRewardRequiredEventsEnv:
+    reward:
+      event: 1.0
+      seen_pokemon: 4.0
+      caught_pokemon: 4.0
+      moves_obtained: 4.0
+      hm_count: 10.0
+      level: 1.0
+      badges: 5.0
+      exploration: 0.02
+      cut_coords: 0.0
+      cut_tiles: 0.0
+      start_menu: 0.0
+      pokemon_menu: 0.0
+      stats_menu: 0.0
+      bag_menu: 0.0
+      explore_hidden_objs: 0.02
+      seen_action_bag_menu: 0.0
+      required_event: 5.0
+      required_item: 5.0
+      useful_item: 1.0
+      pokecenter_heal: 1.0
 
 
 
