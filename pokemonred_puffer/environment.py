@@ -24,8 +24,8 @@ from pokemonred_puffer.data.events import (
 )
 from pokemonred_puffer.data.field_moves import FieldMoves
 from pokemonred_puffer.data.items import (
-    HM_ITEM_IDS,
-    KEY_ITEM_IDS,
+    HM_ITEMS,
+    KEY_ITEMS,
     MAX_ITEM_CAPACITY,
     REQUIRED_ITEMS,
     USEFUL_ITEMS,
@@ -1359,21 +1359,7 @@ class RedGymEnv(Env):
             new_bag_items = [
                 (item, quantity)
                 for item, quantity in zip(bag_items[::2], bag_items[1::2])
-                if (0x0 < item < Items.HM_01.value and (item - 1) in KEY_ITEM_IDS)
-                or item
-                in {
-                    Items[name]
-                    for name in [
-                        "LEMONADE",
-                        "SODA_POP",
-                        "FRESH_WATER",
-                        "HM_01",
-                        "HM_02",
-                        "HM_03",
-                        "HM_04",
-                        "HM_05",
-                    ]
-                }
+                if Items(item) in KEY_ITEMS | REQUIRED_ITEMS | USEFUL_ITEMS | HM_ITEMS
             ]
             # Write the new count back to memory
             self.pyboy.memory[wNumBagItems] = len(new_bag_items)
@@ -1409,13 +1395,13 @@ class RedGymEnv(Env):
         else:
             return -1
 
-    def get_items_in_bag(self) -> Iterable[int]:
+    def get_items_in_bag(self) -> Iterable[Items]:
         num_bag_items = self.read_m("wNumBagItems")
         _, addr = self.pyboy.symbol_lookup("wBagItems")
-        return self.pyboy.memory[addr : addr + 2 * num_bag_items][::2]
+        return [Items(i) for i in self.pyboy.memory[addr : addr + 2 * num_bag_items][::2]]
 
     def get_hm_count(self) -> int:
-        return len(HM_ITEM_IDS.intersection(self.get_items_in_bag()))
+        return len(HM_ITEMS.intersection(self.get_items_in_bag()))
 
     def get_levels_reward(self):
         # Level reward

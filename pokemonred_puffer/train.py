@@ -1,4 +1,5 @@
 import argparse
+from contextlib import contextmanager
 import functools
 import importlib
 import os
@@ -138,30 +139,35 @@ def update_args(args: argparse.Namespace):
     return args
 
 
+@contextmanager
 def init_wandb(args, resume=True):
-    assert args.wandb.project is not None, "Please set the wandb project in config.yaml"
-    assert args.wandb.entity is not None, "Please set the wandb entity in config.yaml"
-    wandb_kwargs = {
-        "id": args.exp_name or wandb.util.generate_id(),
-        "project": args.wandb.project,
-        "entity": args.wandb.entity,
-        "group": args.wandb.group,
-        "config": {
-            "cleanrl": args.train,
-            "env": args.env,
-            "reward_module": args.reward_name,
-            "policy_module": args.policy_name,
-            "reward": args.rewards[args.reward_name],
-            "policy": args.policies[args.policy_name],
-            "wrappers": args.wrappers[args.wrappers_name],
-            "recurrent": "recurrent" in args.policies[args.policy_name],
-        },
-        "name": args.exp_name,
-        "monitor_gym": True,
-        "save_code": True,
-        "resume": resume,
-    }
-    return wandb.init(**wandb_kwargs)
+    if not args.track:
+        yield None
+    else:
+        assert args.wandb.project is not None, "Please set the wandb project in config.yaml"
+        assert args.wandb.entity is not None, "Please set the wandb entity in config.yaml"
+        wandb_kwargs = {
+            "id": args.exp_name or wandb.util.generate_id(),
+            "project": args.wandb.project,
+            "entity": args.wandb.entity,
+            "group": args.wandb.group,
+            "config": {
+                "cleanrl": args.train,
+                "env": args.env,
+                "reward_module": args.reward_name,
+                "policy_module": args.policy_name,
+                "reward": args.rewards[args.reward_name],
+                "policy": args.policies[args.policy_name],
+                "wrappers": args.wrappers[args.wrappers_name],
+                "recurrent": "recurrent" in args.policies[args.policy_name],
+            },
+            "name": args.exp_name,
+            "monitor_gym": True,
+            "save_code": True,
+            "resume": resume,
+        }
+        with wandb.init(**wandb_kwargs) as client:
+            yield client
 
 
 def train(
@@ -286,37 +292,34 @@ if __name__ == "__main__":
     async_wrapper = args.train.async_wrapper
     env_creator = setup_agent(args.wrappers[args.wrappers_name], args.reward_name, async_wrapper)
 
-    wandb_client = None
-    if args.track:
-        wandb_client = init_wandb(args)
-
-    if args.mode == "train":
-        train(args, env_creator, wandb_client)
-    elif args.mode == "autotune":
-        env_kwargs = {
-            "env_config": args.env,
-            "wrappers_config": args.wrappers[args.wrappers_name],
-            "reward_config": args.rewards[args.reward_name]["reward"],
-            "async_config": {},
-        }
-        pufferlib.vector.autotune(
-            functools.partial(env_creator, **env_kwargs), batch_size=args.train.env_batch_size
-        )
-    elif args.mode == "evaluate":
-        env_kwargs = {
-            "env_config": args.env,
-            "wrappers_config": args.wrappers[args.wrappers_name],
-            "reward_config": args.rewards[args.reward_name]["reward"],
-            "async_config": {},
-        }
-        try:
-            cleanrl_puffer.rollout(
-                env_creator,
-                env_kwargs,
-                agent_creator=make_policy,
-                agent_kwargs={"args": args},
-                model_path=args.eval_model_path,
-                device=args.train.device,
+    with init_wandb(args) as wandb_client:
+        if args.mode == "train":
+            train(args, env_creator, wandb_client)
+        elif args.mode == "autotune":
+            env_kwargs = {
+                "env_config": args.env,
+                "wrappers_config": args.wrappers[args.wrappers_name],
+                "reward_config": args.rewards[args.reward_name]["reward"],
+                "async_config": {},
+            }
+            pufferlib.vector.autotune(
+                functools.partial(env_creator, **env_kwargs), batch_size=args.train.env_batch_size
             )
-        except KeyboardInterrupt:
-            os._exit(0)
+        elif args.mode == "evaluate":
+            env_kwargs = {
+                "env_config": args.env,
+                "wrappers_config": args.wrappers[args.wrappers_name],
+                "reward_config": args.rewards[args.reward_name]["reward"],
+                "async_config": {},
+            }
+            try:
+                cleanrl_puffer.rollout(
+                    env_creator,
+                    env_kwargs,
+                    agent_creator=make_policy,
+                    agent_kwargs={"args": args},
+                    model_path=args.eval_model_path,
+                    device=args.train.device,
+                )
+            except KeyboardInterrupt:
+                os._exit(0)
