@@ -257,7 +257,7 @@ class CleanPuffeRL:
                             for count, eid in zip(
                                 self.infos["required_events_count"], self.infos["env_id"]
                             ):
-                                self.events_tracker[eid] = count
+                                self.event_tracker[eid] = count
                             self.infos[k].append(v)
                         else:
                             self.infos[k].append(v)
@@ -286,8 +286,8 @@ class CleanPuffeRL:
                 largest = [
                     x[0]
                     for x in heapq.nlargest(
-                        math.ceil(len(self.events_tracker) * self.config.swarm_keep_pct),
-                        enumerate(self.events_tracker),
+                        math.ceil(len(self.event_tracker) * self.config.swarm_keep_pct),
+                        enumerate(self.event_tracker),
                         key=lambda x: x[1],
                     )
                 ]
