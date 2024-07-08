@@ -293,6 +293,7 @@ class RedGymEnv(Env):
                     for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
                 )
                 # A bit of duplicate code. Blah.
+                self.events = EventFlags(self.pyboy)
                 self.required_events = self.get_required_events()
                 self.seen_pokemon = np.zeros(152, dtype=np.uint8)
                 self.caught_pokemon = np.zeros(152, dtype=np.uint8)
