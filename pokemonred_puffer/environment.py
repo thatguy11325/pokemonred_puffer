@@ -1443,13 +1443,13 @@ class RedGymEnv(Env):
     def get_required_events(self) -> set[str]:
         return (
             {event for event in REQUIRED_EVENTS if self.events.get_event(event)}
-            | ({"rival3"} if (self.read_m("wSSAnne2FCurScript") == 4) else {})
+            | ({"rival3"} if (self.read_m("wSSAnne2FCurScript") == 4) else set())
             | (
                 {"game_corner_rocket"}
                 if self.missables.get_missable("HS_GAME_CORNER_ROCKET")
-                else {}
+                else set()
             )
-            | ({"saffron_guard"} if self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK") else {})
+            | ({"saffron_guard"} if self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK") else set())
         )
 
     def get_events_sum(self):
