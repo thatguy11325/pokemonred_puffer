@@ -639,7 +639,7 @@ class RedGymEnv(Env):
             state = io.BytesIO()
             self.pyboy.save_state(state)
             state.seek(0)
-            info["state"] = {hash(required_events): state.read()}
+            info["state"] = {hash("".join(required_events)): state.read()}
             info["required_events_count"] = len(required_events)
             info["env_id"] = self.env_id
             info = info | self.agent_stats(action)
