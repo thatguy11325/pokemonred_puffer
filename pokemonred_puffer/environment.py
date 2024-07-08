@@ -292,6 +292,8 @@ class RedGymEnv(Env):
                     self.read_m(i).bit_count()
                     for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
                 )
+                # A bit of duplicate code. Blah.
+                self.required_events = self.get_required_events()
                 self.seen_pokemon = np.zeros(152, dtype=np.uint8)
                 self.caught_pokemon = np.zeros(152, dtype=np.uint8)
                 self.moves_obtained = np.zeros(0xA5, dtype=np.uint8)
