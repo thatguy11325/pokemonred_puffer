@@ -284,11 +284,11 @@ class CleanPuffeRL:
             ):
                 # collect the top swarm_keep_pct % of the envs in the batch
                 largest = [
-                    x[0]
+                    x[1][0]
                     for x in heapq.nlargest(
                         math.ceil(len(self.event_tracker) * self.config.swarm_keep_pct),
-                        enumerate(self.event_tracker),
-                        key=lambda x: x[1],
+                        enumerate(self.event_tracker.items()),
+                        key=lambda x: x[1][1],
                     )
                 ]
                 print("Migrating states:")
