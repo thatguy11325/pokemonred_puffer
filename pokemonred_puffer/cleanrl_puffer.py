@@ -306,7 +306,7 @@ class CleanPuffeRL:
                     new_state = random.choice(self.states[new_state_key])
                     # TODO: Fill in more information about the new state
                     print(
-                        f"\t {key}\n\t\t({self.event_tracker[key]}) -> {len(new_state_key)}\n\t\t{new_state_key}"
+                        f"\t {key}:\n\t\t{self.event_tracker[key]} -> {len(new_state_key)}\n\t\t{new_state_key}"
                     )
                     self.env_recv_queues[key].put(new_state)
                     waiting_for.append(key)
