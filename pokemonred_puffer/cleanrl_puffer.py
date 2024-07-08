@@ -303,7 +303,7 @@ class CleanPuffeRL:
                     # pull a list of states corresponding to a required event completion state
                     new_state = random.choice(list(self.states))
                     # pull a state within that list
-                    new_state = random.choice(new_state)
+                    new_state = random.choice(self.states[new_state])
                     # TODO: Fill in more information about the new state
                     print(f"\t {key}")
                     self.env_recv_queues[key].put(new_state)

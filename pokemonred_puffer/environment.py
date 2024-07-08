@@ -296,6 +296,16 @@ class RedGymEnv(Env):
                 self.caught_pokemon = np.zeros(152, dtype=np.uint8)
                 self.moves_obtained = np.zeros(0xA5, dtype=np.uint8)
                 self.pokecenters = np.zeros(252, dtype=np.uint8)
+
+                if self.save_state:
+                    state = io.BytesIO()
+                    self.pyboy.save_state(state)
+                    state.seek(0)
+                    infos |= {
+                        "state": {hash("".join(self.required_events)): state.read()},
+                        "required_events_count": len(self.required_events),
+                        "env_id": self.env_id,
+                    }
             # lazy random seed setting
             # if not seed:
             #     seed = random.randint(0, 4096)
@@ -344,14 +354,6 @@ class RedGymEnv(Env):
 
         self.first = False
 
-        if self.save_state:
-            state = io.BytesIO()
-            self.pyboy.save_state(state)
-            state.seek(0)
-            infos |= {
-                "state": {hash("".join(self.required_events)): state.read()},
-                "required_events_count": len(self.required_events),
-            }
         return self._get_obs(), infos
 
     def init_mem(self):
