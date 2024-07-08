@@ -308,7 +308,7 @@ class RedGymEnv(Env):
                     self.pyboy.save_state(state)
                     state.seek(0)
                     infos |= {
-                        "state": {hash("".join(self.required_events)): state.read()},
+                        "state": {tuple(self.required_events): state.read()},
                         "required_events_count": len(self.required_events),
                         "env_id": self.env_id,
                     }
@@ -647,7 +647,7 @@ class RedGymEnv(Env):
             state = io.BytesIO()
             self.pyboy.save_state(state)
             state.seek(0)
-            info["state"] = {hash("".join(required_events)): state.read()}
+            info["state"] = {tuple(required_events): state.read()}
             info["required_events_count"] = len(required_events)
             info["env_id"] = self.env_id
             info = info | self.agent_stats(action)
