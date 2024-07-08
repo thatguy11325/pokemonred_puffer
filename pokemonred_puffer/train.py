@@ -184,8 +184,8 @@ def train(
         vec = pufferlib.vector.Ray
 
     # TODO: Remove the +1 once the driver env doesn't permanently increase the env id
-    env_send_queues = [Queue() for _ in range(2 * args.train.num_envs)]
-    env_recv_queues = [Queue() for _ in range(2 * args.train.num_envs)]
+    env_send_queues = [Queue() for _ in range(2 * args.train.num_envs + 1)]
+    env_recv_queues = [Queue() for _ in range(2 * args.train.num_envs + 1)]
 
     vecenv = pufferlib.vector.make(
         env_creator,
