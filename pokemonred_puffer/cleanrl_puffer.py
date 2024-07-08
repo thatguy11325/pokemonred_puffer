@@ -301,11 +301,13 @@ class CleanPuffeRL:
                 for key in to_migrate_keys:
                     # we store states in a weird format
                     # pull a list of states corresponding to a required event completion state
-                    new_state = random.choice(list(self.states))
+                    new_state_key = random.choice(list(self.states))
                     # pull a state within that list
-                    new_state = random.choice(self.states[new_state])
+                    new_state = random.choice(self.states[new_state_key])
                     # TODO: Fill in more information about the new state
-                    print(f"\t {key}")
+                    print(
+                        f"\t {key}\n\t\t({self.event_tracker[key]}) -> {len(new_state_key)}\n\t\t{new_state_key}"
+                    )
                     self.env_recv_queues[key].put(new_state)
                     waiting_for.append(key)
                     # Now copy the hidden state over
