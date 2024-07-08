@@ -291,11 +291,11 @@ class CleanPuffeRL:
                         key=lambda x: x[1][1],
                     )
                 ]
-                print("Migrating states:")
                 waiting_for = []
 
                 # find the envs not in the largest
                 to_migrate_keys = set(self.event_tracker.keys()) - set(largest)
+                print(f"Migrating {len(to_migrate_keys)} states:")
                 # Need a way not to reset the env id counter for the driver env
                 # Until then env ids are 1-indexed
                 for key in to_migrate_keys:
