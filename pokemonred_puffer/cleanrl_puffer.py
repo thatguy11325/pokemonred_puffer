@@ -140,6 +140,7 @@ class CleanPuffeRL:
     msg: str = ""
     infos: dict = field(default_factory=lambda: defaultdict(list))
     states: dict = field(default_factory=lambda: defaultdict(partial(deque, maxlen=5)))
+    event_tracker: dict = field(default_factory=lambda: {})
 
     def __post_init__(self):
         seed_everything(self.config.seed, self.config.torch_deterministic)
@@ -252,6 +253,12 @@ class CleanPuffeRL:
                         if "state/" in k:
                             _, key = k.split("/")
                             self.states[key].append(v)
+                        elif "required_events_count" == k:
+                            for count, eid in zip(
+                                self.infos["required_events_count"], self.infos["env_id"]
+                            ):
+                                self.events_tracker[eid] = count
+                            self.infos[k].append(v)
                         else:
                             self.infos[k].append(v)
 
@@ -266,7 +273,7 @@ class CleanPuffeRL:
             # Now this has a lot of gotchas and is really unstable
             # E.g. Some envs could just constantly be on the bottom since they're never
             # progressing
-            breakpoint()
+            # env id in async queues is the index within self.infos - self.config.num_envs + 1
             if (
                 self.config.async_wrapper
                 and hasattr(self.config, "swarm_frequency")
@@ -279,27 +286,32 @@ class CleanPuffeRL:
                 largest = [
                     x[0]
                     for x in heapq.nlargest(
-                        math.ceil(self.config.num_envs * self.config.swarm_keep_pct),
-                        enumerate(self.infos["required_events_count"]),
+                        math.ceil(len(self.events_tracker) * self.config.swarm_keep_pct),
+                        enumerate(self.events_tracker),
                         key=lambda x: x[1],
                     )
                 ]
                 print("Migrating states:")
                 waiting_for = []
+
+                # find the envs not in the largest
+                to_migrate_keys = set(self.event_tracker.keys()) - set(largest)
                 # Need a way not to reset the env id counter for the driver env
                 # Until then env ids are 1-indexed
-                for i in range(self.config.num_envs):
-                    if i not in largest:
-                        new_state = random.choice(largest)
-                        print(
-                            f'\t {i+1} -> {new_state+1}, event scores: {self.infos["reward/event"][i]} -> {self.infos["reward/event"][new_state]}'
-                        )
-                        self.env_recv_queues[i + 1].put(self.infos["state"][new_state])
-                        waiting_for.append(i + 1)
-                        # Now copy the hidden state over
-                        # This may be a little slow, but so is this whole process
-                        self.next_lstm_state[0][:, i, :] = self.next_lstm_state[0][:, new_state, :]
-                        self.next_lstm_state[1][:, i, :] = self.next_lstm_state[1][:, new_state, :]
+                for key in to_migrate_keys:
+                    # we store states in a weird format
+                    # pull a list of states corresponding to a required event completion state
+                    new_state = random.choice(list(self.states))
+                    # pull a state within that list
+                    new_state = random.choice(new_state)
+                    # TODO: Fill in more information about the new state
+                    print(f"\t {key}")
+                    self.env_recv_queues[key].put(new_state)
+                    waiting_for.append(key)
+                    # Now copy the hidden state over
+                    # This may be a little slow, but so is this whole process
+                    # self.next_lstm_state[0][:, i, :] = self.next_lstm_state[0][:, new_state, :]
+                    # self.next_lstm_state[1][:, i, :] = self.next_lstm_state[1][:, new_state, :]
                 for i in waiting_for:
                     self.env_send_queues[i].get()
                 print("State migration complete")
@@ -313,9 +325,7 @@ class CleanPuffeRL:
                     if self.epoch % self.config.overlay_interval == 0:
                         overlay = make_pokemon_red_overlay(np.stack(self.infos[k], axis=0))
                         if self.wandb_client is not None:
-                            self.stats["Media/aggregate_exploration_map"] = wandb.Image(
-                                overlay, file_type="jpg"
-                            )
+                            self.stats["Media/aggregate_exploration_map"] = wandb.Image(overlay)
                 elif "state" in k:
                     continue
 
