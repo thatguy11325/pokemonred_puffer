@@ -636,17 +636,16 @@ class RedGymEnv(Env):
         required_events = self.get_required_events()
         new_required_events = required_events - self.required_events
         if self.save_state and new_required_events:
-            breakpoint()
             state = io.BytesIO()
             self.pyboy.save_state(state)
             state.seek(0)
             info["state"] = {hash(required_events): state.read()}
             info["required_events_count"] = len(required_events)
-        self.required_events = required_events
-
-        # TODO: Make log frequency a configuration parameter
-        if self.step_count % self.log_frequency == 0:
+            info["env_id"] = self.env_id
             info = info | self.agent_stats(action)
+        elif self.step_count % self.log_frequency == 0:
+            info = info | self.agent_stats(action)
+        self.required_events = required_events
 
         obs = self._get_obs()
 

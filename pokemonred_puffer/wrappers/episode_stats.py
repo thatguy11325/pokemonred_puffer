@@ -23,7 +23,6 @@ class EpisodeStatsWrapper(gymnasium.Wrapper):
             if "exploration_map" in k:
                 self.info[k] = self.info.get(k, np.zeros_like(v)) + v
             elif "state" in k:
-                breakpoint()
                 self.info["state"] |= v
             else:
                 self.info[k] = v
