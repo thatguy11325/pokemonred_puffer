@@ -305,9 +305,10 @@ class CleanPuffeRL:
                     # pull a state within that list
                     new_state = random.choice(self.states[new_state_key])
                     # TODO: Fill in more information about the new state
-                    print(
-                        f"\t {key}:\n\t\t{self.event_tracker[key]} -> {self.event_tracker[new_state_key]}\n\t\t{new_state_key}"
-                    )
+                    print(f"\tOld events count: {len(key)}")
+                    print(f"\tOld events: {key}")
+                    print(f"\tNew events count: {len(new_state_key)}")
+                    print(f"\tNew events: {new_state_key}")
                     self.env_recv_queues[key].put(new_state)
                     waiting_for.append(key)
                     # Now copy the hidden state over
