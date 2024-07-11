@@ -8,6 +8,8 @@ from pokemonred_puffer.data.events import REQUIRED_EVENTS
 from pokemonred_puffer.data.items import Items
 from pokemonred_puffer.environment import PIXEL_VALUES
 
+pufferlib.pytorch.nativize_tensor = torch.compiler.disable(pufferlib.pytorch.nativize_tensor)
+
 
 # Because torch.nn.functional.one_hot cannot be traced by torch as of 2.2.0
 def one_hot(tensor, num_classes):
