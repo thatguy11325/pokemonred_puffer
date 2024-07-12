@@ -1,9 +1,11 @@
 import argparse
 import ast
+from datetime import datetime
 from functools import partial
 import heapq
 import math
 import os
+import pathlib
 import random
 import time
 from collections import defaultdict, deque
@@ -201,6 +203,10 @@ class CleanPuffeRL:
         self.taught_cut = False
         self.log = False
 
+        if self.config.archive_states:
+            self.archive_path = pathlib.Path(datetime.now().strftime("%Y%m%d-%H%M%S"))
+            self.archive_path.mkdir(exist_ok=False)
+
     @pufferlib.utils.profile
     def evaluate(self):
         # states are managed separately so dont worry about deleting them
@@ -253,7 +259,16 @@ class CleanPuffeRL:
                     for k, v in pufferlib.utils.unroll_nested_dict(i):
                         if "state/" in k:
                             _, key = k.split("/")
-                            self.states[ast.literal_eval(key)].append(v)
+                            key: tuple[str] = ast.literal_eval(key)
+                            self.states[key].append(v)
+                            if self.config.archive_states:
+                                state_dir = self.archive_path / str(hash(key))
+                                if not state_dir.exists():
+                                    state_dir.mkdir(exist_ok=True)
+                                    with open(state_dir / "desc.txt", "w") as f:
+                                        f.write(str(key))
+                                with open(state_dir / f"{hash(v)}.state", "wb") as f:
+                                    f.write(v)
                         elif "required_events_count" == k:
                             for count, eid in zip(
                                 self.infos["required_events_count"], self.infos["env_id"]
@@ -292,7 +307,6 @@ class CleanPuffeRL:
                         key=lambda x: x[1][0],
                     )
                 ]
-                waiting_for = []
 
                 # find the envs not in the largest
                 to_migrate_keys = set(self.event_tracker.keys()) - set(largest)
@@ -310,13 +324,13 @@ class CleanPuffeRL:
                     print(f"\tEvents count: {self.event_tracker[key]} -> {len(new_state_key)}")
                     print(f"\tNew events: {new_state_key}")
                     self.env_recv_queues[key].put(new_state)
-                    waiting_for.append(key)
                     # Now copy the hidden state over
                     # This may be a little slow, but so is this whole process
                     # self.next_lstm_state[0][:, i, :] = self.next_lstm_state[0][:, new_state, :]
                     # self.next_lstm_state[1][:, i, :] = self.next_lstm_state[1][:, new_state, :]
-                for i in waiting_for:
-                    self.env_send_queues[i].get()
+                for key in to_migrate_keys:
+                    print(f"\tWaiting for message from env-id {key}")
+                    self.env_send_queues[key].get()
                 print("State migration complete")
 
             self.stats = {}
