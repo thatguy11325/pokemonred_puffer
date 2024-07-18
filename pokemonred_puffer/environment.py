@@ -365,7 +365,7 @@ class RedGymEnv(Env):
     def init_mem(self):
         # Maybe I should preallocate a giant matrix for all map ids
         # All map ids have the same size, right?
-        self.seen_coords = {}
+        self.seen_coords: dict[int, dict[tuple[int, int, int], int]] = {}
         self.explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
         self.cut_explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
         self.seen_map_ids = np.zeros(256)
@@ -1182,7 +1182,7 @@ class RedGymEnv(Env):
                 "levels_sum": sum(levels),
                 "ptypes": self.read_party(),
                 "hp": self.read_hp_fraction(),
-                "coord": sum(self.seen_coords.values()),  # np.sum(self.seen_global_coords),
+                "coord": sum(sum(tileset.values()) for tileset in self.seen_coords.values()),
                 "map_id": np.sum(self.seen_map_ids),
                 "npc": sum(self.seen_npcs.values()),
                 "hidden_obj": sum(self.seen_hidden_objs.values()),
@@ -1211,6 +1211,12 @@ class RedGymEnv(Env):
                 "blackout_count": self.blackout_count,
                 "pokecenter": np.sum(self.pokecenters),
                 "pokecenter_heal": self.pokecenter_heal,
+            }
+            | {
+                "exploration": {
+                    tileset.name.lower(): sum(self.seen_coords.get(tileset.value, {}).values())
+                    for tileset in Tilesets
+                }
             }
             | {f"badge_{i+1}": bool(badges & (1 << i)) for i in range(8)},
             "events": {event: self.events.get_event(event) for event in REQUIRED_EVENTS}
@@ -1267,10 +1273,14 @@ class RedGymEnv(Env):
         return (self.read_m(0xD362), self.read_m(0xD361), self.read_m(0xD35E))
 
     def update_seen_coords(self):
-        inc = 0.25 if (self.read_m("wd736") & 0b1000_0000) else 1
+        inc = 0.0 if (self.read_m("wd736") & 0b1000_0000) else 1
 
         x_pos, y_pos, map_n = self.get_game_coords()
-        self.seen_coords[(x_pos, y_pos, map_n)] = inc
+        # self.seen_coords[(x_pos, y_pos, map_n)] = inc
+        cur_map_tileset = self.read_m("wCurMapTileset")
+        if cur_map_tileset not in self.seen_coords:
+            self.seen_coords[cur_map_tileset] = {}
+        self.seen_coords[cur_map_tileset][(x_pos, y_pos, map_n)] = inc
         # TODO: Turn into a wrapper?
         self.explore_map[local_to_global(y_pos, x_pos, map_n)] = inc
         # self.seen_global_coords[local_to_global(y_pos, x_pos, map_n)] = 1
