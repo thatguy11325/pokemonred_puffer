@@ -285,6 +285,7 @@ rewards:
       exploration_gym: 0.025
       exploration_facility: 0.025
       exploration_plateau: 0.025
+      exploration_lobby: 0.25 # for game corner
 
 
 
