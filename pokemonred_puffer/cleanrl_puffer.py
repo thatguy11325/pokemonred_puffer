@@ -7,12 +7,10 @@ import math
 import os
 import pathlib
 import random
-import sys
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from multiprocessing import Queue
-from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import pufferlib
@@ -37,44 +35,6 @@ from pokemonred_puffer.profile import Profile, Utilization
 
 pyximport.install(setup_args={"include_dirs": np.get_include()})
 from pokemonred_puffer.c_gae import compute_gae  # type: ignore  # noqa: E402
-
-# copied from pufferlib.pytorch
-
-# dtype of the tensor
-# shape of the tensor
-# starting element of the observation
-# number of elements of the observation to take
-# could be a namedtuple or dataclass
-NativeDTypeValue = Tuple[torch.dtype, List[int], int, int]
-NativeDType = Union[NativeDTypeValue, Dict[str, Union[NativeDTypeValue, "NativeDType"]]]
-LITTLE_BYTE_ORDER = sys.byteorder == "little"
-
-
-def nativize_tensor(
-    observation: torch.Tensor, native_dtype: NativeDType, device: str
-) -> torch.Tensor | dict[str, torch.Tensor]:
-    return _nativize_tensor(observation, native_dtype, device)
-
-
-def _nativize_tensor(
-    observation: torch.Tensor, native_dtype: NativeDType, device: str
-) -> torch.Tensor | dict[str, torch.Tensor]:
-    if isinstance(native_dtype, tuple):
-        dtype, shape, offset, delta = native_dtype
-        torch._check_is_size(offset)
-        torch._check_is_size(delta)
-        # Important, we are assuming that obervations of shape
-        # [N, D] where N is number of examples and D is number of
-        # bytes per example is being passed in
-        slice = observation.narrow(1, offset, delta)
-        slice = slice.view(dtype)
-        slice = slice.view(observation.shape[0], *shape)
-        return slice.to(device=device, non_blocking=True)
-    else:
-        subviews = {}
-        for name, dtype in native_dtype.items():
-            subviews[name] = _nativize_tensor(observation, dtype, device)
-        return subviews
 
 
 def rollout(
@@ -266,10 +226,7 @@ class CleanPuffeRL:
                 self.global_step += sum(mask)
 
                 o = torch.as_tensor(o)
-                o_device = nativize_tensor(
-                    o.type(torch.uint8), policy.dtype, device=self.config.device
-                )
-                # o_device = o.to(self.config.device)
+                o_device = o.to(self.config.device)
                 r = torch.as_tensor(r)
                 d = torch.as_tensor(d)
 
@@ -430,10 +387,7 @@ class CleanPuffeRL:
             for mb in range(self.experience.num_minibatches):
                 with self.profile.train_misc:
                     obs = self.experience.b_obs[mb]
-                    # obs = obs.to(self.config.device)
-                    obs = nativize_tensor(
-                        obs.type(torch.uint8), self.policy.dtype, device=self.config.device
-                    )
+                    obs = obs.to(self.config.device)
                     atn = self.experience.b_actions[mb]
                     log_probs = self.experience.b_logprobs[mb]
                     val = self.experience.b_values[mb]
