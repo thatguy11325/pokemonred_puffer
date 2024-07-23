@@ -334,6 +334,7 @@ class RedGymEnv(Env):
         self.party = PartyMons(self.pyboy)
         self.update_pokedex()
         self.update_tm_hm_moves_obtained()
+        self.party_size = self.read_m("wPartyCount")
         self.taught_cut = self.check_if_party_has_hm(0xF)
         self.levels_satisfied = False
         self.base_explore = 0
@@ -345,7 +346,6 @@ class RedGymEnv(Env):
         self.last_health = 1
         self.total_heal_health = 0
         self.died_count = 0
-        self.party_size = 0
         self.step_count = 0
         self.blackout_check = 0
         self.blackout_count = 0
