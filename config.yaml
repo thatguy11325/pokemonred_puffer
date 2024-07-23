@@ -280,7 +280,7 @@ rewards:
       required_event: 5.0
       required_item: 5.0
       useful_item: 1.0
-      pokecenter_heal: 0.2
+      pokecenter_heal: 1.0
       exploration: 0.02
       exploration_gym: 0.05
       exploration_facility: 0.05
