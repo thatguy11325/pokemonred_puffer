@@ -117,8 +117,8 @@ class MultiConvolutionalPolicy(nn.Module):
         return actions, value
 
     def encode_observations(self, observations):
-        observations = observations.type(torch.uint8)  # Undo bad cleanrl cast
-        observations = pufferlib.pytorch.nativize_tensor(observations, self.dtype)
+        # observations = observations.type(torch.uint8)  # Undo bad cleanrl cast
+        # observations = pufferlib.pytorch.nativize_tensor(observations, self.dtype)
 
         screen = observations["screen"]
         visited_mask = observations["visited_mask"]
