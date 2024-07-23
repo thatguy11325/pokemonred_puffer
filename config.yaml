@@ -282,10 +282,10 @@ rewards:
       useful_item: 1.0
       pokecenter_heal: 0.2
       exploration: 0.02
-      exploration_gym: 0.025
-      exploration_facility: 0.025
-      exploration_plateau: 0.025
-      exploration_lobby: 0.25 # for game corner
+      exploration_gym: 0.05
+      exploration_facility: 0.05
+      exploration_plateau: 0.03
+      exploration_lobby: 0.03 # for game corner
 
 
 
