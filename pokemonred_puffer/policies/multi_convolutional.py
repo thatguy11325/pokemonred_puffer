@@ -111,6 +111,11 @@ class MultiConvolutionalPolicy(nn.Module):
         self.type_embeddings = nn.Embedding(0x1A, int(0x1A**0.25) + 1, dtype=torch.float32)
         self.moves_embeddings = nn.Embedding(0xA4, int(0xA4**0.25) + 1, dtype=torch.float32)
 
+        # event embeddings
+        self.event_embeddings = nn.Embedding(
+            len(REQUIRED_EVENTS), int(len(REQUIRED_EVENTS) ** 0.25) + 1, dtype=torch.float32
+        )
+
     def forward(self, observations):
         hidden, lookup = self.encode_observations(observations)
         actions, value = self.decode_actions(hidden, lookup)
@@ -202,6 +207,9 @@ class MultiConvolutionalPolicy(nn.Module):
         )
         party_latent = self.party_network(party_obs)
 
+        event_obs = (observations["required_events"].float() @ self.event_embeddings.weight) / len(
+            REQUIRED_EVENTS
+        )
         cat_obs = torch.cat(
             (
                 self.screen_network(image_observation.float() / 255.0).squeeze(1),
@@ -222,8 +230,8 @@ class MultiConvolutionalPolicy(nn.Module):
                 observations["game_corner_rocket"].float(),
                 observations["saffron_guard"].float(),
                 party_latent,
-            )
-            + tuple(observations[event].float() for event in REQUIRED_EVENTS),
+                event_obs,
+            ),
             dim=-1,
         )
         if self.use_global_map:

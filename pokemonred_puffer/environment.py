@@ -187,9 +187,9 @@ class RedGymEnv(Env):
             "speed": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint16),
             "special": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint16),
             "moves": spaces.Box(low=0, high=0xA4, shape=(6, 4), dtype=np.uint8),
-        } | {
-            event: spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8)
-            for event in REQUIRED_EVENTS
+            "required_events": spaces.Box(
+                low=0, high=1, shape=(len(REQUIRED_EVENTS),), dtype=np.uint8
+            ),
         }
 
         if self.use_global_map:
@@ -544,46 +544,42 @@ class RedGymEnv(Env):
         # item ids start at 1 so using 0 as the nothing value is okay
         bag[2 * numBagItems :] = 0
 
-        return (
-            self.render()
-            | {
-                "direction": np.array(
-                    self.read_m("wSpritePlayerStateData1FacingDirection") // 4, dtype=np.uint8
-                ),
-                "blackout_map_id": np.array(self.read_m("wLastBlackoutMap"), dtype=np.uint8),
-                "battle_type": np.array(self.read_m("wIsInBattle") + 1, dtype=np.uint8),
-                "cut_in_party": np.array(self.check_if_party_has_hm(0xF), dtype=np.uint8),
-                # "x": np.array(player_x, dtype=np.uint8),
-                # "y": np.array(player_y, dtype=np.uint8),
-                "map_id": np.array(self.read_m(0xD35E), dtype=np.uint8),
-                "wJoyIgnore": np.array(self.read_m("wJoyIgnore"), dtype=np.uint8),
-                "bag_items": bag[::2].copy(),
-                "bag_quantity": bag[1::2].copy(),
-                "rival_3": np.array(self.read_m("wSSAnne2FCurScript") == 4, dtype=np.uint8),
-                "game_corner_rocket": np.array(
-                    self.missables.get_missable("HS_GAME_CORNER_ROCKET"), dtype=np.uint8
-                ),
-                "saffron_guard": np.array(
-                    self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK"), dtype=np.uint8
-                ),
-                "species": np.array([self.party[i].Species for i in range(6)], dtype=np.uint8),
-                "hp": np.array([self.party[i].HP for i in range(6)], dtype=np.uint16),
-                "status": np.array([self.party[i].Status for i in range(6)], dtype=np.uint8),
-                "type1": np.array([self.party[i].Type1 for i in range(6)], dtype=np.uint8),
-                "type2": np.array([self.party[i].Type2 for i in range(6)], dtype=np.uint8),
-                "level": np.array([self.party[i].Level for i in range(6)], dtype=np.uint8),
-                "maxHP": np.array([self.party[i].MaxHP for i in range(6)], dtype=np.uint16),
-                "attack": np.array([self.party[i].Attack for i in range(6)], dtype=np.uint16),
-                "defense": np.array([self.party[i].Defense for i in range(6)], dtype=np.uint16),
-                "speed": np.array([self.party[i].Speed for i in range(6)], dtype=np.uint16),
-                "special": np.array([self.party[i].Special for i in range(6)], dtype=np.uint16),
-                "moves": np.array([self.party[i].Moves for i in range(6)], dtype=np.uint8),
-            }
-            | {
-                event: np.array(self.events.get_event(event), dtype=np.uint8)
-                for event in REQUIRED_EVENTS
-            }
-        )
+        return self.render() | {
+            "direction": np.array(
+                self.read_m("wSpritePlayerStateData1FacingDirection") // 4, dtype=np.uint8
+            ),
+            "blackout_map_id": np.array(self.read_m("wLastBlackoutMap"), dtype=np.uint8),
+            "battle_type": np.array(self.read_m("wIsInBattle") + 1, dtype=np.uint8),
+            "cut_in_party": np.array(self.check_if_party_has_hm(0xF), dtype=np.uint8),
+            # "x": np.array(player_x, dtype=np.uint8),
+            # "y": np.array(player_y, dtype=np.uint8),
+            "map_id": np.array(self.read_m(0xD35E), dtype=np.uint8),
+            "wJoyIgnore": np.array(self.read_m("wJoyIgnore"), dtype=np.uint8),
+            "bag_items": bag[::2].copy(),
+            "bag_quantity": bag[1::2].copy(),
+            "rival_3": np.array(self.read_m("wSSAnne2FCurScript") == 4, dtype=np.uint8),
+            "game_corner_rocket": np.array(
+                self.missables.get_missable("HS_GAME_CORNER_ROCKET"), dtype=np.uint8
+            ),
+            "saffron_guard": np.array(
+                self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK"), dtype=np.uint8
+            ),
+            "species": np.array([self.party[i].Species for i in range(6)], dtype=np.uint8),
+            "hp": np.array([self.party[i].HP for i in range(6)], dtype=np.uint16),
+            "status": np.array([self.party[i].Status for i in range(6)], dtype=np.uint8),
+            "type1": np.array([self.party[i].Type1 for i in range(6)], dtype=np.uint8),
+            "type2": np.array([self.party[i].Type2 for i in range(6)], dtype=np.uint8),
+            "level": np.array([self.party[i].Level for i in range(6)], dtype=np.uint8),
+            "maxHP": np.array([self.party[i].MaxHP for i in range(6)], dtype=np.uint16),
+            "attack": np.array([self.party[i].Attack for i in range(6)], dtype=np.uint16),
+            "defense": np.array([self.party[i].Defense for i in range(6)], dtype=np.uint16),
+            "speed": np.array([self.party[i].Speed for i in range(6)], dtype=np.uint16),
+            "special": np.array([self.party[i].Special for i in range(6)], dtype=np.uint16),
+            "moves": np.array([self.party[i].Moves for i in range(6)], dtype=np.uint8),
+            "required_events": np.array(
+                [self.events.get_event(event) for event in REQUIRED_EVENTS], dtype=np.uint8
+            ),
+        }
 
     def set_perfect_iv_dvs(self):
         party_size = self.read_m("wPartyCount")
