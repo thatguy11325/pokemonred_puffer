@@ -1283,13 +1283,13 @@ class RedGymEnv(Env):
         cur_map_tileset = self.read_m("wCurMapTileset")
         if cur_map_tileset not in self.seen_coords:
             self.seen_coords[cur_map_tileset] = {}
-        self.seen_coords[cur_map_tileset][(x_pos, y_pos, map_n)] = max(
+        self.seen_coords[cur_map_tileset][(x_pos, y_pos, map_n)] = min(
             self.seen_coords[cur_map_tileset].get((x_pos, y_pos, map_n), 0.0) + inc,
             self.exploration_max,
         )
         # TODO: Turn into a wrapper?
-        self.explore_map[local_to_global(y_pos, x_pos, map_n)] = max(
-            self.explore_map.get(local_to_global(y_pos, x_pos, map_n), 0.0) + inc,
+        self.explore_map[local_to_global(y_pos, x_pos, map_n)] = min(
+            self.explore_map[local_to_global(y_pos, x_pos, map_n)] + inc,
             self.exploration_max,
         )
         # self.seen_global_coords[local_to_global(y_pos, x_pos, map_n)] = 1
