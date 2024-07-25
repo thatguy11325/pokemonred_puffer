@@ -1168,6 +1168,10 @@ class RedGymEnv(Env):
         bag[2 * numBagItems :] = 0
         bag_item_ids = bag[::2]
 
+        exploration_sum = sum(
+            sum(self.seen_coords.get(tileset.value, {}).values()) for tileset in Tilesets
+        )
+
         return {
             "stats": {
                 "step": self.step_count + self.reset_count * self.max_steps,
@@ -1211,6 +1215,7 @@ class RedGymEnv(Env):
             | {
                 "exploration": {
                     tileset.name.lower(): sum(self.seen_coords.get(tileset.value, {}).values())
+                    / exploration_sum
                     for tileset in Tilesets
                 }
             }
