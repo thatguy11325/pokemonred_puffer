@@ -19,7 +19,7 @@ debug:
     device: cpu
     compile: False
     compile_mode: default
-    num_envs: 16
+    num_envs: 1
     envs_per_worker: 1
     num_workers: 1
     env_batch_size: 32
@@ -37,8 +37,8 @@ debug:
     verbose: False
     env_pool: False
     load_optimizer_state: False
-    swarm_frequency: 1
-    swarm_keep_pct: .1
+    # swarm_frequency: 1
+    # swarm_keep_pct: .1
 
 env:
   headless: True
