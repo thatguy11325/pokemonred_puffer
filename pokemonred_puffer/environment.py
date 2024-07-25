@@ -116,6 +116,8 @@ class RedGymEnv(Env):
         self.use_global_map = env_config.use_global_map
         self.save_state = env_config.save_state
         self.animate_scripts = env_config.animate_scripts
+        self.exploration_inc = env_config.exploration_inc
+        self.exploration_max = env_config.exploration_max
         self.action_space = ACTION_SPACE
 
         # Obs space-related. TODO: avoid hardcoding?
@@ -1274,16 +1276,22 @@ class RedGymEnv(Env):
         return (self.read_m(0xD362), self.read_m(0xD361), self.read_m(0xD35E))
 
     def update_seen_coords(self):
-        inc = 0.0 if (self.read_m("wd736") & 0b1000_0000) else 1
+        inc = 0.0 if (self.read_m("wd736") & 0b1000_0000) else self.exploration_inc
 
         x_pos, y_pos, map_n = self.get_game_coords()
         # self.seen_coords[(x_pos, y_pos, map_n)] = inc
         cur_map_tileset = self.read_m("wCurMapTileset")
         if cur_map_tileset not in self.seen_coords:
             self.seen_coords[cur_map_tileset] = {}
-        self.seen_coords[cur_map_tileset][(x_pos, y_pos, map_n)] = inc
+        self.seen_coords[cur_map_tileset][(x_pos, y_pos, map_n)] = max(
+            self.seen_coords[cur_map_tileset].get((x_pos, y_pos, map_n), 0.0) + inc,
+            self.exploration_max,
+        )
         # TODO: Turn into a wrapper?
-        self.explore_map[local_to_global(y_pos, x_pos, map_n)] = inc
+        self.explore_map[local_to_global(y_pos, x_pos, map_n)] = max(
+            self.explore_map.get(local_to_global(y_pos, x_pos, map_n), 0.0) + inc,
+            self.exploration_max,
+        )
         # self.seen_global_coords[local_to_global(y_pos, x_pos, map_n)] = 1
         self.seen_map_ids[map_n] = 1
 

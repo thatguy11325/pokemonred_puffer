@@ -71,6 +71,8 @@ env:
   use_global_map: False
   save_state: False
   animate_scripts: False
+  exploration_inc: 0.25
+  exploration_max: 1.0
 
 
 
