@@ -173,9 +173,6 @@ class RedGymEnv(Env):
                 low=0, high=max(Items._value2member_map_.keys()), shape=(20,), dtype=np.uint8
             ),
             "bag_quantity": spaces.Box(low=0, high=100, shape=(20,), dtype=np.uint8),
-            "rival_3": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
-            "game_corner_rocket": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
-            "saffron_guard": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
             # This could be a dict within a sequence, but we'll do it like this and concat later
             "species": spaces.Box(low=0, high=0xBE, shape=(6,), dtype=np.uint8),
             "hp": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint16),
@@ -189,8 +186,9 @@ class RedGymEnv(Env):
             "speed": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint16),
             "special": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint16),
             "moves": spaces.Box(low=0, high=0xA4, shape=(6, 4), dtype=np.uint8),
+            # Add 3 for rival_3, game corner rocket and saffron guard
             "required_events": spaces.Box(
-                low=0, high=1, shape=(len(REQUIRED_EVENTS),), dtype=np.uint8
+                low=0, high=1, shape=(len(REQUIRED_EVENTS) + 3,), dtype=np.uint8
             ),
         }
 
@@ -559,13 +557,6 @@ class RedGymEnv(Env):
             "wJoyIgnore": np.array(self.read_m("wJoyIgnore"), dtype=np.uint8),
             "bag_items": bag[::2].copy(),
             "bag_quantity": bag[1::2].copy(),
-            "rival_3": np.array(self.read_m("wSSAnne2FCurScript") == 4, dtype=np.uint8),
-            "game_corner_rocket": np.array(
-                self.missables.get_missable("HS_GAME_CORNER_ROCKET"), dtype=np.uint8
-            ),
-            "saffron_guard": np.array(
-                self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK"), dtype=np.uint8
-            ),
             "species": np.array([self.party[i].Species for i in range(6)], dtype=np.uint8),
             "hp": np.array([self.party[i].HP for i in range(6)], dtype=np.uint16),
             "status": np.array([self.party[i].Status for i in range(6)], dtype=np.uint8),
@@ -579,7 +570,13 @@ class RedGymEnv(Env):
             "special": np.array([self.party[i].Special for i in range(6)], dtype=np.uint16),
             "moves": np.array([self.party[i].Moves for i in range(6)], dtype=np.uint8),
             "required_events": np.array(
-                [self.events.get_event(event) for event in REQUIRED_EVENTS], dtype=np.uint8
+                [self.events.get_event(event) for event in REQUIRED_EVENTS]
+                + [
+                    self.read_m("wSSAnne2FCurScript") == 4,  # rival 3
+                    self.missables.get_missable("HS_GAME_CORNER_ROCKET"),  # game corner rocket
+                    self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK"),  # saffron guard
+                ],
+                dtype=np.uint8,
             ),
         }
 
