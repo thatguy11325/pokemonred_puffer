@@ -1172,8 +1172,8 @@ class RedGymEnv(Env):
         bag[2 * numBagItems :] = 0
         bag_item_ids = bag[::2]
 
-        exploration_sum = sum(
-            sum(self.seen_coords.get(tileset.value, {}).values()) for tileset in Tilesets
+        exploration_sum = max(
+            sum(sum(self.seen_coords.get(tileset.value, {}).values()) for tileset in Tilesets), 1
         )
 
         return {
