@@ -329,6 +329,7 @@ class ObjectRewardRequiredEventsEnvTilesetExploration(BaselineRewardEnv):
                 * float(self.missables.get_missable("HS_GAME_CORNER_ROCKET")),
                 "saffron_guard": self.reward_config["required_event"]
                 * float(self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK")),
+                "a_press": len(self.a_press) * self.reward_config["a_press"],
             }
             | {
                 f"exploration_{tileset.name.lower()}": self.reward_config.get(
