@@ -281,6 +281,7 @@ class RedGymEnv(Env):
             # We only init seen hidden objs once cause they can only be found once!
             self.seen_hidden_objs = {}
             self.seen_signs = {}
+            self.a_press = set()
             if options.get("state", None) is not None:
                 self.pyboy.load_state(io.BytesIO(options["state"]))
                 self.reset_count += 1
@@ -321,6 +322,7 @@ class RedGymEnv(Env):
 
         self.recent_screens.clear()
         self.recent_actions.clear()
+        self.a_press.clear()
         self.seen_pokemon.fill(0)
         self.caught_pokemon.fill(0)
         self.moves_obtained.fill(0)
@@ -616,6 +618,9 @@ class RedGymEnv(Env):
         if self.disable_wild_encounters:
             self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = 0xFF
 
+        # update the a press before we use it so we dont trigger the font loaded early return
+        if VALID_ACTIONS[action] == WindowEvent.PRESS_BUTTON_A:
+            self.update_a_press()
         self.run_action_on_emulator(action)
         self.events = EventFlags(self.pyboy)
         self.missables = MissableFlags(self.pyboy)
@@ -1182,6 +1187,7 @@ class RedGymEnv(Env):
                 "ptypes": self.read_party(),
                 "hp": self.read_hp_fraction(),
                 "coord": sum(sum(tileset.values()) for tileset in self.seen_coords.values()),
+                "a_press": len(self.a_press),
                 "map_id": np.sum(self.seen_map_ids),
                 "npc": sum(self.seen_npcs.values()),
                 "hidden_obj": sum(self.seen_hidden_objs.values()),
@@ -1291,6 +1297,22 @@ class RedGymEnv(Env):
         )
         # self.seen_global_coords[local_to_global(y_pos, x_pos, map_n)] = 1
         self.seen_map_ids[map_n] = 1
+
+    def update_a_press(self):
+        if self.read_m("wIsInBattle") != 0 or self.read_m("wFontLoaded"):
+            return
+
+        direction = self.read_m("wSpritePlayerStateData1FacingDirection")
+        x_pos, y_pos, map_n = self.get_game_coords()
+        if direction == 0:
+            y_pos += 1
+        if direction == 4:
+            y_pos -= 1
+        if direction == 8:
+            x_pos -= 1
+        if direction == 0xC:
+            x_pos += 1
+        self.a_press.add((x_pos, y_pos, map_n))
 
     def get_explore_map(self):
         explore_map = np.zeros(GLOBAL_MAP_SHAPE)

@@ -288,6 +288,7 @@ rewards:
       exploration_facility: 0.05
       exploration_plateau: 0.03
       exploration_lobby: 0.03 # for game corner
+      a_press: 0.02
 
 
 
