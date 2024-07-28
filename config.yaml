@@ -7,7 +7,7 @@ debug:
   env:
     headless: False
     stream_wrapper: False
-    init_state: victory_road
+    init_state: Bulbasaur
     max_steps: 16
     log_frequency: 1
     disable_wild_encounters: True
@@ -22,7 +22,7 @@ debug:
     num_envs: 1
     envs_per_worker: 1
     num_workers: 1
-    env_batch_size: 32
+    env_batch_size: 128
     env_pool: True
     zero_copy: False
     batch_size: 128
