@@ -677,15 +677,13 @@ class RedGymEnv(Env):
 
         if not self.disable_ai_actions:
             self.pyboy.send_input(VALID_ACTIONS[action])
+            self.pyboy.send_input(VALID_RELEASE_ACTIONS[action], delay=8)
             # TODO: Function-ize this
             self.user_control = False
-            while not self.user_control:
+            count = 0
+            while not self.user_control and count < self.action_freq:
                 self.pyboy.tick(1, render=False)
-
-            self.user_control = False
-            self.pyboy.send_input(VALID_RELEASE_ACTIONS[action])
-            while not self.user_control:
-                self.pyboy.tick(1, render=False)
+                count += 1
         else:
             self.pyboy.tick(self.action_freq, render=True)
 
