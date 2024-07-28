@@ -686,6 +686,8 @@ class RedGymEnv(Env):
                 count += 1
         else:
             self.pyboy.tick(self.action_freq, render=True)
+        while self.read_m("wJoyIgnore"):
+            self.pyboy.tick(1, render=False)
 
         if self.events.get_event("EVENT_GOT_HM01"):
             if self.auto_teach_cut and not self.check_if_party_has_hm(0x0F):
