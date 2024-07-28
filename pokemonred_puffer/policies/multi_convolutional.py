@@ -221,7 +221,6 @@ class MultiConvolutionalPolicy(nn.Module):
                 # badges.float().squeeze(1),
                 map_id.squeeze(1),
                 blackout_map_id.squeeze(1),
-                observations["wJoyIgnore"].float(),
                 items.flatten(start_dim=1),
                 party_latent,
                 event_obs,
