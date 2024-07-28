@@ -678,9 +678,10 @@ class RedGymEnv(Env):
         if not self.disable_ai_actions:
             self.pyboy.send_input(VALID_ACTIONS[action])
             self.pyboy.send_input(VALID_RELEASE_ACTIONS[action], delay=8)
-        self.pyboy.tick(self.action_freq, render=True)
+        self.pyboy.tick(self.action_freq, render=False)
         while self.read_m("wJoyIgnore"):
-            self.pyboy.tick(1, render=False)
+            self.pyboy.button("a", delay=8)
+            self.pyboy.tick(24, render=False)
 
         if self.events.get_event("EVENT_GOT_HM01"):
             if self.auto_teach_cut and not self.check_if_party_has_hm(0x0F):
