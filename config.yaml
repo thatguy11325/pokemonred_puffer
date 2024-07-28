@@ -11,7 +11,7 @@ debug:
     max_steps: 16
     log_frequency: 1
     disable_wild_encounters: True
-    disable_ai_actions: False
+    disable_ai_actions: True
     use_global_map: False
     reduce_res: False
     animate_scripts: True
