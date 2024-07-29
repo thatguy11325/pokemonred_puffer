@@ -2587,7 +2587,7 @@ class EventFlags(Union):
 
 
 EVENTS = {
-    event for event, _ in EventFlagsBits._fields_ if not re.match("EVENT_[0-9,A-F]{3}$", event)
+    event for event, _, _ in EventFlagsBits._fields_ if not re.search("EVENT_[0-9,A-F]{3}$", event)
 }
 
 
