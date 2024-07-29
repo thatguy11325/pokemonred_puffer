@@ -18,6 +18,7 @@ from pyboy.utils import WindowEvent
 import pufferlib
 from pokemonred_puffer.data.events import (
     EVENT_FLAGS_START,
+    EVENTS,
     EVENTS_FLAGS_LENGTH,
     MUSEUM_TICKET,
     REQUIRED_EVENTS,
@@ -186,9 +187,7 @@ class RedGymEnv(Env):
             "special": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint32),
             "moves": spaces.Box(low=0, high=0xA4, shape=(6, 4), dtype=np.uint8),
             # Add 3 for rival_3, game corner rocket and saffron guard
-            "required_events": spaces.Box(
-                low=0, high=1, shape=(len(REQUIRED_EVENTS) + 3,), dtype=np.uint8
-            ),
+            "events": spaces.Box(low=0, high=1, shape=(len(EVENTS) + 3,), dtype=np.uint8),
         }
 
         if self.use_global_map:
@@ -570,8 +569,8 @@ class RedGymEnv(Env):
             "speed": np.array([self.party[i].Speed for i in range(6)], dtype=np.uint32),
             "special": np.array([self.party[i].Special for i in range(6)], dtype=np.uint32),
             "moves": np.array([self.party[i].Moves for i in range(6)], dtype=np.uint8),
-            "required_events": np.array(
-                [self.events.get_event(event) for event in REQUIRED_EVENTS]
+            "events": np.array(
+                [self.events.get_event(event) for event in EVENTS]
                 + [
                     self.read_m("wSSAnne2FCurScript") == 4,  # rival 3
                     self.missables.get_missable("HS_GAME_CORNER_ROCKET"),  # game corner rocket

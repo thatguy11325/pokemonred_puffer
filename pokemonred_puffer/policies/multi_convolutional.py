@@ -109,7 +109,7 @@ class MultiConvolutionalPolicy(nn.Module):
         self.moves_embeddings = nn.Embedding(0xA4, int(0xA4**0.25) + 1, dtype=torch.float32)
 
         # event embeddings
-        n_events = env.env.observation_space["required_events"].shape[0]
+        n_events = env.env.observation_space["events"].shape[0]
         self.event_embeddings = nn.Embedding(n_events, int(n_events**0.25) + 1, dtype=torch.float32)
 
     def forward(self, observations):
@@ -205,7 +205,7 @@ class MultiConvolutionalPolicy(nn.Module):
         party_latent = self.party_network(party_obs)
 
         event_obs = (
-            observations["required_events"].float() @ self.event_embeddings.weight
+            observations["events"].float() @ self.event_embeddings.weight
         ) / self.event_embeddings.weight.shape[0]
         cat_obs = torch.cat(
             (
