@@ -323,11 +323,17 @@ class CleanPuffeRL:
                 # V2 implementation
                 # check if we have a new highest required_events_count with N save states available
                 # If we do, migrate 100% of states to one of the states
-                max_event_count, new_state_key = max(self.states.keys())
+                max_event_count = 0
+                new_state_key = ""
+                for key in self.states.keys():
+                    if len(key) > max_event_count:
+                        max_event_count = len(key)
+                        new_state_key = key
                 max_state: deque = self.states[key]
                 to_migrate_keys = []
                 if max_event_count > self.max_event_count and len(max_state) == max_state.maxlen:
                     to_migrate_keys = self.event_tracker.keys()
+                    self.max_event_count = max_event_count
 
                 # Need a way not to reset the env id counter for the driver env
                 # Until then env ids are 1-indexed
