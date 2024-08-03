@@ -330,28 +330,26 @@ class CleanPuffeRL:
                         max_event_count = len(key)
                         new_state_key = key
                 max_state: deque = self.states[key]
-                to_migrate_keys = []
                 if max_event_count > self.max_event_count and len(max_state) == max_state.maxlen:
-                    to_migrate_keys = self.event_tracker.keys()
                     self.max_event_count = max_event_count
 
-                # Need a way not to reset the env id counter for the driver env
-                # Until then env ids are 1-indexed
-                for key in to_migrate_keys:
-                    new_state = random.choice(self.states[new_state_key])
+                    # Need a way not to reset the env id counter for the driver env
+                    # Until then env ids are 1-indexed
+                    for key in self.event_tracker.keys():
+                        new_state = random.choice(self.states[new_state_key])
 
-                    print(f"Environment ID: {key}")
-                    print(f"\tEvents count: {self.event_tracker[key]} -> {len(new_state_key)}")
-                    print(f"\tNew events: {new_state_key}")
-                    self.env_recv_queues[key].put(new_state)
-                    # Now copy the hidden state over
-                    # This may be a little slow, but so is this whole process
-                    # self.next_lstm_state[0][:, i, :] = self.next_lstm_state[0][:, new_state, :]
-                    # self.next_lstm_state[1][:, i, :] = self.next_lstm_state[1][:, new_state, :]
-                for key in to_migrate_keys:
-                    print(f"\tWaiting for message from env-id {key}")
-                    self.env_send_queues[key].get()
-                print("State migration complete")
+                        print(f"Environment ID: {key}")
+                        print(f"\tEvents count: {self.event_tracker[key]} -> {len(new_state_key)}")
+                        print(f"\tNew events: {new_state_key}")
+                        self.env_recv_queues[key].put(new_state)
+                        # Now copy the hidden state over
+                        # This may be a little slow, but so is this whole process
+                        # self.next_lstm_state[0][:, i, :] = self.next_lstm_state[0][:, new_state, :]
+                        # self.next_lstm_state[1][:, i, :] = self.next_lstm_state[1][:, new_state, :]
+                    for key in self.event_tracker.keys():
+                        print(f"\tWaiting for message from env-id {key}")
+                        self.env_send_queues[key].get()
+                    print("State migration complete")
 
             self.stats = {}
 
@@ -537,7 +535,7 @@ class CleanPuffeRL:
                     )
 
             if self.epoch % self.config.checkpoint_interval == 0 or done_training:
-                self.save_checkpoint()
+                # self.save_checkpoint()
                 self.msg = f"Checkpoint saved at update {self.epoch}"
 
     def close(self):
@@ -546,11 +544,11 @@ class CleanPuffeRL:
             self.utilization.stop()
 
         if self.wandb_client is not None:
-            artifact_name = f"{self.exp_name}_model"
-            artifact = wandb.Artifact(artifact_name, type="model")
-            model_path = self.save_checkpoint()
-            artifact.add_file(model_path)
-            self.wandb_client.log_artifact(artifact)
+            # artifact_name = f"{self.exp_name}_model"
+            # artifact = wandb.Artifact(artifact_name, type="model")
+            # model_path = self.save_checkpoint()
+            # artifact.add_file(model_path)
+            # self.wandb_client.log_artifact(artifact)
             self.wandb_client.finish()
 
     def save_checkpoint(self):
@@ -594,7 +592,7 @@ class CleanPuffeRL:
 
     def __exit__(self, *args):
         print("Done training.")
-        self.save_checkpoint()
+        # self.save_checkpoint()
         self.close()
         print("Run complete")
 

@@ -7,13 +7,13 @@ debug:
   env:
     headless: False
     stream_wrapper: False
-    init_state: Bulbasaur
+    init_state: victory_road
     max_steps: 16
     log_frequency: 1
     disable_wild_encounters: True
     disable_ai_actions: True
     use_global_map: False
-    reduce_res: False
+    reduce_res: True
     animate_scripts: True
   train:
     device: cpu
@@ -69,9 +69,9 @@ env:
   auto_pokeflute: True
   infinite_money: True
   use_global_map: False
-  save_state: False
+  save_state: True
   animate_scripts: False
-  exploration_inc: 0.25
+  exploration_inc: 1.0
   exploration_max: 1.0
 
 
@@ -103,7 +103,7 @@ train:
   bptt_horizon: 16 
   vf_clip_coef: 0.1
 
-  num_envs: 144
+  num_envs: 288
   num_workers: 24
   env_batch_size: 36
   env_pool: True
@@ -119,11 +119,11 @@ train:
   pool_kernel: [0]
   load_optimizer_state: False
   use_rnn: True
-  async_wrapper: False
-  archive_states: False
+  async_wrapper: True
+  archive_states: True
 
-  # swarm_frequency: 500
-  # swarm_keep_pct: .8
+  swarm_frequency: 500
+  swarm_keep_pct: .8
 
 wrappers:
   empty:
@@ -284,11 +284,11 @@ rewards:
       useful_item: 1.0
       pokecenter_heal: 0.2
       exploration: 0.02
-      exploration_gym: 0.05
+      exploration_gym: 0.025
       exploration_facility: 0.05
-      exploration_plateau: 0.03
-      exploration_lobby: 0.03 # for game corner
-      a_press: 0.02
+      exploration_plateau: 0.025
+      exploration_lobby: 0.035 # for game corner
+      a_press: 0.00001
 
 
 
