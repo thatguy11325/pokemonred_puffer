@@ -38,11 +38,11 @@ class MultiConvolutionalPolicy(nn.Module):
         self.channels_last = channels_last
         self.downsample = downsample
         self.screen_network = nn.Sequential(
-            nn.LazyConv2d(32, 8, stride=4),
+            nn.LazyConv2d(32, 8, stride=2),
             nn.ReLU(),
             nn.LazyConv2d(64, 4, stride=2),
             nn.ReLU(),
-            nn.LazyConv2d(64, 3, stride=1),
+            nn.LazyConv2d(64, 3, stride=2),
             nn.ReLU(),
             nn.Flatten(),
         )
@@ -205,9 +205,9 @@ class MultiConvolutionalPolicy(nn.Module):
         )
         party_latent = self.party_network(party_obs)
 
-        event_obs = (
-            observations["events"].float() @ self.event_embeddings.weight
-        ) / self.event_embeddings.weight.shape[0]
+        # event_obs = (
+        #     observations["events"].float() @ self.event_embeddings.weight
+        # ) / self.event_embeddings.weight.shape[0]
         cat_obs = torch.cat(
             (
                 self.screen_network(image_observation.float() / 255.0).squeeze(1),
@@ -224,7 +224,7 @@ class MultiConvolutionalPolicy(nn.Module):
                 blackout_map_id.squeeze(1),
                 items.flatten(start_dim=1),
                 party_latent,
-                event_obs,
+                observations["events"].float().squeeze(1),
             ),
             dim=-1,
         )

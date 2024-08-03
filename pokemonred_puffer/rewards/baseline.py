@@ -333,7 +333,7 @@ class ObjectRewardRequiredEventsEnvTilesetExploration(BaselineRewardEnv):
             }
             | {
                 f"exploration_{tileset.name.lower()}": self.reward_config.get(
-                    tileset.name.lower(), self.reward_config["exploration"]
+                    f"exploration_{tileset.name.lower()}", self.reward_config["exploration"]
                 )
                 * sum(self.seen_coords.get(tileset.value, {}).values())
                 for tileset in Tilesets
