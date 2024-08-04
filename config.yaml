@@ -8,7 +8,7 @@ debug:
     headless: False
     stream_wrapper: False
     init_state: victory_road
-    max_steps: 16
+    max_steps: 20480
     log_frequency: 1
     disable_wild_encounters: True
     disable_ai_actions: True
@@ -289,6 +289,7 @@ rewards:
       exploration_plateau: 0.025
       exploration_lobby: 0.035 # for game corner
       a_press: 0.00001
+      explore_warps: 0.03
 
 
 

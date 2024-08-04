@@ -60,6 +60,10 @@ class DecayWrapper(gym.Wrapper):
             (k, max(0.15, v * (self.step_forgetting_factor["npc"])))
             for k, v in self.env.unwrapped.seen_npcs.items()
         )
+        self.env.unwrapped.seen_warps.update(
+            (k, max(0.15, v * (self.step_forgetting_factor["coords"])))
+            for k, v in self.env.unwrapped.seen_warps.items()
+        )
         self.env.unwrapped.explore_map *= self.step_forgetting_factor["explore"]
         self.env.unwrapped.explore_map[self.env.unwrapped.explore_map > 0] = np.clip(
             self.env.unwrapped.explore_map[self.env.unwrapped.explore_map > 0], 0.15, 1
@@ -113,6 +117,7 @@ class OnResetExplorationWrapper(gym.Wrapper):
             self.env.unwrapped.seen_npcs.clear()
             self.env.unwrapped.cut_coords.clear()
             self.env.unwrapped.cut_tiles.clear()
+            self.env.unwrapped.seen_warps.clear()
         self.counter += 1
         return self.env.reset(*args, **kwargs)
 
@@ -145,5 +150,10 @@ class OnResetLowerToFixedValueWrapper(gym.Wrapper):
         ]
         self.env.unwrapped.cut_explore_map[self.env.unwrapped.cut_explore_map > 0] = (
             self.fixed_value["cut"]
+        )
+        self.env.unwrapped.seen_warps.update(
+            (k, self.fixed_value["coords"])
+            for k, v in self.env.unwrapped.seen_warps.items()
+            if v > 0
         )
         return self.env.reset(*args, **kwargs)

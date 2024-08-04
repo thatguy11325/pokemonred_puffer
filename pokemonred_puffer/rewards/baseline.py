@@ -330,6 +330,7 @@ class ObjectRewardRequiredEventsEnvTilesetExploration(BaselineRewardEnv):
                 "saffron_guard": self.reward_config["required_event"]
                 * float(self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK")),
                 "a_press": len(self.a_press) * self.reward_config["a_press"],
+                "warps": len(self.seen_warps) * self.reward_config["explore_warps"],
             }
             | {
                 f"exploration_{tileset.name.lower()}": self.reward_config.get(

@@ -251,6 +251,7 @@ class RedGymEnv(Env):
             self.setup_disable_wild_encounters()
         self.pyboy.hook_register(None, "AnimateHealingMachine", self.pokecenter_heal_hook, None)
         self.pyboy.hook_register(None, "OverworldLoopLessDelay", self.overworld_loop_hook, None)
+        self.pyboy.hook_register(None, "CheckWarpsNoCollisionLoop", self.update_warps_hook, None)
 
     def setup_disable_wild_encounters(self):
         bank, addr = self.pyboy.symbol_lookup("TryDoWildEncounter.gotWildEncounterType")
@@ -371,6 +372,7 @@ class RedGymEnv(Env):
         self.cut_explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
         self.seen_map_ids = np.zeros(256)
         self.seen_npcs = {}
+        self.seen_warps = {}
 
         self.cut_coords = {}
         self.cut_tiles = {}
@@ -652,6 +654,7 @@ class RedGymEnv(Env):
         elif self.step_count % self.log_frequency == 0:
             info = info | self.agent_stats(action)
         self.required_events = required_events
+        print(self.seen_warps)
 
         obs = self._get_obs()
 
@@ -1136,6 +1139,16 @@ class RedGymEnv(Env):
     def overworld_loop_hook(self, *args, **kwargs):
         self.user_control = True
 
+    def update_warps_hook(self, *args, **kwargs):
+        # current map id, destiation map id, warp id
+        key = (
+            self.read_m("wCurMap"),
+            self.read_m("hWarpDestinationMap"),
+            self.read_m("wDestinationWarpID"),
+        )
+        if key[-1] != 0xFF:
+            self.seen_warps[key] = 1
+
     def cut_hook(self, context):
         player_direction = self.pyboy.memory[
             self.pyboy.symbol_lookup("wSpritePlayerStateData1FacingDirection")[1]
@@ -1194,6 +1207,7 @@ class RedGymEnv(Env):
                 "ptypes": self.read_party(),
                 "hp": self.read_hp_fraction(),
                 "coord": sum(sum(tileset.values()) for tileset in self.seen_coords.values()),
+                "warps": len(self.seen_warps),
                 "a_press": len(self.a_press),
                 "map_id": np.sum(self.seen_map_ids),
                 "npc": sum(self.seen_npcs.values()),
