@@ -654,7 +654,6 @@ class RedGymEnv(Env):
         elif self.step_count % self.log_frequency == 0:
             info = info | self.agent_stats(action)
         self.required_events = required_events
-        print(self.seen_warps)
 
         obs = self._get_obs()
 
