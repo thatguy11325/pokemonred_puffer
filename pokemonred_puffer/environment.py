@@ -655,7 +655,9 @@ class RedGymEnv(Env):
             state = io.BytesIO()
             self.pyboy.save_state(state)
             state.seek(0)
-            info["state"] = {tuple(required_events): state.read()}
+            info["state"] = {
+                tuple(sorted(list(required_events) + list(required_items))): state.read()
+            }
             info["required_count"] = len(required_events) + len(required_items)
             info["env_id"] = self.env_id
             info = info | self.agent_stats(action)
