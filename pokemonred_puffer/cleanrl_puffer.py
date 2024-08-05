@@ -268,9 +268,9 @@ class CleanPuffeRL:
                                         f.write(str(key))
                                 with open(state_dir / f"{hash(v)}.state", "wb") as f:
                                     f.write(v)
-                        elif "required_events_count" == k:
+                        elif "required_count" == k:
                             for count, eid in zip(
-                                self.infos["required_events_count"], self.infos["env_id"]
+                                self.infos["required_count"], self.infos["env_id"]
                             ):
                                 self.event_tracker[eid] = count
                             self.infos[k].append(v)
@@ -294,7 +294,7 @@ class CleanPuffeRL:
                 and hasattr(self.config, "swarm_frequency")
                 and hasattr(self.config, "swarm_keep_pct")
                 # and self.epoch % self.config.swarm_frequency == 0
-                and "required_events_count" in self.infos
+                and "required_count" in self.infos
                 and self.states
             ):
                 """
@@ -321,7 +321,7 @@ class CleanPuffeRL:
                 """
 
                 # V2 implementation
-                # check if we have a new highest required_events_count with N save states available
+                # check if we have a new highest required_count with N save states available
                 # If we do, migrate 100% of states to one of the states
                 max_event_count = 0
                 new_state_key = ""
