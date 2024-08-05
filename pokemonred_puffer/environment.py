@@ -1527,10 +1527,10 @@ class RedGymEnv(Env):
         )
 
     def get_required_items(self) -> set[str]:
-        _, wNumBagItems = self.pyboy.symbol_lookup("wNumBagItems")
+        wNumBagItems = self.read_m("wNumBagItems")
         _, wBagItems = self.pyboy.symbol_lookup("wBagItems")
-        bag_items = self.pyboy.memory[wBagItems : wBagItems + wNumBagItems * 2]
-        return {Items(item).name for item in bag_items[::2] if Items(item) in REQUIRED_ITEMS}
+        bag_items = self.pyboy.memory[wBagItems : wBagItems + wNumBagItems * 2 : 2]
+        return {Items(item).name for item in bag_items if Items(item) in REQUIRED_ITEMS}
 
     def get_events_sum(self):
         # adds up all event flags, exclude museum ticket
