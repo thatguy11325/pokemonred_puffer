@@ -299,6 +299,7 @@ class RedGymEnv(Env):
                 self.wd728 = Wd728Flags(self.pyboy)
                 self.party = PartyMons(self.pyboy)
                 self.required_events = self.get_required_events()
+                self.required_items = self.get_required_items()
                 self.seen_pokemon = np.zeros(152, dtype=np.uint8)
                 self.caught_pokemon = np.zeros(152, dtype=np.uint8)
                 self.moves_obtained = np.zeros(0xA5, dtype=np.uint8)
@@ -309,8 +310,12 @@ class RedGymEnv(Env):
                     self.pyboy.save_state(state)
                     state.seek(0)
                     infos |= {
-                        "state": {tuple(self.required_events): state.read()},
-                        "required_events_count": len(self.required_events),
+                        "state": {
+                            tuple(
+                                sorted(list(self.required_events) + list(self.required_items))
+                            ): state.read()
+                        },
+                        "required_count": len(self.required_events) + len(self.required_items),
                         "env_id": self.env_id,
                     }
             # lazy random seed setting
@@ -343,6 +348,7 @@ class RedGymEnv(Env):
         self.max_opponent_level = 0
         self.max_event_rew = 0
         self.required_events = self.get_required_events()
+        self.required_items = self.get_required_items()
         self.max_level_rew = 0
         self.max_level_sum = 0
         self.last_health = 1
@@ -642,18 +648,21 @@ class RedGymEnv(Env):
         info = {}
 
         required_events = self.get_required_events()
+        required_items = self.get_required_items()
         new_required_events = required_events - self.required_events
-        if self.save_state and new_required_events:
+        new_required_items = required_items - self.required_items
+        if self.save_state and (new_required_events or new_required_items):
             state = io.BytesIO()
             self.pyboy.save_state(state)
             state.seek(0)
             info["state"] = {tuple(required_events): state.read()}
-            info["required_events_count"] = len(required_events)
+            info["required_count"] = len(required_events) + len(required_items)
             info["env_id"] = self.env_id
             info = info | self.agent_stats(action)
         elif self.step_count % self.log_frequency == 0:
             info = info | self.agent_stats(action)
         self.required_events = required_events
+        self.required_items = required_items
 
         obs = self._get_obs()
 
@@ -1516,6 +1525,12 @@ class RedGymEnv(Env):
             )
             | ({"saffron_guard"} if self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK") else set())
         )
+
+    def get_required_items(self) -> set[str]:
+        _, wNumBagItems = self.pyboy.symbol_lookup("wNumBagItems")
+        _, wBagItems = self.pyboy.symbol_lookup("wBagItems")
+        bag_items = self.pyboy.memory[wBagItems : wBagItems + wNumBagItems * 2]
+        return {Items(item).name for item in bag_items[::2] if Items(item) in REQUIRED_ITEMS}
 
     def get_events_sum(self):
         # adds up all event flags, exclude museum ticket
