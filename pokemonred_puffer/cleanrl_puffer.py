@@ -291,8 +291,8 @@ class CleanPuffeRL:
             # env id in async queues is the index within self.infos - self.config.num_envs + 1
             if (
                 self.config.async_wrapper
-                and hasattr(self.config, "swarm_frequency")
-                and hasattr(self.config, "swarm_keep_pct")
+                and hasattr(self.config, "swarm")
+                and self.config.swarm
                 # and self.epoch % self.config.swarm_frequency == 0
                 and "required_count" in self.infos
                 and self.states
@@ -347,7 +347,7 @@ class CleanPuffeRL:
                         # self.next_lstm_state[0][:, i, :] = self.next_lstm_state[0][:, new_state, :]
                         # self.next_lstm_state[1][:, i, :] = self.next_lstm_state[1][:, new_state, :]
                     for key in self.event_tracker.keys():
-                        print(f"\tWaiting for message from env-id {key}")
+                        # print(f"\tWaiting for message from env-id {key}")
                         self.env_send_queues[key].get()
                     print("State migration complete")
 

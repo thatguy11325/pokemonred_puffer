@@ -250,7 +250,7 @@ class RedGymEnv(Env):
         if self.disable_wild_encounters:
             self.setup_disable_wild_encounters()
         self.pyboy.hook_register(None, "AnimateHealingMachine", self.pokecenter_heal_hook, None)
-        self.pyboy.hook_register(None, "OverworldLoopLessDelay", self.overworld_loop_hook, None)
+        # self.pyboy.hook_register(None, "OverworldLoopLessDelay", self.overworld_loop_hook, None)
         self.pyboy.hook_register(None, "CheckWarpsNoCollisionLoop", self.update_warps_hook, None)
 
     def setup_disable_wild_encounters(self):
@@ -405,6 +405,13 @@ class RedGymEnv(Env):
         if self.reduce_res:
             game_pixels_render = game_pixels_render[::2, ::2, :]
             # game_pixels_render = skimage.measure.block_reduce(game_pixels_render, (2, 2, 1), np.min)
+
+        """
+        import cv2
+        cv2.imshow("a", game_pixels_render)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        """
 
         # place an overlay on top of the screen greying out places we haven't visited
         # first get our location
@@ -690,7 +697,7 @@ class RedGymEnv(Env):
         if not self.disable_ai_actions:
             self.pyboy.send_input(VALID_ACTIONS[action])
             self.pyboy.send_input(VALID_RELEASE_ACTIONS[action], delay=8)
-        self.pyboy.tick(self.action_freq, render=False)
+        self.pyboy.tick(self.action_freq - 1, render=False)
         while self.read_m("wJoyIgnore"):
             self.pyboy.button("a", delay=8)
             self.pyboy.tick(self.action_freq, render=False)
