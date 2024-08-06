@@ -335,12 +335,11 @@ class CleanPuffeRL:
 
                     # Need a way not to reset the env id counter for the driver env
                     # Until then env ids are 1-indexed
+                    print(f"\tEvents count: {self.event_tracker[key]} -> {len(new_state_key)}")
+                    print(f"\tNew events: {new_state_key}")
                     for key in self.event_tracker.keys():
                         new_state = random.choice(self.states[new_state_key])
 
-                        print(f"Environment ID: {key}")
-                        print(f"\tEvents count: {self.event_tracker[key]} -> {len(new_state_key)}")
-                        print(f"\tNew events: {new_state_key}")
                         self.env_recv_queues[key].put(new_state)
                         # Now copy the hidden state over
                         # This may be a little slow, but so is this whole process
