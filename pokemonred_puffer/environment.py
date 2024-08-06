@@ -1,5 +1,6 @@
 from abc import abstractmethod
 import io
+from multiprocessing import Lock, shared_memory
 import os
 import random
 from collections import deque
@@ -17,6 +18,7 @@ from pyboy.utils import WindowEvent
 import pufferlib
 from pokemonred_puffer.data.events import (
     EVENT_FLAGS_START,
+    EVENTS,
     EVENTS_FLAGS_LENGTH,
     MUSEUM_TICKET,
     REQUIRED_EVENTS,
@@ -78,6 +80,9 @@ ACTION_SPACE = spaces.Discrete(len(VALID_ACTIONS))
 
 # TODO: Make global map usage a configuration parameter
 class RedGymEnv(Env):
+    env_id = shared_memory.SharedMemory(create=True, size=4)
+    lock = Lock()
+
     def __init__(self, env_config: pufferlib.namespace):
         # TODO: Dont use pufferlib.namespace. It seems to confuse __init__
         self.video_dir = Path(env_config.video_dir)
@@ -112,6 +117,8 @@ class RedGymEnv(Env):
         self.use_global_map = env_config.use_global_map
         self.save_state = env_config.save_state
         self.animate_scripts = env_config.animate_scripts
+        self.exploration_inc = env_config.exploration_inc
+        self.exploration_max = env_config.exploration_max
         self.action_space = ACTION_SPACE
 
         # Obs space-related. TODO: avoid hardcoding?
@@ -162,30 +169,25 @@ class RedGymEnv(Env):
             # "y": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
             "map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
             # "badges": spaces.Box(low=0, high=np.iinfo(np.uint16).max, shape=(1,), dtype=np.uint16),
-            "wJoyIgnore": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
             "bag_items": spaces.Box(
                 low=0, high=max(Items._value2member_map_.keys()), shape=(20,), dtype=np.uint8
             ),
             "bag_quantity": spaces.Box(low=0, high=100, shape=(20,), dtype=np.uint8),
-            "rival_3": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
-            "game_corner_rocket": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
-            "saffron_guard": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
             # This could be a dict within a sequence, but we'll do it like this and concat later
             "species": spaces.Box(low=0, high=0xBE, shape=(6,), dtype=np.uint8),
-            "hp": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint16),
+            "hp": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint32),
             "status": spaces.Box(low=0, high=7, shape=(6,), dtype=np.uint8),
             "type1": spaces.Box(low=0, high=0x1A, shape=(6,), dtype=np.uint8),
             "type2": spaces.Box(low=0, high=0x1A, shape=(6,), dtype=np.uint8),
             "level": spaces.Box(low=0, high=100, shape=(6,), dtype=np.uint8),
-            "maxHP": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint16),
-            "attack": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint16),
-            "defense": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint16),
-            "speed": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint16),
-            "special": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint16),
+            "maxHP": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint32),
+            "attack": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint32),
+            "defense": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint32),
+            "speed": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint32),
+            "special": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint32),
             "moves": spaces.Box(low=0, high=0xA4, shape=(6, 4), dtype=np.uint8),
-        } | {
-            event: spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8)
-            for event in REQUIRED_EVENTS
+            # Add 3 for rival_3, game corner rocket and saffron guard
+            "events": spaces.Box(low=0, high=1, shape=(len(EVENTS) + 3,), dtype=np.uint8),
         }
 
         if self.use_global_map:
@@ -209,6 +211,19 @@ class RedGymEnv(Env):
 
         self.first = True
 
+        with RedGymEnv.lock:
+            env_id = (
+                (int(RedGymEnv.env_id.buf[0]) << 24)
+                + (int(RedGymEnv.env_id.buf[1]) << 16)
+                + (int(RedGymEnv.env_id.buf[2]) << 8)
+                + (int(RedGymEnv.env_id.buf[3]))
+            )
+            self.env_id = env_id
+            env_id += 1
+            RedGymEnv.env_id.buf[0] = (env_id >> 24) & 0xFF
+            RedGymEnv.env_id.buf[1] = (env_id >> 16) & 0xFF
+            RedGymEnv.env_id.buf[2] = (env_id >> 8) & 0xFF
+            RedGymEnv.env_id.buf[3] = (env_id) & 0xFF
         self.init_mem()
 
     def register_hooks(self):
@@ -235,6 +250,8 @@ class RedGymEnv(Env):
         if self.disable_wild_encounters:
             self.setup_disable_wild_encounters()
         self.pyboy.hook_register(None, "AnimateHealingMachine", self.pokecenter_heal_hook, None)
+        # self.pyboy.hook_register(None, "OverworldLoopLessDelay", self.overworld_loop_hook, None)
+        self.pyboy.hook_register(None, "CheckWarpsNoCollisionLoop", self.update_warps_hook, None)
 
     def setup_disable_wild_encounters(self):
         bank, addr = self.pyboy.symbol_lookup("TryDoWildEncounter.gotWildEncounterType")
@@ -256,6 +273,7 @@ class RedGymEnv(Env):
         # restart game, skipping credits
         options = options or {}
 
+        infos = {}
         self.explore_map_dim = 384
         if self.first or options.get("state", None) is not None:
             self.recent_screens = deque()
@@ -263,6 +281,7 @@ class RedGymEnv(Env):
             # We only init seen hidden objs once cause they can only be found once!
             self.seen_hidden_objs = {}
             self.seen_signs = {}
+            self.a_press = set()
             if options.get("state", None) is not None:
                 self.pyboy.load_state(io.BytesIO(options["state"]))
                 self.reset_count += 1
@@ -274,10 +293,31 @@ class RedGymEnv(Env):
                     self.read_m(i).bit_count()
                     for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
                 )
+                # A bit of duplicate code. Blah.
+                self.events = EventFlags(self.pyboy)
+                self.missables = MissableFlags(self.pyboy)
+                self.wd728 = Wd728Flags(self.pyboy)
+                self.party = PartyMons(self.pyboy)
+                self.required_events = self.get_required_events()
+                self.required_items = self.get_required_items()
                 self.seen_pokemon = np.zeros(152, dtype=np.uint8)
                 self.caught_pokemon = np.zeros(152, dtype=np.uint8)
                 self.moves_obtained = np.zeros(0xA5, dtype=np.uint8)
                 self.pokecenters = np.zeros(252, dtype=np.uint8)
+
+                if self.save_state:
+                    state = io.BytesIO()
+                    self.pyboy.save_state(state)
+                    state.seek(0)
+                    infos |= {
+                        "state": {
+                            tuple(
+                                sorted(list(self.required_events) + list(self.required_items))
+                            ): state.read()
+                        },
+                        "required_count": len(self.required_events) + len(self.required_items),
+                        "env_id": self.env_id,
+                    }
             # lazy random seed setting
             # if not seed:
             #     seed = random.randint(0, 4096)
@@ -287,6 +327,7 @@ class RedGymEnv(Env):
 
         self.recent_screens.clear()
         self.recent_actions.clear()
+        self.a_press.clear()
         self.seen_pokemon.fill(0)
         self.caught_pokemon.fill(0)
         self.moves_obtained.fill(0)
@@ -300,17 +341,19 @@ class RedGymEnv(Env):
         self.party = PartyMons(self.pyboy)
         self.update_pokedex()
         self.update_tm_hm_moves_obtained()
+        self.party_size = self.read_m("wPartyCount")
         self.taught_cut = self.check_if_party_has_hm(0xF)
         self.levels_satisfied = False
         self.base_explore = 0
         self.max_opponent_level = 0
         self.max_event_rew = 0
+        self.required_events = self.get_required_events()
+        self.required_items = self.get_required_items()
         self.max_level_rew = 0
         self.max_level_sum = 0
         self.last_health = 1
         self.total_heal_health = 0
         self.died_count = 0
-        self.party_size = 0
         self.step_count = 0
         self.blackout_check = 0
         self.blackout_count = 0
@@ -324,22 +367,18 @@ class RedGymEnv(Env):
         self.total_reward = sum([val for _, val in self.progress_reward.items()])
 
         self.first = False
-        infos = {}
-        if self.save_state:
-            state = io.BytesIO()
-            self.pyboy.save_state(state)
-            state.seek(0)
-            infos |= {"state": state.read()}
+
         return self._get_obs(), infos
 
     def init_mem(self):
         # Maybe I should preallocate a giant matrix for all map ids
         # All map ids have the same size, right?
-        self.seen_coords = {}
+        self.seen_coords: dict[int, dict[tuple[int, int, int], int]] = {}
         self.explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
         self.cut_explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
         self.seen_map_ids = np.zeros(256)
         self.seen_npcs = {}
+        self.seen_warps = {}
 
         self.cut_coords = {}
         self.cut_tiles = {}
@@ -366,6 +405,13 @@ class RedGymEnv(Env):
         if self.reduce_res:
             game_pixels_render = game_pixels_render[::2, ::2, :]
             # game_pixels_render = skimage.measure.block_reduce(game_pixels_render, (2, 2, 1), np.min)
+
+        """
+        import cv2
+        cv2.imshow("a", game_pixels_render)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        """
 
         # place an overlay on top of the screen greying out places we haven't visited
         # first get our location
@@ -514,46 +560,40 @@ class RedGymEnv(Env):
         # item ids start at 1 so using 0 as the nothing value is okay
         bag[2 * numBagItems :] = 0
 
-        return (
-            self.render()
-            | {
-                "direction": np.array(
-                    self.read_m("wSpritePlayerStateData1FacingDirection") // 4, dtype=np.uint8
-                ),
-                "blackout_map_id": np.array(self.read_m("wLastBlackoutMap"), dtype=np.uint8),
-                "battle_type": np.array(self.read_m("wIsInBattle") + 1, dtype=np.uint8),
-                "cut_in_party": np.array(self.check_if_party_has_hm(0xF), dtype=np.uint8),
-                # "x": np.array(player_x, dtype=np.uint8),
-                # "y": np.array(player_y, dtype=np.uint8),
-                "map_id": np.array(self.read_m(0xD35E), dtype=np.uint8),
-                "wJoyIgnore": np.array(self.read_m("wJoyIgnore"), dtype=np.uint8),
-                "bag_items": bag[::2].copy(),
-                "bag_quantity": bag[1::2].copy(),
-                "rival_3": np.array(self.read_m("wSSAnne2FCurScript") == 4, dtype=np.uint8),
-                "game_corner_rocket": np.array(
-                    self.missables.get_missable("HS_GAME_CORNER_ROCKET"), dtype=np.uint8
-                ),
-                "saffron_guard": np.array(
-                    self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK"), dtype=np.uint8
-                ),
-                "species": np.array([self.party[i].Species for i in range(6)], dtype=np.uint8),
-                "hp": np.array([self.party[i].HP for i in range(6)], dtype=np.uint16),
-                "status": np.array([self.party[i].Status for i in range(6)], dtype=np.uint8),
-                "type1": np.array([self.party[i].Type1 for i in range(6)], dtype=np.uint8),
-                "type2": np.array([self.party[i].Type2 for i in range(6)], dtype=np.uint8),
-                "level": np.array([self.party[i].Level for i in range(6)], dtype=np.uint8),
-                "maxHP": np.array([self.party[i].MaxHP for i in range(6)], dtype=np.uint16),
-                "attack": np.array([self.party[i].Attack for i in range(6)], dtype=np.uint16),
-                "defense": np.array([self.party[i].Defense for i in range(6)], dtype=np.uint16),
-                "speed": np.array([self.party[i].Speed for i in range(6)], dtype=np.uint16),
-                "special": np.array([self.party[i].Special for i in range(6)], dtype=np.uint16),
-                "moves": np.array([self.party[i].Moves for i in range(6)], dtype=np.uint8),
-            }
-            | {
-                event: np.array(self.events.get_event(event), dtype=np.uint8)
-                for event in REQUIRED_EVENTS
-            }
-        )
+        return self.render() | {
+            "direction": np.array(
+                self.read_m("wSpritePlayerStateData1FacingDirection") // 4, dtype=np.uint8
+            ),
+            "blackout_map_id": np.array(self.read_m("wLastBlackoutMap"), dtype=np.uint8),
+            "battle_type": np.array(self.read_m("wIsInBattle") + 1, dtype=np.uint8),
+            "cut_in_party": np.array(self.check_if_party_has_hm(0xF), dtype=np.uint8),
+            # "x": np.array(player_x, dtype=np.uint8),
+            # "y": np.array(player_y, dtype=np.uint8),
+            "map_id": np.array(self.read_m(0xD35E), dtype=np.uint8),
+            "bag_items": bag[::2].copy(),
+            "bag_quantity": bag[1::2].copy(),
+            "species": np.array([self.party[i].Species for i in range(6)], dtype=np.uint8),
+            "hp": np.array([self.party[i].HP for i in range(6)], dtype=np.uint32),
+            "status": np.array([self.party[i].Status for i in range(6)], dtype=np.uint8),
+            "type1": np.array([self.party[i].Type1 for i in range(6)], dtype=np.uint8),
+            "type2": np.array([self.party[i].Type2 for i in range(6)], dtype=np.uint8),
+            "level": np.array([self.party[i].Level for i in range(6)], dtype=np.uint8),
+            "maxHP": np.array([self.party[i].MaxHP for i in range(6)], dtype=np.uint32),
+            "attack": np.array([self.party[i].Attack for i in range(6)], dtype=np.uint32),
+            "defense": np.array([self.party[i].Defense for i in range(6)], dtype=np.uint32),
+            "speed": np.array([self.party[i].Speed for i in range(6)], dtype=np.uint32),
+            "special": np.array([self.party[i].Special for i in range(6)], dtype=np.uint32),
+            "moves": np.array([self.party[i].Moves for i in range(6)], dtype=np.uint8),
+            "events": np.array(
+                [self.events.get_event(event) for event in EVENTS]
+                + [
+                    self.read_m("wSSAnne2FCurScript") == 4,  # rival 3
+                    self.missables.get_missable("HS_GAME_CORNER_ROCKET"),  # game corner rocket
+                    self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK"),  # saffron guard
+                ],
+                dtype=np.uint8,
+            ),
+        }
 
     def set_perfect_iv_dvs(self):
         party_size = self.read_m("wPartyCount")
@@ -591,6 +631,9 @@ class RedGymEnv(Env):
         if self.disable_wild_encounters:
             self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = 0xFF
 
+        # update the a press before we use it so we dont trigger the font loaded early return
+        if VALID_ACTIONS[action] == WindowEvent.PRESS_BUTTON_A:
+            self.update_a_press()
         self.run_action_on_emulator(action)
         self.events = EventFlags(self.pyboy)
         self.missables = MissableFlags(self.pyboy)
@@ -611,15 +654,24 @@ class RedGymEnv(Env):
         self.pokecenters[self.read_m("wLastBlackoutMap")] = 1
         info = {}
 
-        if self.save_state and self.get_events_sum() > self.max_event_rew:
+        required_events = self.get_required_events()
+        required_items = self.get_required_items()
+        new_required_events = required_events - self.required_events
+        new_required_items = required_items - self.required_items
+        if self.save_state and (new_required_events or new_required_items):
             state = io.BytesIO()
             self.pyboy.save_state(state)
             state.seek(0)
-            info["state"] = state.read()
-
-        # TODO: Make log frequency a configuration parameter
-        if self.step_count % self.log_frequency == 0:
+            info["state"] = {
+                tuple(sorted(list(required_events) + list(required_items))): state.read()
+            }
+            info["required_count"] = len(required_events) + len(required_items)
+            info["env_id"] = self.env_id
             info = info | self.agent_stats(action)
+        elif self.step_count % self.log_frequency == 0:
+            info = info | self.agent_stats(action)
+        self.required_events = required_events
+        self.required_items = required_items
 
         obs = self._get_obs()
 
@@ -645,7 +697,10 @@ class RedGymEnv(Env):
         if not self.disable_ai_actions:
             self.pyboy.send_input(VALID_ACTIONS[action])
             self.pyboy.send_input(VALID_RELEASE_ACTIONS[action], delay=8)
-        self.pyboy.tick(self.action_freq, render=True)
+        self.pyboy.tick(self.action_freq - 1, render=False)
+        while self.read_m("wJoyIgnore"):
+            self.pyboy.button("a", delay=8)
+            self.pyboy.tick(self.action_freq, render=False)
 
         if self.events.get_event("EVENT_GOT_HM01"):
             if self.auto_teach_cut and not self.check_if_party_has_hm(0x0F):
@@ -668,6 +723,9 @@ class RedGymEnv(Env):
 
         if self.events.get_event("EVENT_GOT_POKE_FLUTE") and self.auto_pokeflute:
             self.use_pokeflute()
+
+        # One last tick just in case
+        self.pyboy.tick(1, render=True)
 
     def party_has_cut_capable_mon(self):
         # find bulba and replace tackle (first skill) with cut
@@ -1095,6 +1153,19 @@ class RedGymEnv(Env):
     def pokecenter_heal_hook(self, *args, **kwargs):
         self.pokecenter_heal = 1
 
+    def overworld_loop_hook(self, *args, **kwargs):
+        self.user_control = True
+
+    def update_warps_hook(self, *args, **kwargs):
+        # current map id, destiation map id, warp id
+        key = (
+            self.read_m("wCurMap"),
+            self.read_m("hWarpDestinationMap"),
+            self.read_m("wDestinationWarpID"),
+        )
+        if key[-1] != 0xFF:
+            self.seen_warps[key] = 1
+
     def cut_hook(self, context):
         player_direction = self.pyboy.memory[
             self.pyboy.symbol_lookup("wSpritePlayerStateData1FacingDirection")[1]
@@ -1138,6 +1209,10 @@ class RedGymEnv(Env):
         bag[2 * numBagItems :] = 0
         bag_item_ids = bag[::2]
 
+        exploration_sum = max(
+            sum(sum(self.seen_coords.get(tileset.value, {}).values()) for tileset in Tilesets), 1
+        )
+
         return {
             "stats": {
                 "step": self.step_count + self.reset_count * self.max_steps,
@@ -1148,7 +1223,9 @@ class RedGymEnv(Env):
                 "levels_sum": sum(levels),
                 "ptypes": self.read_party(),
                 "hp": self.read_hp_fraction(),
-                "coord": sum(self.seen_coords.values()),  # np.sum(self.seen_global_coords),
+                "coord": sum(sum(tileset.values()) for tileset in self.seen_coords.values()),
+                "warps": len(self.seen_warps),
+                "a_press": len(self.a_press),
                 "map_id": np.sum(self.seen_map_ids),
                 "npc": sum(self.seen_npcs.values()),
                 "hidden_obj": sum(self.seen_hidden_objs.values()),
@@ -1177,6 +1254,13 @@ class RedGymEnv(Env):
                 "blackout_count": self.blackout_count,
                 "pokecenter": np.sum(self.pokecenters),
                 "pokecenter_heal": self.pokecenter_heal,
+            }
+            | {
+                "exploration": {
+                    tileset.name.lower(): sum(self.seen_coords.get(tileset.value, {}).values())
+                    / exploration_sum
+                    for tileset in Tilesets
+                }
             }
             | {f"badge_{i+1}": bool(badges & (1 << i)) for i in range(8)},
             "events": {event: self.events.get_event(event) for event in REQUIRED_EVENTS}
@@ -1233,14 +1317,40 @@ class RedGymEnv(Env):
         return (self.read_m(0xD362), self.read_m(0xD361), self.read_m(0xD35E))
 
     def update_seen_coords(self):
-        inc = 0.25 if (self.read_m("wd736") & 0b1000_0000) else 1
+        inc = 0.5 if (self.read_m("wd736") & 0b1000_0000) else self.exploration_inc
 
         x_pos, y_pos, map_n = self.get_game_coords()
-        self.seen_coords[(x_pos, y_pos, map_n)] = inc
+        # self.seen_coords[(x_pos, y_pos, map_n)] = inc
+        cur_map_tileset = self.read_m("wCurMapTileset")
+        if cur_map_tileset not in self.seen_coords:
+            self.seen_coords[cur_map_tileset] = {}
+        self.seen_coords[cur_map_tileset][(x_pos, y_pos, map_n)] = min(
+            self.seen_coords[cur_map_tileset].get((x_pos, y_pos, map_n), 0.0) + inc,
+            self.exploration_max,
+        )
         # TODO: Turn into a wrapper?
-        self.explore_map[local_to_global(y_pos, x_pos, map_n)] = inc
+        self.explore_map[local_to_global(y_pos, x_pos, map_n)] = min(
+            self.explore_map[local_to_global(y_pos, x_pos, map_n)] + inc,
+            self.exploration_max,
+        )
         # self.seen_global_coords[local_to_global(y_pos, x_pos, map_n)] = 1
         self.seen_map_ids[map_n] = 1
+
+    def update_a_press(self):
+        if self.read_m("wIsInBattle") != 0 or self.read_m("wFontLoaded"):
+            return
+
+        direction = self.read_m("wSpritePlayerStateData1FacingDirection")
+        x_pos, y_pos, map_n = self.get_game_coords()
+        if direction == 0:
+            y_pos += 1
+        if direction == 4:
+            y_pos -= 1
+        if direction == 8:
+            x_pos -= 1
+        if direction == 0xC:
+            x_pos += 1
+        self.a_press.add((x_pos, y_pos, map_n))
 
     def get_explore_map(self):
         explore_map = np.zeros(GLOBAL_MAP_SHAPE)
@@ -1412,6 +1522,24 @@ class RedGymEnv(Env):
         else:
             level_reward = 30 + (self.max_level_sum - 30) / 4
         return level_reward
+
+    def get_required_events(self) -> set[str]:
+        return (
+            {event for event in REQUIRED_EVENTS if self.events.get_event(event)}
+            | ({"rival3"} if (self.read_m("wSSAnne2FCurScript") == 4) else set())
+            | (
+                {"game_corner_rocket"}
+                if self.missables.get_missable("HS_GAME_CORNER_ROCKET")
+                else set()
+            )
+            | ({"saffron_guard"} if self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK") else set())
+        )
+
+    def get_required_items(self) -> set[str]:
+        wNumBagItems = self.read_m("wNumBagItems")
+        _, wBagItems = self.pyboy.symbol_lookup("wBagItems")
+        bag_items = self.pyboy.memory[wBagItems : wBagItems + wNumBagItems * 2 : 2]
+        return {Items(item).name for item in bag_items if Items(item) in REQUIRED_ITEMS}
 
     def get_events_sum(self):
         # adds up all event flags, exclude museum ticket

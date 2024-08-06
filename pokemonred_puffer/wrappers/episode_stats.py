@@ -22,6 +22,8 @@ class EpisodeStatsWrapper(gymnasium.Wrapper):
         for k, v in pufferlib.utils.unroll_nested_dict(info):
             if "exploration_map" in k:
                 self.info[k] = self.info.get(k, np.zeros_like(v)) + v
+            elif "state" in k:
+                self.info["state"] |= v
             else:
                 self.info[k] = v
 

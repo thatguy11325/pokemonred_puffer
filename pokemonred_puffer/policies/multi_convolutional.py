@@ -4,7 +4,6 @@ import pufferlib.pytorch
 import torch
 from torch import nn
 
-from pokemonred_puffer.data.events import REQUIRED_EVENTS
 from pokemonred_puffer.data.items import Items
 from pokemonred_puffer.environment import PIXEL_VALUES
 
@@ -39,11 +38,11 @@ class MultiConvolutionalPolicy(nn.Module):
         self.channels_last = channels_last
         self.downsample = downsample
         self.screen_network = nn.Sequential(
-            nn.LazyConv2d(32, 8, stride=4),
+            nn.LazyConv2d(32, 8, stride=2),
             nn.ReLU(),
             nn.LazyConv2d(64, 4, stride=2),
             nn.ReLU(),
-            nn.LazyConv2d(64, 3, stride=1),
+            nn.LazyConv2d(64, 3, stride=2),
             nn.ReLU(),
             nn.Flatten(),
         )
@@ -109,6 +108,10 @@ class MultiConvolutionalPolicy(nn.Module):
         self.type_embeddings = nn.Embedding(0x1A, int(0x1A**0.25) + 1, dtype=torch.float32)
         self.moves_embeddings = nn.Embedding(0xA4, int(0xA4**0.25) + 1, dtype=torch.float32)
 
+        # event embeddings
+        n_events = env.env.observation_space["events"].shape[0]
+        self.event_embeddings = nn.Embedding(n_events, int(n_events**0.25) + 1, dtype=torch.float32)
+
     def forward(self, observations):
         hidden, lookup = self.encode_observations(observations)
         actions, value = self.decode_actions(hidden, lookup)
@@ -152,13 +155,14 @@ class MultiConvolutionalPolicy(nn.Module):
                     .int(),
                 ).reshape(restored_global_map_shape)
         # badges = self.badge_buffer <= observations["badges"]
-        map_id = self.map_embeddings(observations["map_id"].long())
-        blackout_map_id = self.map_embeddings(observations["blackout_map_id"].long())
+        map_id = self.map_embeddings(observations["map_id"].int()).squeeze(1)
+        blackout_map_id = self.map_embeddings(observations["blackout_map_id"].int()).squeeze(1)
         # The bag quantity can be a value between 1 and 99
         # TODO: Should items be positionally encoded? I dont think it matters
-        items = self.item_embeddings(observations["bag_items"].squeeze(1).long()).float() * (
-            observations["bag_quantity"].squeeze(1).float().unsqueeze(-1) / 100.0
-        )
+        items = (
+            self.item_embeddings(observations["bag_items"].int())
+            * (observations["bag_quantity"].float().unsqueeze(-1) / 100.0)
+        ).squeeze(1)
 
         # image_observation = torch.cat((screen, visited_mask, global_map), dim=-1)
         image_observation = torch.cat((screen, visited_mask), dim=-1)
@@ -172,12 +176,13 @@ class MultiConvolutionalPolicy(nn.Module):
             image_observation = image_observation[:, :, :: self.downsample, :: self.downsample]
 
         # party network
-        species = self.species_embeddings(observations["species"].squeeze(1).long()).float()
-        status = one_hot(observations["status"].long(), 7).squeeze(1).float()
-        type1 = self.type_embeddings(observations["type1"].squeeze(1).long()).float()
-        type2 = self.type_embeddings(observations["type2"].squeeze(1).long()).float()
+        species = self.species_embeddings(observations["species"].int()).float().squeeze(1)
+        status = one_hot(observations["status"].int(), 7).float().squeeze(1)
+        type1 = self.type_embeddings(observations["type1"].int()).squeeze(1)
+        type2 = self.type_embeddings(observations["type2"].int()).squeeze(1)
         moves = (
-            self.moves_embeddings(observations["moves"].squeeze(1).long())
+            self.moves_embeddings(observations["moves"].int())
+            .squeeze(1)
             .float()
             .reshape((-1, 6, 4 * self.moves_embeddings.embedding_dim))
         )
@@ -200,28 +205,27 @@ class MultiConvolutionalPolicy(nn.Module):
         )
         party_latent = self.party_network(party_obs)
 
+        # event_obs = (
+        #     observations["events"].float() @ self.event_embeddings.weight
+        # ) / self.event_embeddings.weight.shape[0]
         cat_obs = torch.cat(
             (
                 self.screen_network(image_observation.float() / 255.0).squeeze(1),
-                one_hot(observations["direction"].long(), 4).float().squeeze(1),
-                # one_hot(observations["reset_map_id"].long(), 0xF7).float().squeeze(1),
-                one_hot(observations["battle_type"].long(), 4).float().squeeze(1),
+                one_hot(observations["direction"].int(), 4).float().squeeze(1),
+                # one_hot(observations["reset_map_id"].int(), 0xF7).float().squeeze(1),
+                one_hot(observations["battle_type"].int(), 4).float().squeeze(1),
                 # observations["cut_event"].float(),
                 observations["cut_in_party"].float(),
                 # observations["x"].float(),
                 # observations["y"].float(),
-                # one_hot(observations["map_id"].long(), 0xF7).float().squeeze(1),
+                # one_hot(observations["map_id"].int(), 0xF7).float().squeeze(1),
                 # badges.float().squeeze(1),
                 map_id.squeeze(1),
                 blackout_map_id.squeeze(1),
-                observations["wJoyIgnore"].float(),
                 items.flatten(start_dim=1),
-                observations["rival_3"].float(),
-                observations["game_corner_rocket"].float(),
-                observations["saffron_guard"].float(),
                 party_latent,
-            )
-            + tuple(observations[event].float() for event in REQUIRED_EVENTS),
+                observations["events"].float().squeeze(1),
+            ),
             dim=-1,
         )
         if self.use_global_map:
