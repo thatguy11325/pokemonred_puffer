@@ -188,6 +188,8 @@ class RedGymEnv(Env):
             "moves": spaces.Box(low=0, high=0xA4, shape=(6, 4), dtype=np.uint8),
             # Add 3 for rival_3, game corner rocket and saffron guard
             "events": spaces.Box(low=0, high=1, shape=(len(EVENTS) + 3,), dtype=np.uint8),
+            # can't use 16-bit types so might as well send the float32
+            "safari_steps": spaces.Box(low=0, high=1.0, shape=(1,), dtype=np.float32),
         }
 
         if self.use_global_map:
@@ -593,6 +595,7 @@ class RedGymEnv(Env):
                 ],
                 dtype=np.uint8,
             ),
+            "safari_steps": np.array(self.read_short("wSafariSteps") / 502.0, dtype=np.float32),
         }
 
     def set_perfect_iv_dvs(self):
