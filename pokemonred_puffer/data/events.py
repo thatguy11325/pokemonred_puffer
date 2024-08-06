@@ -1,4 +1,5 @@
 from ctypes import c_uint8, LittleEndianStructure, Union
+import re
 
 from pyboy import PyBoy
 
@@ -2583,6 +2584,11 @@ class EventFlags(Union):
 
     def get_event(self, event_name: str) -> bool:
         return bool(getattr(self.b, event_name))
+
+
+EVENTS = {
+    event for event, _, _ in EventFlagsBits._fields_ if not re.search("EVENT_[0-9,A-F]{3}$", event)
+}
 
 
 REQUIRED_EVENTS = {

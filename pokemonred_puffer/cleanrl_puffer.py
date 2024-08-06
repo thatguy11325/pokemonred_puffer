@@ -1,7 +1,9 @@
 import argparse
-import heapq
-import math
+import ast
+from datetime import datetime
+from functools import partial
 import os
+import pathlib
 import random
 import time
 from collections import defaultdict, deque
@@ -138,6 +140,9 @@ class CleanPuffeRL:
     stats: dict = field(default_factory=lambda: {})
     msg: str = ""
     infos: dict = field(default_factory=lambda: defaultdict(list))
+    states: dict = field(default_factory=lambda: defaultdict(partial(deque, maxlen=5)))
+    event_tracker: dict = field(default_factory=lambda: {})
+    max_event_count: int = 0
 
     def __post_init__(self):
         seed_everything(self.config.seed, self.config.torch_deterministic)
@@ -197,53 +202,15 @@ class CleanPuffeRL:
         self.taught_cut = False
         self.log = False
 
+        if self.config.archive_states:
+            self.archive_path = pathlib.Path(datetime.now().strftime("%Y%m%d-%H%M%S"))
+            self.archive_path.mkdir(exist_ok=False)
+
     @pufferlib.utils.profile
     def evaluate(self):
-        # Clear all self.infos except for the state
+        # states are managed separately so dont worry about deleting them
         for k in list(self.infos.keys()):
-            if k != "state":
-                del self.infos[k]
-
-        # now for a tricky bit:
-        # if we have swarm_frequency, we will take the top swarm_keep_pct envs and evenly distribute
-        # their states to the bottom 90%.
-        # we do this here so the environment can remain "pure"
-        if (
-            self.config.async_wrapper
-            and hasattr(self.config, "swarm_frequency")
-            and hasattr(self.config, "swarm_keep_pct")
-            and self.epoch % self.config.swarm_frequency == 0
-            and "reward/event" in self.infos
-            and "state" in self.infos
-        ):
-            # collect the top swarm_keep_pct % of envs
-            largest = [
-                x[0]
-                for x in heapq.nlargest(
-                    math.ceil(self.config.num_envs * self.config.swarm_keep_pct),
-                    enumerate(self.infos["reward/event"]),
-                    key=lambda x: x[1],
-                )
-            ]
-            print("Migrating states:")
-            waiting_for = []
-            # Need a way not to reset the env id counter for the driver env
-            # Until then env ids are 1-indexed
-            for i in range(self.config.num_envs):
-                if i not in largest:
-                    new_state = random.choice(largest)
-                    print(
-                        f'\t {i+1} -> {new_state+1}, event scores: {self.infos["reward/event"][i]} -> {self.infos["reward/event"][new_state]}'
-                    )
-                    self.env_recv_queues[i + 1].put(self.infos["state"][new_state])
-                    waiting_for.append(i + 1)
-                    # Now copy the hidden state over
-                    # This may be a little slow, but so is this whole process
-                    self.next_lstm_state[0][:, i, :] = self.next_lstm_state[0][:, new_state, :]
-                    self.next_lstm_state[1][:, i, :] = self.next_lstm_state[1][:, new_state, :]
-            for i in waiting_for:
-                self.env_send_queues[i].get()
-            print("State migration complete")
+            del self.infos[k]
 
         with self.profile.eval_misc:
             policy = self.policy
@@ -289,8 +256,24 @@ class CleanPuffeRL:
 
                 for i in info:
                     for k, v in pufferlib.utils.unroll_nested_dict(i):
-                        if k == "state":
-                            self.infos[k] = [v]
+                        if "state/" in k:
+                            _, key = k.split("/")
+                            key: tuple[str] = ast.literal_eval(key)
+                            self.states[key].append(v)
+                            if self.config.archive_states:
+                                state_dir = self.archive_path / str(hash(key))
+                                if not state_dir.exists():
+                                    state_dir.mkdir(exist_ok=True)
+                                    with open(state_dir / "desc.txt", "w") as f:
+                                        f.write(str(key))
+                                with open(state_dir / f"{hash(v)}.state", "wb") as f:
+                                    f.write(v)
+                        elif "required_count" == k:
+                            for count, eid in zip(
+                                self.infos["required_count"], self.infos["env_id"]
+                            ):
+                                self.event_tracker[eid] = count
+                            self.infos[k].append(v)
                         else:
                             self.infos[k].append(v)
 
@@ -298,6 +281,76 @@ class CleanPuffeRL:
                 self.vecenv.send(actions)
 
         with self.profile.eval_misc:
+            # now for a tricky bit:
+            # if we have swarm_frequency, we will migrate the bottom
+            # % of envs in the batch (by required events count)
+            # and migrate them to a new state at random.
+            # Now this has a lot of gotchas and is really unstable
+            # E.g. Some envs could just constantly be on the bottom since they're never
+            # progressing
+            # env id in async queues is the index within self.infos - self.config.num_envs + 1
+            if (
+                self.config.async_wrapper
+                and hasattr(self.config, "swarm")
+                and self.config.swarm
+                # and self.epoch % self.config.swarm_frequency == 0
+                and "required_count" in self.infos
+                and self.states
+            ):
+                """
+                # V1 implementation - 
+                #     collect the top swarm_keep_pct % of the envs in the batch
+                #     migrate the envs not in the largest keep pct to one of the top states
+                largest = [
+                    x[1][0]
+                    for x in heapq.nlargest(
+                        math.ceil(len(self.event_tracker) * self.config.swarm_keep_pct),
+                        enumerate(self.event_tracker.items()),
+                        key=lambda x: x[1][0],
+                    )
+                ]
+
+                to_migrate_keys = set(self.event_tracker.keys()) - set(largest)
+                print(f"Migrating {len(to_migrate_keys)} states:")
+                for key in to_migrate_keys:
+                    # we store states in a weird format
+                    # pull a list of states corresponding to a required event completion state
+                    new_state_key = random.choice(list(self.states.keys()))
+                    # pull a state within that list
+                    new_state = random.choice(self.states[new_state_key])
+                """
+
+                # V2 implementation
+                # check if we have a new highest required_count with N save states available
+                # If we do, migrate 100% of states to one of the states
+                max_event_count = 0
+                new_state_key = ""
+                for key in self.states.keys():
+                    if len(key) > max_event_count:
+                        max_event_count = len(key)
+                        new_state_key = key
+                max_state: deque = self.states[key]
+                if max_event_count > self.max_event_count and len(max_state) == max_state.maxlen:
+                    self.max_event_count = max_event_count
+
+                    # Need a way not to reset the env id counter for the driver env
+                    # Until then env ids are 1-indexed
+                    for key in self.event_tracker.keys():
+                        new_state = random.choice(self.states[new_state_key])
+
+                        print(f"Environment ID: {key}")
+                        print(f"\tEvents count: {self.event_tracker[key]} -> {len(new_state_key)}")
+                        print(f"\tNew events: {new_state_key}")
+                        self.env_recv_queues[key].put(new_state)
+                        # Now copy the hidden state over
+                        # This may be a little slow, but so is this whole process
+                        # self.next_lstm_state[0][:, i, :] = self.next_lstm_state[0][:, new_state, :]
+                        # self.next_lstm_state[1][:, i, :] = self.next_lstm_state[1][:, new_state, :]
+                    for key in self.event_tracker.keys():
+                        # print(f"\tWaiting for message from env-id {key}")
+                        self.env_send_queues[key].get()
+                    print("State migration complete")
+
             self.stats = {}
 
             for k, v in self.infos.items():
@@ -307,9 +360,7 @@ class CleanPuffeRL:
                     if self.epoch % self.config.overlay_interval == 0:
                         overlay = make_pokemon_red_overlay(np.stack(self.infos[k], axis=0))
                         if self.wandb_client is not None:
-                            self.stats["Media/aggregate_exploration_map"] = wandb.Image(
-                                overlay, file_type="jpg"
-                            )
+                            self.stats["Media/aggregate_exploration_map"] = wandb.Image(overlay)
                 elif "state" in k:
                     continue
 
@@ -484,7 +535,7 @@ class CleanPuffeRL:
                     )
 
             if self.epoch % self.config.checkpoint_interval == 0 or done_training:
-                self.save_checkpoint()
+                # self.save_checkpoint()
                 self.msg = f"Checkpoint saved at update {self.epoch}"
 
     def close(self):
@@ -493,11 +544,11 @@ class CleanPuffeRL:
             self.utilization.stop()
 
         if self.wandb_client is not None:
-            artifact_name = f"{self.exp_name}_model"
-            artifact = wandb.Artifact(artifact_name, type="model")
-            model_path = self.save_checkpoint()
-            artifact.add_file(model_path)
-            self.wandb_client.log_artifact(artifact)
+            # artifact_name = f"{self.exp_name}_model"
+            # artifact = wandb.Artifact(artifact_name, type="model")
+            # model_path = self.save_checkpoint()
+            # artifact.add_file(model_path)
+            # self.wandb_client.log_artifact(artifact)
             self.wandb_client.finish()
 
     def save_checkpoint(self):
@@ -541,7 +592,7 @@ class CleanPuffeRL:
 
     def __exit__(self, *args):
         print("Done training.")
-        self.save_checkpoint()
+        # self.save_checkpoint()
         self.close()
         print("Run complete")
 

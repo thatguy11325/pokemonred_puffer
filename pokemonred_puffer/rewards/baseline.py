@@ -3,6 +3,7 @@ import pufferlib
 
 from pokemonred_puffer.data.events import REQUIRED_EVENTS
 from pokemonred_puffer.data.items import REQUIRED_ITEMS, USEFUL_ITEMS
+from pokemonred_puffer.data.tilesets import Tilesets
 from pokemonred_puffer.environment import (
     EVENT_FLAGS_START,
     EVENTS_FLAGS_LENGTH,
@@ -35,7 +36,7 @@ class BaselineRewardEnv(RedGymEnv):
             # "death_reward": self.died_count,
             "badge": self.get_badges() * 5,
             # "heal": self.total_healing_rew,
-            "explore": sum(self.seen_coords.values()) * 0.012,
+            "explore": sum(sum(tileset.values()) for tileset in self.seen_coords.values()) * 0.012,
             # "explore_maps": np.sum(self.seen_map_ids) * 0.0001,
             "taught_cut": 4 * int(self.check_if_party_has_hm(0xF)),
             "cut_coords": sum(self.cut_coords.values()) * 1.0,
@@ -111,7 +112,8 @@ class TeachCutReplicationEnv(BaselineRewardEnv):
             "hm_count": self.reward_config["hm_count"] * self.get_hm_count(),
             "level": self.reward_config["level"] * self.get_levels_reward(),
             "badges": self.reward_config["badges"] * self.get_badges(),
-            "exploration": self.reward_config["exploration"] * sum(self.seen_coords.values()),
+            "exploration": self.reward_config["exploration"]
+            * sum(sum(tileset.values()) for tileset in self.seen_coords.values()),
             "cut_coords": self.reward_config["cut_coords"] * sum(self.cut_coords.values()),
             "cut_tiles": self.reward_config["cut_tiles"] * sum(self.cut_tiles.values()),
             "start_menu": self.reward_config["start_menu"] * self.seen_start_menu,
@@ -147,7 +149,8 @@ class TeachCutReplicationEnvFork(BaselineRewardEnv):
             "moves_obtained": self.reward_config["moves_obtained"] * sum(self.moves_obtained),
             "hm_count": self.reward_config["hm_count"] * self.get_hm_count(),
             "badges": self.reward_config["badges"] * self.get_badges(),
-            "exploration": self.reward_config["exploration"] * sum(self.seen_coords.values()),
+            "exploration": self.reward_config["exploration"]
+            * sum(sum(tileset.values()) for tileset in self.seen_coords.values()),
             "explore_npcs": self.reward_config["explore_npcs"] * sum(self.seen_npcs.values()),
             "explore_hidden_objs": (
                 self.reward_config["explore_hidden_objs"] * sum(self.seen_hidden_objs.values())
@@ -202,7 +205,8 @@ class CutWithObjectRewardsEnv(BaselineRewardEnv):
             "hm_count": self.reward_config["hm_count"] * self.get_hm_count(),
             "level": self.reward_config["level"] * self.get_levels_reward(),
             "badges": self.reward_config["badges"] * self.get_badges(),
-            "exploration": self.reward_config["exploration"] * sum(self.seen_coords.values()),
+            "exploration": self.reward_config["exploration"]
+            * sum(sum(tileset.values()) for tileset in self.seen_coords.values()),
             "cut_coords": self.reward_config["cut_coords"] * sum(self.cut_coords.values()),
             "cut_tiles": self.reward_config["cut_tiles"] * sum(self.cut_tiles.values()),
             "start_menu": self.reward_config["start_menu"] * self.seen_start_menu,
@@ -246,7 +250,8 @@ class CutWithObjectRewardRequiredEventsEnv(BaselineRewardEnv):
                 "hm_count": self.reward_config["hm_count"] * self.get_hm_count(),
                 "level": self.reward_config["level"] * self.get_levels_reward(),
                 "badges": self.reward_config["badges"] * self.get_badges(),
-                "exploration": self.reward_config["exploration"] * sum(self.seen_coords.values()),
+                "exploration": self.reward_config["exploration"]
+                * sum(sum(tileset.values()) for tileset in self.seen_coords.values()),
                 "cut_coords": self.reward_config["cut_coords"] * sum(self.cut_coords.values()),
                 "cut_tiles": self.reward_config["cut_tiles"] * sum(self.cut_tiles.values()),
                 "start_menu": self.reward_config["start_menu"] * self.seen_start_menu,
@@ -264,6 +269,75 @@ class CutWithObjectRewardRequiredEventsEnv(BaselineRewardEnv):
                 * float(self.missables.get_missable("HS_GAME_CORNER_ROCKET")),
                 "saffron_guard": self.reward_config["required_event"]
                 * float(self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK")),
+            }
+            | {
+                event: self.reward_config["required_event"] * float(self.events.get_event(event))
+                for event in REQUIRED_EVENTS
+            }
+            | {
+                item.name: self.reward_config["required_item"] * float(item.value in bag_item_ids)
+                for item in REQUIRED_ITEMS
+            }
+            | {
+                item.name: self.reward_config["useful_item"] * float(item.value in bag_item_ids)
+                for item in USEFUL_ITEMS
+            }
+        )
+
+    def get_levels_reward(self):
+        party_size = self.read_m("wPartyCount")
+        party_levels = [self.read_m(f"wPartyMon{i+1}Level") for i in range(party_size)]
+        self.max_level_sum = max(self.max_level_sum, sum(party_levels))
+        if self.max_level_sum < 15:
+            return self.max_level_sum
+        else:
+            return 15 + (self.max_level_sum - 15) / 4
+
+
+class ObjectRewardRequiredEventsEnvTilesetExploration(BaselineRewardEnv):
+    def get_game_state_reward(self):
+        _, wBagItems = self.pyboy.symbol_lookup("wBagItems")
+        bag = np.array(self.pyboy.memory[wBagItems : wBagItems + 40], dtype=np.uint8)
+        numBagItems = self.read_m("wNumBagItems")
+        # item ids start at 1 so using 0 as the nothing value is okay
+        bag[2 * numBagItems :] = 0
+        bag_item_ids = bag[::2]
+
+        return (
+            {
+                "event": self.reward_config["event"] * self.update_max_event_rew(),
+                "seen_pokemon": self.reward_config["seen_pokemon"] * sum(self.seen_pokemon),
+                "caught_pokemon": self.reward_config["caught_pokemon"] * sum(self.caught_pokemon),
+                "moves_obtained": self.reward_config["moves_obtained"] * sum(self.moves_obtained),
+                "hm_count": self.reward_config["hm_count"] * self.get_hm_count(),
+                "level": self.reward_config["level"] * self.get_levels_reward(),
+                "badges": self.reward_config["badges"] * self.get_badges(),
+                "cut_coords": self.reward_config["cut_coords"] * sum(self.cut_coords.values()),
+                "cut_tiles": self.reward_config["cut_tiles"] * sum(self.cut_tiles.values()),
+                "start_menu": self.reward_config["start_menu"] * self.seen_start_menu,
+                "pokemon_menu": self.reward_config["pokemon_menu"] * self.seen_pokemon_menu,
+                "stats_menu": self.reward_config["stats_menu"] * self.seen_stats_menu,
+                "bag_menu": self.reward_config["bag_menu"] * self.seen_bag_menu,
+                "explore_hidden_objs": sum(self.seen_hidden_objs.values())
+                * self.reward_config["explore_hidden_objs"],
+                "seen_action_bag_menu": self.seen_action_bag_menu
+                * self.reward_config["seen_action_bag_menu"],
+                "pokecenter_heal": self.pokecenter_heal * self.reward_config["pokecenter_heal"],
+                "rival3": self.reward_config["required_event"]
+                * int(self.read_m("wSSAnne2FCurScript") == 4),
+                "game_corner_rocket": self.reward_config["required_event"]
+                * float(self.missables.get_missable("HS_GAME_CORNER_ROCKET")),
+                "saffron_guard": self.reward_config["required_event"]
+                * float(self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK")),
+                "a_press": len(self.a_press) * self.reward_config["a_press"],
+                "warps": len(self.seen_warps) * self.reward_config["explore_warps"],
+            }
+            | {
+                f"exploration_{tileset.name.lower()}": self.reward_config.get(
+                    f"exploration_{tileset.name.lower()}", self.reward_config["exploration"]
+                )
+                * sum(self.seen_coords.get(tileset.value, {}).values())
+                for tileset in Tilesets
             }
             | {
                 event: self.reward_config["required_event"] * float(self.events.get_event(event))
