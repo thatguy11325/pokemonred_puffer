@@ -75,6 +75,7 @@ env:
   animate_scripts: False
   exploration_inc: 1.0
   exploration_max: 1.0
+  max_steps_scaling: 0.2 # every 10 events or items gained, multiply max_steps by 2
 
 
 
@@ -162,7 +163,7 @@ wrappers:
         user: thatguy 
     - exploration.OnResetExplorationWrapper:
         full_reset_frequency: 1
-        jitter: 1
+        jitter: 0
 
   fixed_reset_value:
     - stream_wrapper.StreamWrapper:

@@ -119,6 +119,7 @@ class RedGymEnv(Env):
         self.animate_scripts = env_config.animate_scripts
         self.exploration_inc = env_config.exploration_inc
         self.exploration_max = env_config.exploration_max
+        self.max_steps_scaling = env_config.max_steps_scaling
         self.action_space = ACTION_SPACE
 
         # Obs space-related. TODO: avoid hardcoding?
@@ -680,7 +681,9 @@ class RedGymEnv(Env):
 
         self.step_count += 1
         reset = (
-            self.step_count >= self.max_steps  # or
+            self.step_count
+            >= self.max_steps
+            * (len(self.required_events) + len(self.required_items) * self.max_steps_scaling)  # or
             # self.caught_pokemon[6] == 1  # squirtle
         )
 
