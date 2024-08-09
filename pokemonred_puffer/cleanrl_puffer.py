@@ -293,7 +293,6 @@ class CleanPuffeRL:
                 self.config.async_wrapper
                 and hasattr(self.config, "swarm")
                 and self.config.swarm
-                # and self.epoch % self.config.swarm_frequency == 0
                 and "required_count" in self.infos
                 and self.states
             ):
@@ -325,12 +324,17 @@ class CleanPuffeRL:
                 # If we do, migrate 100% of states to one of the states
                 max_event_count = 0
                 new_state_key = ""
+                max_state = None
                 for key in self.states.keys():
-                    if len(key) > max_event_count:
+                    candidate_max_state: deque = self.states[key]
+                    if (
+                        len(key) > max_event_count
+                        and len(candidate_max_state) == candidate_max_state.maxlen
+                    ):
                         max_event_count = len(key)
                         new_state_key = key
-                max_state: deque = self.states[key]
-                if max_event_count > self.max_event_count and len(max_state) == max_state.maxlen:
+                        max_state = candidate_max_state
+                if max_event_count > self.max_event_count and max_state:
                     self.max_event_count = max_event_count
 
                     # Need a way not to reset the env id counter for the driver env
