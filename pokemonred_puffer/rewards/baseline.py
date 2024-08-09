@@ -18,6 +18,7 @@ class BaselineRewardEnv(RedGymEnv):
     def __init__(self, env_config: pufferlib.namespace, reward_config: pufferlib.namespace):
         super().__init__(env_config)
         self.reward_config = reward_config
+        self.max_event_rew = 0
 
     # TODO: make the reward weights configurable
     def get_game_state_reward(self):
@@ -302,7 +303,6 @@ class ObjectRewardRequiredEventsEnvTilesetExploration(BaselineRewardEnv):
 
         return (
             {
-                "event": self.reward_config["event"] * self.update_max_event_rew(),
                 "seen_pokemon": self.reward_config["seen_pokemon"] * sum(self.seen_pokemon),
                 "caught_pokemon": self.reward_config["caught_pokemon"] * sum(self.caught_pokemon),
                 "moves_obtained": self.reward_config["moves_obtained"] * sum(self.moves_obtained),
