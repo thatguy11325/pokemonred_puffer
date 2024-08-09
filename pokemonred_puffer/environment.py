@@ -349,7 +349,6 @@ class RedGymEnv(Env):
         self.levels_satisfied = False
         self.base_explore = 0
         self.max_opponent_level = 0
-        self.max_event_rew = 0
         self.required_events = self.get_required_events()
         self.required_items = self.get_required_items()
         self.max_level_rew = 0
@@ -1281,7 +1280,7 @@ class RedGymEnv(Env):
             "required_items": {item.name: item.value in bag_item_ids for item in REQUIRED_ITEMS},
             "useful_items": {item.name: item.value in bag_item_ids for item in USEFUL_ITEMS},
             "reward": self.get_game_state_reward(),
-            "reward/reward_sum": sum(self.get_game_state_reward().values()),
+            "reward_sum": sum(self.get_game_state_reward().values()),
             # Remove padding
             "pokemon_exploration_map": self.explore_map,
             # "cut_exploration_map": self.cut_explore_map,
