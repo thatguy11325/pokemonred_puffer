@@ -297,11 +297,8 @@ class CutWithObjectRewardRequiredEventsEnv(BaselineRewardEnv):
 class ObjectRewardRequiredEventsEnvTilesetExploration(BaselineRewardEnv):
     def get_game_state_reward(self):
         _, wBagItems = self.pyboy.symbol_lookup("wBagItems")
-        bag = np.array(self.pyboy.memory[wBagItems : wBagItems + 40], dtype=np.uint8)
         numBagItems = self.read_m("wNumBagItems")
-        # item ids start at 1 so using 0 as the nothing value is okay
-        bag[2 * numBagItems :] = 0
-        bag_item_ids = bag[::2]
+        bag_item_ids = set(self.pyboy.memory[wBagItems : wBagItems + 2 * numBagItems : 2])
 
         return (
             {

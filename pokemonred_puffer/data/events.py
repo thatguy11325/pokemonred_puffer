@@ -2582,8 +2582,11 @@ class EventFlags(Union):
             *emu.memory[EVENT_FLAGS_START : EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH]
         )
 
-    def get_event(self, event_name: str) -> bool:
-        return bool(getattr(self.b, event_name))
+    def get_event(self, event_name: str) -> int:
+        """
+        1 if true, 0 if false
+        """
+        return getattr(self.b, event_name)
 
 
 EVENTS = {
