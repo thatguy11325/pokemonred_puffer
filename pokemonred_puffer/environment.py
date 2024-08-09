@@ -1262,6 +1262,7 @@ class RedGymEnv(Env):
                 "blackout_count": self.blackout_count,
                 "pokecenter": np.sum(self.pokecenters),
                 "pokecenter_heal": self.pokecenter_heal,
+                "in_battle": self.read_m("wIsInBattle") > 0,
             }
             | {
                 "exploration": {
