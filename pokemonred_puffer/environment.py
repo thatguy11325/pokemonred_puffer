@@ -682,8 +682,11 @@ class RedGymEnv(Env):
         self.step_count += 1
         reset = (
             self.step_count
-            >= self.max_steps
-            * (len(self.required_events) + len(self.required_items) * self.max_steps_scaling)  # or
+            >= min(
+                self.max_steps,
+                self.max_steps
+                * (len(self.required_events) + len(self.required_items) * self.max_steps_scaling),
+            )  # or
             # self.caught_pokemon[6] == 1  # squirtle
         )
 
