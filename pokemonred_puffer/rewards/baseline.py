@@ -303,6 +303,7 @@ class ObjectRewardRequiredEventsEnvTilesetExploration(BaselineRewardEnv):
 
         return (
             {
+                "event": self.reward_config["event"] * self.update_max_event_rew(),
                 "seen_pokemon": self.reward_config["seen_pokemon"] * sum(self.seen_pokemon),
                 "caught_pokemon": self.reward_config["caught_pokemon"] * sum(self.caught_pokemon),
                 "moves_obtained": self.reward_config["moves_obtained"] * sum(self.moves_obtained),

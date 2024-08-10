@@ -13,7 +13,6 @@ import numpy as np
 from gymnasium import Env, spaces
 from pyboy import PyBoy
 from pyboy.utils import WindowEvent
-# from skimage.transform import resize
 
 import pufferlib
 from pokemonred_puffer.data.events import (
@@ -1259,6 +1258,7 @@ class RedGymEnv(Env):
                 "pokecenter": np.sum(self.pokecenters),
                 "pokecenter_heal": self.pokecenter_heal,
                 "in_battle": self.read_m("wIsInBattle") > 0,
+                "event": self.progress_reward["event"],
                 "max_steps": self.max_steps
                 * (len(self.required_events) + len(self.required_items))
                 * self.max_steps_scaling,
