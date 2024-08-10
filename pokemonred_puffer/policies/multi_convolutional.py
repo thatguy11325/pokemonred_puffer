@@ -205,18 +205,6 @@ class MultiConvolutionalPolicy(nn.Module):
         )
         party_latent = self.party_network(party_obs)
 
-        # enemy mon
-        species = self.species_embeddings(observations["species"].int()).float().squeeze(1)
-        status = one_hot(observations["status"].int(), 7).float().squeeze(1)
-        type1 = self.type_embeddings(observations["type1"].int()).squeeze(1)
-        type2 = self.type_embeddings(observations["type2"].int()).squeeze(1)
-        moves = (
-            self.moves_embeddings(observations["moves"].int())
-            .squeeze(1)
-            .float()
-            .reshape((-1, 6, 4 * self.moves_embeddings.embedding_dim))
-        )
-
         # event_obs = (
         #     observations["events"].float() @ self.event_embeddings.weight
         # ) / self.event_embeddings.weight.shape[0]
