@@ -11,7 +11,7 @@ debug:
     state_dir: pyboy_states
     max_steps: 20480
     log_frequency: 1
-    disable_wild_encounters: True
+    disable_wild_encounters: False
     disable_ai_actions: True
     use_global_map: False
     reduce_res: True

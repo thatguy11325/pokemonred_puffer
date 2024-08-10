@@ -2,6 +2,8 @@ from ctypes import Structure, Union, c_uint16, c_uint8, sizeof
 
 from pyboy import PyBoy
 
+from pokemonred_puffer.data.species import Species
+
 
 class BoxStruct(Structure):
     _pack_ = 1
@@ -46,9 +48,14 @@ class PartyMons(Union):
 
     def __init__(self, emu: PyBoy):
         _, wPartyMons = emu.symbol_lookup("wPartyMons")
+        _, wPartyCount = emu.symbol_lookup("wPartyCount")
+        self.party_size = emu.memory[wPartyCount]
         self.asbytes = (c_uint8 * PARTY_LENGTH_BYTES)(
             *emu.memory[wPartyMons : wPartyMons + PARTY_LENGTH_BYTES]
         )
 
     def __getitem__(self, idx):
         return self.party[idx]
+
+    def __repr__(self):
+        return str([Species(x.Species).name for x in self.party[: self.party_size]])

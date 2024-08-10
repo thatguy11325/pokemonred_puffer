@@ -205,6 +205,7 @@ class CleanPuffeRL:
         if self.config.archive_states:
             self.archive_path = pathlib.Path(datetime.now().strftime("%Y%m%d-%H%M%S"))
             self.archive_path.mkdir(exist_ok=False)
+            print(f"Will archive states to {self.archive_path}")
 
     @pufferlib.utils.profile
     def evaluate(self):
@@ -351,7 +352,9 @@ class CleanPuffeRL:
                     for key in self.event_tracker.keys():
                         # print(f"\tWaiting for message from env-id {key}")
                         self.env_send_queues[key].get()
-                    print("State migration complete")
+                    print(
+                        f"State migration to {self.archive_path}/{str(hash(new_state_key))} complete"
+                    )
 
             self.stats = {}
 
