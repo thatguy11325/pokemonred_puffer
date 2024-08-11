@@ -2578,6 +2578,7 @@ class EventFlags(Union):
 
     def __init__(self, emu: PyBoy):
         super().__init__()
+        self.emu = emu
         self.asbytes = (c_uint8 * 320)(
             *emu.memory[EVENT_FLAGS_START : EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH]
         )
@@ -2587,6 +2588,15 @@ class EventFlags(Union):
         1 if true, 0 if false
         """
         return getattr(self.b, event_name)
+
+    def set_event(self, event_name: str, value: bool):
+        # This is O(N) but it's so rare that I'm not too worried about it
+        idx = [x[0] for x in self.b._fields_].index(event_name)
+        addr = EVENT_FLAGS_START + idx // 8
+        bit = idx % 8
+
+        self.emu.memory[addr] = self.emu.memory[addr] & int(value) << bit
+        setattr(self.b, event_name, int(value))
 
 
 EVENTS = {

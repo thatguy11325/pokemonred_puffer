@@ -243,7 +243,17 @@ class MissableFlags(Union):
 
     def __init__(self, emu: PyBoy):
         super().__init__()
+        self.emu = emu
         self.asbytes = (c_uint8 * 32)(*emu.memory[0xD5A6 : 0xD5A6 + 32])
 
-    def get_missable(self, missable: str) -> bool:
-        return bool(getattr(self.b, missable))
+    def get_missable(self, missable: str) -> int:
+        return getattr(self.b, missable)
+
+    def set_missable(self, missable: str, value: bool):
+        # This is O(N) but it's so rare that I'm not too worried about it
+        idx = [x[0] for x in self.b._fields_].index(missable)
+        addr = 0xD5A6 + idx // 8
+        bit = idx % 8
+
+        self.emu.memory[addr] = self.emu.memory[addr] & int(value) << bit
+        setattr(self.b, missable, int(value))

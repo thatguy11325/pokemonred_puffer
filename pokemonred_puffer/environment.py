@@ -738,6 +738,9 @@ class RedGymEnv(Env):
         if self.events.get_event("EVENT_GOT_POKE_FLUTE") and self.auto_pokeflute:
             self.use_pokeflute()
 
+        if self.get_game_coords() == (18, 4, 7) and self.skip_safari_zone:
+            self.skip_safari_zone()
+
         # One last tick just in case
         self.pyboy.tick(1, render=True)
 
@@ -1121,6 +1124,28 @@ class RedGymEnv(Env):
                     if not self.disable_wild_encounters:
                         self.setup_enable_wild_ecounters()
                     break
+
+    def skip_safari_zone(self):
+        # First move down
+        self.pyboy.button("down", 8)
+        self.pyboy.tick(self.action_freq, render=self.animate_scripts)
+        _, wBagItems = self.pyboy.symbol_lookup("wBagItems")
+        _, wNumBagItems = self.pyboy.symbol_lookup("wNumBagItems")
+        numBagItems = self.read_m(wNumBagItems)
+        bag = np.array(self.pyboy.memory[wBagItems : wBagItems + 40], dtype=np.uint8)
+        if self.events.get_event("EVENT_GOT_HM03"):
+            self.events.set_event("EVENT_GOT_HM03", True)
+            bag[numBagItems * 2] = Items.HM_03.value
+            bag[numBagItems * 2 + 1] = 1
+            numBagItems += 1
+        if self.missables.get_missable("HS_SAFARI_ZONE_WEST_ITEM_4"):
+            self.missables.set_missable("HS_SAFARI_ZONE_WEST_ITEM_4", True)
+            bag[numBagItems * 2] = Items.GOLD_TEETH.value
+            bag[numBagItems * 2 + 1] = 1
+            numBagItems += 1
+        bag[numBagItems * 2 :] = 0xFF
+        self.pyboy.memory[wBagItems : wBagItems + 40] = bag
+        self.pyboy.memory[wNumBagItems] = numBagItems
 
     def sign_hook(self, *args, **kwargs):
         sign_id = self.pyboy.memory[self.pyboy.symbol_lookup("hSpriteIndexOrTextID")[1]]
