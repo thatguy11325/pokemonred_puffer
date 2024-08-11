@@ -407,7 +407,7 @@ class RedGymEnv(Env):
         """
         import cv2
         cv2.imshow("a", game_pixels_render)
-        cv2.waitKey(0)
+        cv2.waitKey(150)
         cv2.destroyAllWindows()
         """
 
@@ -494,6 +494,13 @@ class RedGymEnv(Env):
                 )
             ).astype(np.uint8)[6 // scale : -10 // scale, :]
             visited_mask = np.expand_dims(visited_mask, -1)
+
+        """
+        import cv2
+        cv2.imshow("a", game_pixels_render * visited_mask)
+        cv2.waitKey(250)
+        cv2.destroyAllWindows()
+        """
 
         """
         global_map = np.expand_dims(
@@ -638,7 +645,6 @@ class RedGymEnv(Env):
         self.missables = MissableFlags(self.pyboy)
         self.wd728 = Wd728Flags(self.pyboy)
         self.party = PartyMons(self.pyboy)
-        self.update_seen_coords()
         self.update_health()
         self.update_pokedex()
         self.update_tm_hm_moves_obtained()
@@ -702,6 +708,10 @@ class RedGymEnv(Env):
             self.pyboy.send_input(VALID_ACTIONS[action])
             self.pyboy.send_input(VALID_RELEASE_ACTIONS[action], delay=8)
         self.pyboy.tick(self.action_freq - 1, render=False)
+
+        # TODO: Split this function up. update_seen_coords should not be here!
+        self.update_seen_coords()
+
         while self.read_m("wJoyIgnore"):
             self.pyboy.button("a", delay=8)
             self.pyboy.tick(self.action_freq, render=False)
