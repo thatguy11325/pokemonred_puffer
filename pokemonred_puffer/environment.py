@@ -682,12 +682,8 @@ class RedGymEnv(Env):
 
         self.step_count += 1
         reset = (
-            self.step_count
-            >= min(
-                self.max_steps,
-                self.max_steps
-                * (len(self.required_events) + len(self.required_items) * self.max_steps_scaling),
-            )  # or
+            self.step_count >= self.get_max_steps()
+            # or
             # self.caught_pokemon[6] == 1  # squirtle
         )
 
@@ -1294,9 +1290,7 @@ class RedGymEnv(Env):
                 "pokecenter_heal": self.pokecenter_heal,
                 "in_battle": self.read_m("wIsInBattle") > 0,
                 "event": self.progress_reward["event"],
-                "max_steps": self.max_steps
-                * (len(self.required_events) + len(self.required_items))
-                * self.max_steps_scaling,
+                "max_steps": self.get_max_steps(),
             }
             | {
                 "exploration": {
@@ -1358,6 +1352,13 @@ class RedGymEnv(Env):
 
     def get_game_coords(self):
         return (self.read_m(0xD362), self.read_m(0xD361), self.read_m(0xD35E))
+
+    def get_max_steps(self):
+        return min(
+            self.max_steps,
+            self.max_steps
+            * (len(self.required_events) + len(self.required_items) * self.max_steps_scaling),
+        )
 
     def update_seen_coords(self):
         inc = 0.5 if (self.read_m("wd736") & 0b1000_0000) else self.exploration_inc
