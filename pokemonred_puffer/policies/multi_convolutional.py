@@ -58,6 +58,7 @@ class MultiConvolutionalPolicy(nn.Module):
         self.value_fn = nn.LazyLinear(1)
 
         self.two_bit = env.unwrapped.env.two_bit
+        self.skip_safari_zone = env.unwrapped.skip_safari_zone
         self.use_global_map = env.unwrapped.env.use_global_map
 
         if self.use_global_map:
@@ -216,6 +217,8 @@ class MultiConvolutionalPolicy(nn.Module):
                 one_hot(observations["battle_type"].int(), 4).float().squeeze(1),
                 # observations["cut_event"].float(),
                 observations["cut_in_party"].float(),
+                observations["strength_in_party"].float(),
+                observations["surf_in_party"].float(),
                 # observations["x"].float(),
                 # observations["y"].float(),
                 # one_hot(observations["map_id"].int(), 0xF7).float().squeeze(1),
@@ -229,6 +232,8 @@ class MultiConvolutionalPolicy(nn.Module):
             ),
             dim=-1,
         )
+        if self.skip_safari_zone:
+            cat_obs = torch.cat((cat_obs, observations["safari_steps"].float()), dim=-1)
         if self.use_global_map:
             cat_obs = torch.cat(
                 (
