@@ -201,7 +201,7 @@ class RedGymEnv(Env):
             "events": spaces.Box(low=0, high=1, shape=(len(EVENTS) + 3,), dtype=np.uint8),
         }
         if not self.skip_safari_zone:
-            obs_dict["safari_steps"] = spaces.Box(low=0, high=1.0, shape=(1,), dtype=np.uint32)
+            obs_dict["safari_steps"] = spaces.Box(low=0, high=502.0, shape=(1,), dtype=np.uint32)
 
         if self.use_global_map:
             obs_dict["global_map"] = spaces.Box(
