@@ -232,7 +232,7 @@ class MultiConvolutionalPolicy(nn.Module):
             ),
             dim=-1,
         )
-        if self.skip_safari_zone:
+        if not self.skip_safari_zone:
             cat_obs = torch.cat(
                 (
                     cat_obs,
