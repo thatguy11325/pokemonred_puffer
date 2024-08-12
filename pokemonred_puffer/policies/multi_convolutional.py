@@ -233,7 +233,13 @@ class MultiConvolutionalPolicy(nn.Module):
             dim=-1,
         )
         if self.skip_safari_zone:
-            cat_obs = torch.cat((cat_obs, observations["safari_steps"].float()), dim=-1)
+            cat_obs = torch.cat(
+                (
+                    cat_obs,
+                    observations["safari_steps"].float() / 502.0,
+                ),
+                dim=-1,
+            )
         if self.use_global_map:
             cat_obs = torch.cat(
                 (
