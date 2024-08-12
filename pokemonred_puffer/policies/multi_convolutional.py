@@ -58,7 +58,7 @@ class MultiConvolutionalPolicy(nn.Module):
         self.value_fn = nn.LazyLinear(1)
 
         self.two_bit = env.unwrapped.env.two_bit
-        self.skip_safari_zone = env.unwrapped.skip_safari_zone
+        self.skip_safari_zone = env.unwrapped.env.skip_safari_zone
         self.use_global_map = env.unwrapped.env.use_global_map
 
         if self.use_global_map:
