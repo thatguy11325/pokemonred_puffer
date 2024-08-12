@@ -228,7 +228,6 @@ class MultiConvolutionalPolicy(nn.Module):
                 items.flatten(start_dim=1),
                 party_latent,
                 observations["events"].float().squeeze(1),
-                observations["safari_steps"].float() / 502.0,
             ),
             dim=-1,
         )
