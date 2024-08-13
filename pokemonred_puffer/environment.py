@@ -1403,10 +1403,11 @@ class RedGymEnv(Env):
         return (self.read_m(0xD362), self.read_m(0xD361), self.read_m(0xD35E))
 
     def get_max_steps(self):
-        return min(
+        return max(
             self.max_steps,
             self.max_steps
-            * (len(self.required_events) + len(self.required_items) * self.max_steps_scaling),
+            * (len(self.required_events) + len(self.required_items))
+            * self.max_steps_scaling,
         )
 
     def update_seen_coords(self):
