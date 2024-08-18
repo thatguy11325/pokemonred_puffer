@@ -316,7 +316,8 @@ class ObjectRewardRequiredEventsEnvTilesetExploration(BaselineRewardEnv):
                 "pokemon_menu": self.reward_config["pokemon_menu"] * self.seen_pokemon_menu,
                 "stats_menu": self.reward_config["stats_menu"] * self.seen_stats_menu,
                 "bag_menu": self.reward_config["bag_menu"] * self.seen_bag_menu,
-                "explore_hidden_objs": sum(self.seen_hidden_objs.values())
+                "explore_hidden_objs": sum(self.seen_hidden_objs.values()),
+                "explore_signs": sum(self.seen_signs.values())
                 * self.reward_config["explore_hidden_objs"],
                 "seen_action_bag_menu": self.seen_action_bag_menu
                 * self.reward_config["seen_action_bag_menu"],

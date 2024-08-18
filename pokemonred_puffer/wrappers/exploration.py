@@ -68,6 +68,14 @@ class DecayWrapper(gym.Wrapper):
         self.env.unwrapped.explore_map[self.env.unwrapped.explore_map > 0] = np.clip(
             self.env.unwrapped.explore_map[self.env.unwrapped.explore_map > 0], 0.15, 1
         )
+        self.env.unwrapped.seen_hidden_objs.update(
+            (k, max(0.15, v * (self.step_forgetting_factor["hidden_objs"])))
+            for k, v in self.env.unwrapped.seen_coords.items()
+        )
+        self.env.unwrapped.seen_signs.update(
+            (k, max(0.15, v * (self.step_forgetting_factor["signs"])))
+            for k, v in self.env.unwrapped.seen_coords.items()
+        )
 
         if self.env.unwrapped.read_m("wIsInBattle") == 0:
             self.env.unwrapped.seen_start_menu *= self.step_forgetting_factor["start_menu"]
@@ -118,6 +126,8 @@ class OnResetExplorationWrapper(gym.Wrapper):
             self.env.unwrapped.cut_coords.clear()
             self.env.unwrapped.cut_tiles.clear()
             self.env.unwrapped.seen_warps.clear()
+            self.env.unwrapped.seen_hidden_objs.clear()
+            self.env.unwrapped.seen_signs.clear()
         self.counter += 1
         return self.env.reset(*args, **kwargs)
 
@@ -155,5 +165,13 @@ class OnResetLowerToFixedValueWrapper(gym.Wrapper):
             (k, self.fixed_value["coords"])
             for k, v in self.env.unwrapped.seen_warps.items()
             if v > 0
+        )
+        self.env.unwrapped.seen_hidden_objs.update(
+            (k, self.fixed_value["hidden_objs"])
+            for k, v in self.env.unwrapped.seen_npcs.items()
+            if v > 0
+        )
+        self.env.unwrapped.seen_signs.update(
+            (k, self.fixed_value["signs"]) for k, v in self.env.unwrapped.seen_npcs.items() if v > 0
         )
         return self.env.reset(*args, **kwargs)

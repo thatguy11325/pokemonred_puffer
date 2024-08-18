@@ -250,12 +250,6 @@ class RedGymEnv(Env):
         self.pyboy.hook_register(
             None, "CheckForHiddenObject.foundMatchingObject", self.hidden_object_hook, None
         )
-        """
-        _, addr = self.pyboy.symbol_lookup("IsSpriteOrSignInFrontOfPlayer.retry")
-        self.pyboy.hook_register(
-            None, addr-1, self.sign_hook, None
-        )
-        """
         self.pyboy.hook_register(None, "HandleBlackOut", self.blackout_hook, None)
         self.pyboy.hook_register(None, "SetLastBlackoutMap.done", self.blackout_update_hook, None)
         # self.pyboy.hook_register(None, "UsedCut.nothingToCut", self.cut_hook, context=True)
@@ -265,6 +259,13 @@ class RedGymEnv(Env):
         self.pyboy.hook_register(None, "AnimateHealingMachine", self.pokecenter_heal_hook, None)
         # self.pyboy.hook_register(None, "OverworldLoopLessDelay", self.overworld_loop_hook, None)
         self.pyboy.hook_register(None, "CheckWarpsNoCollisionLoop", self.update_warps_hook, None)
+        signBank, signAddr = self.pyboy.symbol_lookup("IsSpriteOrSignInFrontOfPlayer.retry")
+        self.pyboy.hook_register(
+            signBank,
+            signAddr - 1,
+            self.sign_hook,
+            None,
+        )
 
     def setup_disable_wild_encounters(self):
         bank, addr = self.pyboy.symbol_lookup("TryDoWildEncounter.gotWildEncounterType")
@@ -292,8 +293,6 @@ class RedGymEnv(Env):
             self.recent_screens = deque()
             self.recent_actions = deque()
             # We only init seen hidden objs once cause they can only be found once!
-            self.seen_hidden_objs = {}
-            self.seen_signs = {}
             self.a_press = set()
             if options.get("state", None) is not None:
                 self.pyboy.load_state(io.BytesIO(options["state"]))
@@ -396,6 +395,9 @@ class RedGymEnv(Env):
 
         self.cut_coords = {}
         self.cut_tiles = {}
+
+        self.seen_hidden_objs = {}
+        self.seen_signs = {}
 
         self.seen_start_menu = 0
         self.seen_pokemon_menu = 0
@@ -1191,10 +1193,9 @@ class RedGymEnv(Env):
         self.pyboy.memory[wNumBagItems] = numBagItems
 
     def sign_hook(self, *args, **kwargs):
-        sign_id = self.pyboy.memory[self.pyboy.symbol_lookup("hSpriteIndexOrTextID")[1]]
-        map_id = self.pyboy.memory[self.pyboy.symbol_lookup("wCurMap")[1]]
-        # We will store this by map id, y, x,
-        self.seen_hidden_objs[(map_id, sign_id)] = 1
+        sign_id = self.read_m("hSpriteIndexOrTextID")
+        map_id = self.read_m("wCurMap")
+        self.seen_signs[(map_id, sign_id)] = 1
 
     def hidden_object_hook(self, *args, **kwargs):
         hidden_object_id = self.pyboy.memory[self.pyboy.symbol_lookup("wHiddenObjectIndex")[1]]
@@ -1311,6 +1312,7 @@ class RedGymEnv(Env):
                 "map_id": np.sum(self.seen_map_ids),
                 "npc": sum(self.seen_npcs.values()),
                 "hidden_obj": sum(self.seen_hidden_objs.values()),
+                "sign": sum(self.seen_signs.values()),
                 "deaths": self.died_count,
                 "badge": self.get_badges(),
                 "healr": self.total_heal_health,
