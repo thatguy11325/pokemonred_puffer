@@ -280,6 +280,7 @@ rewards:
       stats_menu: 0.0
       bag_menu: 0.0
       explore_hidden_objs: 0.02
+      explore_signs: 0.02
       seen_action_bag_menu: 0.0
       required_event: 5.0
       required_item: 5.0
