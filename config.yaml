@@ -76,7 +76,7 @@ env:
   animate_scripts: False
   exploration_inc: 1.0
   exploration_max: 1.0
-  max_steps_scaling: 0.2 # every 10 events or items gained, multiply max_steps by 2
+  max_steps_scaling: 0 # 0.2 # every 10 events or items gained, multiply max_steps by 2
 
 
 
@@ -163,8 +163,8 @@ wrappers:
     - stream_wrapper.StreamWrapper:
         user: thatguy 
     - exploration.OnResetExplorationWrapper:
-        full_reset_frequency: 0
-        jitter: 0
+        full_reset_frequency: 1
+        jitter: 1
 
   fixed_reset_value:
     - stream_wrapper.StreamWrapper:
@@ -279,8 +279,8 @@ rewards:
       pokemon_menu: 0.0
       stats_menu: 0.0
       bag_menu: 0.0
-      explore_hidden_objs: 0.02
-      explore_signs: 0.02
+      explore_hidden_objs: 0.01
+      explore_signs: 0.015
       seen_action_bag_menu: 0.0
       required_event: 5.0
       required_item: 5.0
@@ -288,10 +288,10 @@ rewards:
       pokecenter_heal: 0.2
       exploration: 0.02
       exploration_gym: 0.025
-      exploration_facility: 0.10
+      exploration_facility: 0.11
       exploration_plateau: 0.025
       exploration_lobby: 0.035 # for game corner
-      a_press: 0.00001
+      a_press: 0.0 # 0.00001
       explore_warps: 0.05
 
 

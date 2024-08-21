@@ -140,7 +140,7 @@ class CleanPuffeRL:
     stats: dict = field(default_factory=lambda: {})
     msg: str = ""
     infos: dict = field(default_factory=lambda: defaultdict(list))
-    states: dict = field(default_factory=lambda: defaultdict(partial(deque, maxlen=5)))
+    states: dict = field(default_factory=lambda: defaultdict(partial(deque, maxlen=1)))
     event_tracker: dict = field(default_factory=lambda: {})
     max_event_count: int = 0
 
