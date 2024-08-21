@@ -1166,12 +1166,12 @@ class RedGymEnv(Env):
         _, wNumBagItems = self.pyboy.symbol_lookup("wNumBagItems")
         numBagItems = self.read_m(wNumBagItems)
         bag = np.array(self.pyboy.memory[wBagItems : wBagItems + 40], dtype=np.uint8)
-        if self.events.get_event("EVENT_GOT_HM03"):
+        if not self.events.get_event("EVENT_GOT_HM03"):
             self.events.set_event("EVENT_GOT_HM03", True)
             bag[numBagItems * 2] = Items.HM_03.value
             bag[numBagItems * 2 + 1] = 1
             numBagItems += 1
-        if self.missables.get_missable("HS_SAFARI_ZONE_WEST_ITEM_4"):
+        if not self.missables.get_missable("HS_SAFARI_ZONE_WEST_ITEM_4"):
             self.missables.set_missable("HS_SAFARI_ZONE_WEST_ITEM_4", True)
             bag[numBagItems * 2] = Items.GOLD_TEETH.value
             bag[numBagItems * 2 + 1] = 1
