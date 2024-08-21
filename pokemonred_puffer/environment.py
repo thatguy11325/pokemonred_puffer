@@ -173,9 +173,6 @@ class RedGymEnv(Env):
             "direction": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
             "blackout_map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
             "battle_type": spaces.Box(low=0, high=4, shape=(1,), dtype=np.uint8),
-            "cut_in_party": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
-            "strength_in_party": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
-            "surf_in_party": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
             # "x": spaces.Box(low=0, high=255, shape=(1,), dtype=np.u`int8),
             # "y": spaces.Box(low=0, high=255, shape=(1,), dtype=np.uint8),
             "map_id": spaces.Box(low=0, high=0xF7, shape=(1,), dtype=np.uint8),
@@ -591,15 +588,6 @@ class RedGymEnv(Env):
                 ),
                 "blackout_map_id": np.array(self.read_m("wLastBlackoutMap"), dtype=np.uint8),
                 "battle_type": np.array(self.read_m("wIsInBattle") + 1, dtype=np.uint8),
-                "cut_in_party": np.array(
-                    self.check_if_party_has_hm(TmHmMoves.CUT.value), dtype=np.uint8
-                ),
-                "surf_in_party": np.array(
-                    self.check_if_party_has_hm(TmHmMoves.SURF.value), dtype=np.uint8
-                ),
-                "strength_in_party": np.array(
-                    self.check_if_party_has_hm(TmHmMoves.STRENGTH.value), dtype=np.uint8
-                ),
                 # "x": np.array(player_x, dtype=np.uint8),
                 # "y": np.array(player_y, dtype=np.uint8),
                 "map_id": np.array(self.read_m(0xD35E), dtype=np.uint8),
