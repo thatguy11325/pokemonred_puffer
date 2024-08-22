@@ -2594,8 +2594,9 @@ class EventFlags(Union):
         idx = [x[0] for x in self.b._fields_].index(event_name)
         addr = EVENT_FLAGS_START + idx // 8
         bit = idx % 8
+        mask = int(value) << bit
 
-        self.emu.memory[addr] = self.emu.memory[addr] & int(value) << bit
+        self.emu.memory[addr] = (self.emu.memory[addr] & ~mask) | mask
         setattr(self.b, event_name, int(value))
 
 
