@@ -254,6 +254,7 @@ class MissableFlags(Union):
         idx = [x[0] for x in self.b._fields_].index(missable)
         addr = 0xD5A6 + idx // 8
         bit = idx % 8
+        mask = int(value) << bit
 
-        self.emu.memory[addr] = self.emu.memory[addr] & int(value) << bit
+        self.emu.memory[addr] = (self.emu.memory[addr] & ~mask) | mask
         setattr(self.b, missable, int(value))
