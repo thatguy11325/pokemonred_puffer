@@ -369,6 +369,7 @@ class RedGymEnv(Env):
         self.step_count = 0
         self.blackout_check = 0
         self.blackout_count = 0
+        self.use_surf = 0
 
         self.current_event_flags_set = {}
 
@@ -684,6 +685,8 @@ class RedGymEnv(Env):
         self.taught_surf = self.check_if_party_has_hm(TmHmMoves.SURF.value)
         self.taught_strength = self.check_if_party_has_hm(TmHmMoves.STRENGTH.value)
         self.pokecenters[self.read_m("wLastBlackoutMap")] = 1
+        if self.read_m("wWalkBikeSurfState") == 0x2:
+            self.use_surf = 1
         info = {}
 
         required_events = self.get_required_events()
