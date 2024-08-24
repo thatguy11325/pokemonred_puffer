@@ -69,6 +69,7 @@ env:
   auto_solve_strength_puzzles: True
   auto_remove_all_nonuseful_items: True
   auto_pokeflute: True
+  auto_next_elevator_floor: False
   skip_safari_zone: True
   infinite_money: True
   use_global_map: False
