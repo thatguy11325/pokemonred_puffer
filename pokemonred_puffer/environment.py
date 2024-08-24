@@ -15,6 +15,7 @@ from pyboy import PyBoy
 from pyboy.utils import WindowEvent
 
 import pufferlib
+from pokemonred_puffer.data.elevators import NEXT_ELEVATORS
 from pokemonred_puffer.data.events import (
     EVENT_FLAGS_START,
     EVENTS,
@@ -120,6 +121,7 @@ class RedGymEnv(Env):
         self.auto_solve_strength_puzzles = env_config.auto_solve_strength_puzzles
         self.auto_remove_all_nonuseful_items = env_config.auto_remove_all_nonuseful_items
         self.auto_pokeflute = env_config.auto_pokeflute
+        self.auto_next_elevator_floor = env_config.auto_next_elevator_floor
         self.skip_safari_zone = env_config.skip_safari_zone
         self.infinite_money = env_config.infinite_money
         self.use_global_map = env_config.use_global_map
@@ -764,6 +766,9 @@ class RedGymEnv(Env):
         if self.get_game_coords() == (18, 4, 7) and self.skip_safari_zone:
             self.skip_safari_zone_atn()
 
+        if self.auto_next_elevator_floor:
+            self.next_elevator_floor()
+
         # One last tick just in case
         self.pyboy.tick(1, render=True)
 
@@ -1179,6 +1184,47 @@ class RedGymEnv(Env):
         bag[numBagItems * 2 :] = 0xFF
         self.pyboy.memory[wBagItems : wBagItems + 40] = bag
         self.pyboy.memory[wNumBagItems] = numBagItems
+
+    def next_elevator_floor(self):
+        curMapId = MapIds(self.read_m("wCurMap"))
+        if curMapId in (MapIds.SILPH_CO_ELEVATOR, MapIds.CELADON_MART_ELEVATOR):
+            for _ in range(5):
+                self.pyboy.button("up", 8)
+                self.pyboy.tick(self.action_freq, render=self.animate_scripts)
+            # walk right
+            for _ in range(5):
+                self.pyboy.button("right", 8)
+                self.pyboy.tick(self.action_freq, render=self.animate_scripts)
+        elif curMapId == MapIds.ROCKET_HIDEOUT_ELEVATOR and Items.LIFT_KEY in self.required_items:
+            for _ in range(5):
+                self.pyboy.button("left", 8)
+                self.pyboy.tick(self.action_freq, render=self.animate_scripts)
+        else:
+            return
+
+        self.pyboy.button("up", 8)
+        self.pyboy.tick(self.action_freq, render=self.animate_scripts)
+        self.pyboy.button("a", 8)
+        self.pyboy.tick(5 * self.action_freq, render=self.animate_scripts)
+        for _ in range(NEXT_ELEVATORS[MapIds(self.read_m("wWarpedFromWhichMap"))]):
+            self.pyboy.button("down", 8)
+            self.pyboy.tick(self.action_freq, render=self.animate_scripts)
+        self.pyboy.button("a", 8)
+        self.pyboy.tick(20 * self.action_freq, render=self.animate_scripts)
+        # now leave elevator
+        if curMapId in (MapIds.SILPH_CO_ELEVATOR, MapIds.CELADON_MART_ELEVATOR):
+            for _ in range(5):
+                self.pyboy.button("down", 8)
+                self.pyboy.tick(self.action_freq, render=self.animate_scripts)
+            self.pyboy.button("left", 8)
+            self.pyboy.tick(self.action_freq, render=self.animate_scripts)
+            self.pyboy.button("down", 8)
+            self.pyboy.tick(self.action_freq, render=self.animate_scripts)
+        elif curMapId == MapIds.ROCKET_HIDEOUT_ELEVATOR and Items.LIFT_KEY in self.required_items:
+            self.pyboy.button("right", 8)
+            self.pyboy.tick(self.action_freq, render=self.animate_scripts)
+            self.pyboy.button("up", 8)
+            self.pyboy.tick(self.action_freq, render=self.animate_scripts)
 
     def sign_hook(self, *args, **kwargs):
         sign_id = self.read_m("hSpriteIndexOrTextID")
