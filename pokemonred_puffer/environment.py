@@ -989,10 +989,10 @@ class RedGymEnv(Env):
                 self.pyboy.tick(4 * self.action_freq, self.animate_scripts)
 
     def surf_if_attempt(self, action: WindowEvent):
-        if not (
-            self.read_m(0xD057) == 0
+        if (
+            self.read_m("wIsInBattle") == 0
             and self.read_m("wWalkBikeSurfState") != 2
-            and self.check_if_party_has_hm(0x39)
+            and self.check_if_party_has_hm(TmHmMoves.SURF.value)
             and action
             in [
                 WindowEvent.PRESS_ARROW_DOWN,
