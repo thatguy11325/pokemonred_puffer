@@ -33,7 +33,7 @@ from pokemonred_puffer.data.items import (
     USEFUL_ITEMS,
     Items,
 )
-from pokemonred_puffer.data.map import MapIds
+from pokemonred_puffer.data.map import MAP_ID_COMPLETION_EVENTS, MapIds
 from pokemonred_puffer.data.missable_objects import MissableFlags
 from pokemonred_puffer.data.party import PartyMons
 from pokemonred_puffer.data.strength_puzzles import STRENGTH_SOLUTIONS
@@ -130,6 +130,7 @@ class RedGymEnv(Env):
         self.exploration_inc = env_config.exploration_inc
         self.exploration_max = env_config.exploration_max
         self.max_steps_scaling = env_config.max_steps_scaling
+        self.map_id_scalefactor = env_config.map_id_scalefactor
         self.action_space = ACTION_SPACE
 
         # Obs space-related. TODO: avoid hardcoding?
@@ -343,6 +344,7 @@ class RedGymEnv(Env):
         self.caught_pokemon.fill(0)
         self.moves_obtained.fill(0)
         self.explore_map *= 0
+        self.reward_explore_map *= 0
         self.cut_explore_map *= 0
         self.reset_mem()
 
@@ -388,6 +390,7 @@ class RedGymEnv(Env):
         # All map ids have the same size, right?
         self.seen_coords: dict[int, dict[tuple[int, int, int], int]] = {}
         self.explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
+        self.reward_explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
         self.cut_explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
         self.seen_map_ids = np.zeros(256)
         self.seen_npcs = {}
@@ -1466,6 +1469,10 @@ class RedGymEnv(Env):
             self.explore_map[local_to_global(y_pos, x_pos, map_n)] + inc,
             self.exploration_max,
         )
+        self.reward_explore_map[local_to_global(y_pos, x_pos, map_n)] = min(
+            self.explore_map[local_to_global(y_pos, x_pos, map_n)] + inc,
+            self.exploration_max,
+        ) * self.map_id_scaling(map_n)
         # self.seen_global_coords[local_to_global(y_pos, x_pos, map_n)] = 1
         self.seen_map_ids[map_n] = 1
 
@@ -1687,3 +1694,20 @@ class RedGymEnv(Env):
             - int(self.read_bit(*MUSEUM_TICKET)),
             0,
         )
+
+    def map_id_scaling(self, map_n: int) -> float:
+        map_id = MapIds(map_n)
+        if map_id not in MAP_ID_COMPLETION_EVENTS:
+            return 1.0
+
+        event_or_missable = MAP_ID_COMPLETION_EVENTS[map_id]
+        if (
+            event_or_missable.startswith("EVENT_")
+            and not self.events.get_event(event_or_missable)
+            or (
+                event_or_missable.startswith("HS_")
+                and not self.missables.get_missable(event_or_missable)
+            )
+        ):
+            return self.map_id_scalefactor
+        return 1.0
