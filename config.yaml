@@ -313,7 +313,7 @@ rewards:
       pokemon_menu: 0.0
       stats_menu: 0.0
       bag_menu: 0.0
-      explore_hidden_objs: 0.01
+      explore_hidden_objs: 0.0001
       explore_signs: 0.015
       seen_action_bag_menu: 0.0
       required_event: 5.0
