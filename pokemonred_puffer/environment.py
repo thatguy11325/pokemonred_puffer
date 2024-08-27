@@ -1201,7 +1201,10 @@ class RedGymEnv(Env):
             for _ in range(5):
                 self.pyboy.button("right", 8)
                 self.pyboy.tick(self.action_freq, render=self.animate_scripts)
-        elif curMapId == MapIds.ROCKET_HIDEOUT_ELEVATOR and Items.LIFT_KEY in self.required_items:
+        elif (
+            curMapId == MapIds.ROCKET_HIDEOUT_ELEVATOR
+            and Items.LIFT_KEY.name in self.required_items
+        ):
             for _ in range(5):
                 self.pyboy.button("left", 8)
                 self.pyboy.tick(self.action_freq, render=self.animate_scripts)
@@ -1215,6 +1218,7 @@ class RedGymEnv(Env):
         for _ in range(NEXT_ELEVATORS[MapIds(self.read_m("wWarpedFromWhichMap"))]):
             self.pyboy.button("down", 8)
             self.pyboy.tick(self.action_freq, render=self.animate_scripts)
+
         self.pyboy.button("a", 8)
         self.pyboy.tick(20 * self.action_freq, render=self.animate_scripts)
         # now leave elevator
@@ -1226,7 +1230,10 @@ class RedGymEnv(Env):
             self.pyboy.tick(self.action_freq, render=self.animate_scripts)
             self.pyboy.button("down", 8)
             self.pyboy.tick(self.action_freq, render=self.animate_scripts)
-        elif curMapId == MapIds.ROCKET_HIDEOUT_ELEVATOR and Items.LIFT_KEY in self.required_items:
+        elif (
+            curMapId == MapIds.ROCKET_HIDEOUT_ELEVATOR
+            and Items.LIFT_KEY.name in self.required_items
+        ):
             self.pyboy.button("right", 8)
             self.pyboy.tick(self.action_freq, render=self.animate_scripts)
             self.pyboy.button("up", 8)
