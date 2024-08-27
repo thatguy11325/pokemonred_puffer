@@ -742,7 +742,6 @@ class RedGymEnv(Env):
         self.update_seen_coords()
 
         while self.read_m("wJoyIgnore"):
-            self.pyboy.button("a", delay=8)
             self.pyboy.tick(self.action_freq, render=False)
 
         if self.events.get_event("EVENT_GOT_HM01"):
@@ -1126,12 +1125,21 @@ class RedGymEnv(Env):
                         self.pyboy.memory[wd728] |= 0b0000_0001
                         # Perform solution
                         current_repel_steps = self.read_m("wRepelRemainingSteps")
-                        for button in solution:
+                        for step in solution:
                             self.pyboy.memory[
                                 self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]
                             ] = 0xFF
-                            self.pyboy.button(button, 8)
-                            self.pyboy.tick(self.action_freq * 1.5, self.animate_scripts)
+                            match step:
+                                case str(button):
+                                    self.pyboy.button(button, 8)
+                                    self.pyboy.tick(self.action_freq * 2, self.animate_scripts)
+                                case (str(button), int(button_freq), int(action_freq)):
+                                    self.pyboy.button(button, button_freq)
+                                    self.pyboy.tick(action_freq, self.animate_scripts)
+                                case _:
+                                    raise
+                            while self.read_m("wJoyIgnore"):
+                                self.pyboy.tick(self.action_freq, render=False)
                         self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = (
                             current_repel_steps
                         )
@@ -1156,15 +1164,24 @@ class RedGymEnv(Env):
                     self.pyboy.memory[wd728] |= 0b0000_0001
                     # Perform solution
                     current_repel_steps = self.read_m("wRepelRemainingSteps")
-                    for button in solution:
+                    for step in solution:
                         self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = (
                             0xFF
                         )
-                        self.pyboy.button(button, 8)
-                        self.pyboy.tick(self.action_freq * 2, self.animate_scripts)
-                    self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = (
-                        current_repel_steps
-                    )
+                        match step:
+                            case str(button):
+                                self.pyboy.button(button, 8)
+                                self.pyboy.tick(self.action_freq * 2, self.animate_scripts)
+                            case (str(button), int(button_freq), int(action_freq)):
+                                self.pyboy.button(button, button_freq)
+                                self.pyboy.tick(action_freq, self.animate_scripts)
+                            case _:
+                                raise
+                        while self.read_m("wJoyIgnore"):
+                            self.pyboy.tick(self.action_freq, render=False)
+                        self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = (
+                            current_repel_steps
+                        )
                     if not self.disable_wild_encounters:
                         self.setup_enable_wild_ecounters()
                     break
