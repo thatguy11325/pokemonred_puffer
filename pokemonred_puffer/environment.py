@@ -44,7 +44,7 @@ from pokemonred_puffer.data.tm_hm import (
     SURF_SPECIES_IDS,
     TmHmMoves,
 )
-from pokemonred_puffer.data.status_flags_1 import status_flags_1Flags
+from pokemonred_puffer.data.status_flags import StatusFlags1
 from pokemonred_puffer.global_map import GLOBAL_MAP_SHAPE, local_to_global
 
 PIXEL_VALUES = np.array([0, 85, 153, 255], dtype=np.uint8)
@@ -309,7 +309,7 @@ class RedGymEnv(Env):
                 # A bit of duplicate code. Blah.
                 self.events = EventFlags(self.pyboy)
                 self.missables = MissableFlags(self.pyboy)
-                self.status_flags_1 = status_flags_1Flags(self.pyboy)
+                self.status_flags_1 = StatusFlags1(self.pyboy)
                 self.party = PartyMons(self.pyboy)
                 self.required_events = self.get_required_events()
                 self.required_items = self.get_required_items()
@@ -351,7 +351,7 @@ class RedGymEnv(Env):
 
         self.events = EventFlags(self.pyboy)
         self.missables = MissableFlags(self.pyboy)
-        self.status_flags_1 = status_flags_1Flags(self.pyboy)
+        self.status_flags_1 = StatusFlags1(self.pyboy)
         self.party = PartyMons(self.pyboy)
         self.update_pokedex()
         self.update_tm_hm_moves_obtained()
@@ -673,7 +673,7 @@ class RedGymEnv(Env):
         self.run_action_on_emulator(action)
         self.events = EventFlags(self.pyboy)
         self.missables = MissableFlags(self.pyboy)
-        self.status_flags_1 = status_flags_1Flags(self.pyboy)
+        self.status_flags_1 = StatusFlags1(self.pyboy)
         self.party = PartyMons(self.pyboy)
         self.update_health()
         self.update_pokedex()
