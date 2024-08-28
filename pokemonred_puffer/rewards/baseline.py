@@ -269,7 +269,7 @@ class CutWithObjectRewardRequiredEventsEnv(BaselineRewardEnv):
                 "game_corner_rocket": self.reward_config["required_event"]
                 * float(self.missables.get_missable("HS_GAME_CORNER_ROCKET")),
                 "saffron_guard": self.reward_config["required_event"]
-                * float(self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK")),
+                * float(self.status_flags_1.get_bit("GAVE_SAFFRON_GUARD_DRINK")),
             }
             | {
                 event: self.reward_config["required_event"] * float(self.events.get_event(event))
@@ -327,7 +327,7 @@ class ObjectRewardRequiredEventsEnvTilesetExploration(BaselineRewardEnv):
                 "game_corner_rocket": self.reward_config["required_event"]
                 * float(self.missables.get_missable("HS_GAME_CORNER_ROCKET")),
                 "saffron_guard": self.reward_config["required_event"]
-                * float(self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK")),
+                * float(self.status_flags_1.get_bit("GAVE_SAFFRON_GUARD_DRINK")),
                 "a_press": len(self.a_press) * self.reward_config["a_press"],
                 "warps": len(self.seen_warps) * self.reward_config["explore_warps"],
                 "use_surf": self.reward_config["use_surf"] * self.use_surf,
@@ -395,7 +395,7 @@ class ObjectRewardRequiredEventsMapIds(BaselineRewardEnv):
                 "game_corner_rocket": self.reward_config["required_event"]
                 * float(self.missables.get_missable("HS_GAME_CORNER_ROCKET")),
                 "saffron_guard": self.reward_config["required_event"]
-                * float(self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK")),
+                * float(self.status_flags_1.get_bit("GAVE_SAFFRON_GUARD_DRINK")),
                 "a_press": len(self.a_press) * self.reward_config["a_press"],
                 "warps": len(self.seen_warps) * self.reward_config["explore_warps"],
                 "use_surf": self.reward_config["use_surf"] * self.use_surf,
