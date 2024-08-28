@@ -743,6 +743,8 @@ class RedGymEnv(Env):
         self.update_seen_coords()
 
         while self.read_m("wJoyIgnore"):
+            # DO NOT DELETE. Some animations require dialog interaction
+            self.pyboy.button("a", 8)
             self.pyboy.tick(self.action_freq, render=False)
 
         if self.events.get_event("EVENT_GOT_HM01"):
@@ -1375,7 +1377,7 @@ class RedGymEnv(Env):
 
     def disable_wild_encounter_hook(self, *args, **kwargs):
         self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = 0xFF
-        self.pyboy.memory[self.pyboy.symbol_lookup("wCurEnemyLVL")[1]] = 0x01
+        self.pyboy.memory[self.pyboy.symbol_lookup("wCurEnemyLevel")[1]] = 0x01
 
     def agent_stats(self, action):
         levels = [self.read_m(f"wPartyMon{i+1}Level") for i in range(self.read_m("wPartyCount"))]
