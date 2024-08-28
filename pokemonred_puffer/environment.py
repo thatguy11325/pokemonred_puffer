@@ -775,6 +775,9 @@ class RedGymEnv(Env):
         if self.auto_next_elevator_floor:
             self.next_elevator_floor()
 
+        if self.insert_saffron_guard_drinks:
+            self.insert_guard_drinks()
+
         # One last tick just in case
         self.pyboy.tick(1, render=True)
 
