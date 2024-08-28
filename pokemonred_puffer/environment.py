@@ -1526,7 +1526,6 @@ class RedGymEnv(Env):
             self.explore_map[local_to_global(y_pos, x_pos, map_n)] + inc,
             self.exploration_max,
         ) * self.map_id_scaling(map_n)
-        print(self.map_id_scaling(map_n))
         # self.seen_global_coords[local_to_global(y_pos, x_pos, map_n)] = 1
         self.seen_map_ids[map_n] = 1
 
