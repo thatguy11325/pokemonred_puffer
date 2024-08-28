@@ -1261,7 +1261,7 @@ class RedGymEnv(Env):
             self.pyboy.tick(self.action_freq, render=self.animate_scripts)
 
     def insert_guard_drinks(self):
-        if not self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK") and self.wd728.MapIds(
+        if not self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK") and MapIds(
             self.read_m("wCurMap")
         ) in [
             MapIds.CELADON_MART_1F,
