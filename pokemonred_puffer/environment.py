@@ -1497,6 +1497,7 @@ class RedGymEnv(Env):
             self.explore_map[local_to_global(y_pos, x_pos, map_n)] + inc,
             self.exploration_max,
         ) * self.map_id_scaling(map_n)
+        print(self.map_id_scaling(map_n))
         # self.seen_global_coords[local_to_global(y_pos, x_pos, map_n)] = 1
         self.seen_map_ids[map_n] = 1
 
@@ -1724,14 +1725,14 @@ class RedGymEnv(Env):
         if map_id not in MAP_ID_COMPLETION_EVENTS:
             return 1.0
 
-        event_or_missable = MAP_ID_COMPLETION_EVENTS[map_id]
-        if (
+        if all(
             event_or_missable.startswith("EVENT_")
             and not self.events.get_event(event_or_missable)
             or (
                 event_or_missable.startswith("HS_")
                 and not self.missables.get_missable(event_or_missable)
             )
+            for event_or_missable in MAP_ID_COMPLETION_EVENTS[map_id]
         ):
             return self.map_id_scalefactor
         return 1.0
