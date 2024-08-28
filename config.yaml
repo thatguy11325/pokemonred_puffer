@@ -73,6 +73,7 @@ env:
   auto_pokeflute: True
   auto_next_elevator_floor: False
   skip_safari_zone: True
+  insert_saffron_guard_drinks: True
   infinite_money: True
   use_global_map: False
   save_state: True
