@@ -44,7 +44,7 @@ from pokemonred_puffer.data.tm_hm import (
     SURF_SPECIES_IDS,
     TmHmMoves,
 )
-from pokemonred_puffer.data.wd728 import Wd728Flags
+from pokemonred_puffer.data.status_flags_1 import status_flags_1Flags
 from pokemonred_puffer.global_map import GLOBAL_MAP_SHAPE, local_to_global
 
 PIXEL_VALUES = np.array([0, 85, 153, 255], dtype=np.uint8)
@@ -309,7 +309,7 @@ class RedGymEnv(Env):
                 # A bit of duplicate code. Blah.
                 self.events = EventFlags(self.pyboy)
                 self.missables = MissableFlags(self.pyboy)
-                self.wd728 = Wd728Flags(self.pyboy)
+                self.status_flags_1 = status_flags_1Flags(self.pyboy)
                 self.party = PartyMons(self.pyboy)
                 self.required_events = self.get_required_events()
                 self.required_items = self.get_required_items()
@@ -351,7 +351,7 @@ class RedGymEnv(Env):
 
         self.events = EventFlags(self.pyboy)
         self.missables = MissableFlags(self.pyboy)
-        self.wd728 = Wd728Flags(self.pyboy)
+        self.status_flags_1 = status_flags_1Flags(self.pyboy)
         self.party = PartyMons(self.pyboy)
         self.update_pokedex()
         self.update_tm_hm_moves_obtained()
@@ -617,7 +617,7 @@ class RedGymEnv(Env):
                     + [
                         self.read_m("wSSAnne2FCurScript") == 4,  # rival 3
                         self.missables.get_missable("HS_GAME_CORNER_ROCKET"),  # game corner rocket
-                        self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK"),  # saffron guard
+                        self.status_flags_1.get_bit("GAVE_SAFFRON_GUARD_DRINK"),  # saffron guard
                     ],
                     dtype=np.uint8,
                 ),
@@ -673,7 +673,7 @@ class RedGymEnv(Env):
         self.run_action_on_emulator(action)
         self.events = EventFlags(self.pyboy)
         self.missables = MissableFlags(self.pyboy)
-        self.wd728 = Wd728Flags(self.pyboy)
+        self.status_flags_1 = status_flags_1Flags(self.pyboy)
         self.party = PartyMons(self.pyboy)
         self.update_health()
         self.update_pokedex()
@@ -1125,8 +1125,8 @@ class RedGymEnv(Env):
                         if not self.disable_wild_encounters:
                             self.setup_disable_wild_encounters()
                         # Activate strength
-                        _, wd728 = self.pyboy.symbol_lookup("wd728")
-                        self.pyboy.memory[wd728] |= 0b0000_0001
+                        _, status_flags_1 = self.pyboy.symbol_lookup("status_flags_1")
+                        self.pyboy.memory[status_flags_1] |= 0b0000_0001
                         # Perform solution
                         current_repel_steps = self.read_m("wRepelRemainingSteps")
                         for step in solution:
@@ -1164,8 +1164,8 @@ class RedGymEnv(Env):
                     if not self.disable_wild_encounters:
                         self.setup_disable_wild_encounters()
                     # Activate strength
-                    _, wd728 = self.pyboy.symbol_lookup("wd728")
-                    self.pyboy.memory[wd728] |= 0b0000_0001
+                    _, status_flags_1 = self.pyboy.symbol_lookup("status_flags_1")
+                    self.pyboy.memory[status_flags_1] |= 0b0000_0001
                     # Perform solution
                     current_repel_steps = self.read_m("wRepelRemainingSteps")
                     for step in solution:
@@ -1261,7 +1261,7 @@ class RedGymEnv(Env):
             self.pyboy.tick(self.action_freq, render=self.animate_scripts)
 
     def insert_guard_drinks(self):
-        if not self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK") and MapIds(
+        if not self.status_flags_1.get_bit("GAVE_SAFFRON_GUARD_DRINK") and MapIds(
             self.read_m("wCurMap")
         ) in [
             MapIds.CELADON_MART_1F,
@@ -1451,7 +1451,7 @@ class RedGymEnv(Env):
             | {
                 "rival3": int(self.read_m(0xD665) == 4),
                 "game_corner_rocket": self.missables.get_missable("HS_GAME_CORNER_ROCKET"),
-                "saffron_guard": self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK"),
+                "saffron_guard": self.status_flags_1.get_bit("GAVE_SAFFRON_GUARD_DRINK"),
             },
             "required_items": {item.name: item.value in bag_item_ids for item in REQUIRED_ITEMS},
             "useful_items": {item.name: item.value in bag_item_ids for item in USEFUL_ITEMS},
@@ -1509,7 +1509,7 @@ class RedGymEnv(Env):
         )
 
     def update_seen_coords(self):
-        inc = 0.5 if (self.read_m("wd736") & 0b1000_0000) else self.exploration_inc
+        inc = 0.5 if (self.read_m("wMovementFlags") & 0b1000_0000) else self.exploration_inc
 
         x_pos, y_pos, map_n = self.get_game_coords()
         # self.seen_coords[(x_pos, y_pos, map_n)] = inc
@@ -1728,7 +1728,11 @@ class RedGymEnv(Env):
                 if self.missables.get_missable("HS_GAME_CORNER_ROCKET")
                 else set()
             )
-            | ({"saffron_guard"} if self.wd728.get_bit("GAVE_SAFFRON_GUARD_DRINK") else set())
+            | (
+                {"saffron_guard"}
+                if self.status_flags_1.get_bit("GAVE_SAFFRON_GUARD_DRINK")
+                else set()
+            )
         )
 
     def get_required_items(self) -> set[str]:
