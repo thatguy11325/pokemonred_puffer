@@ -96,7 +96,7 @@ class MultiConvolutionalPolicy(nn.Module):
 
         # pokemon has 0xF7 map ids
         # Lets start with 4 dims for now. Could try 8
-        self.map_embeddings = nn.Embedding(0xF7, 4, dtype=torch.float32)
+        self.map_embeddings = nn.Embedding(0xFF, 4, dtype=torch.float32)
         # N.B. This is an overestimate
         item_count = max(Items._value2member_map_.keys())
         self.item_embeddings = nn.Embedding(
