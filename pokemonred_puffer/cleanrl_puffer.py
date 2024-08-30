@@ -390,8 +390,9 @@ class CleanPuffeRL:
                 ):
                     table[env_id] = [
                         f"{Species(_species).name} @ {level} w/ {[Moves(move).name for move in _moves if move]}"
-                        for _species, level, _moves in zip(species, levels, moves)
                         if _species
+                        else ""
+                        for _species, level, _moves in zip(species, levels, moves)
                     ]
 
                 self.stats["party/agents"] = wandb.Table(
