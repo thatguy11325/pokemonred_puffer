@@ -743,7 +743,7 @@ class RedGymEnv(Env):
         self.update_seen_coords()
 
         while self.read_m("wJoyIgnore"):
-            # DO NOT DELETE. Some animations require dialog interaction
+            # DO NOT DELETE. Some animations require dialog navigation
             self.pyboy.button("a", 8)
             self.pyboy.tick(self.action_freq, render=False)
 
@@ -1127,7 +1127,7 @@ class RedGymEnv(Env):
                         if not self.disable_wild_encounters:
                             self.setup_disable_wild_encounters()
                         # Activate strength
-                        _, status_flags_1 = self.pyboy.symbol_lookup("status_flags_1")
+                        _, status_flags_1 = self.pyboy.symbol_lookup("wStatusFlags1")
                         self.pyboy.memory[status_flags_1] |= 0b0000_0001
                         # Perform solution
                         current_repel_steps = self.read_m("wRepelRemainingSteps")
@@ -1166,7 +1166,7 @@ class RedGymEnv(Env):
                     if not self.disable_wild_encounters:
                         self.setup_disable_wild_encounters()
                     # Activate strength
-                    _, status_flags_1 = self.pyboy.symbol_lookup("status_flags_1")
+                    _, status_flags_1 = self.pyboy.symbol_lookup("wStatusFlags1")
                     self.pyboy.memory[status_flags_1] |= 0b0000_0001
                     # Perform solution
                     current_repel_steps = self.read_m("wRepelRemainingSteps")
