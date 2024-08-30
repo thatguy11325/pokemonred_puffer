@@ -1395,6 +1395,7 @@ class RedGymEnv(Env):
         )
 
         return {
+            "env_ids": int(self.env_id),
             "stats": {
                 "step": self.step_count + self.reset_count * self.max_steps,
                 "max_map_progress": self.max_map_progress,
@@ -1462,6 +1463,9 @@ class RedGymEnv(Env):
             # Remove padding
             "pokemon_exploration_map": self.explore_map,
             # "cut_exploration_map": self.cut_explore_map,
+            "species": [pokemon.Species for pokemon in self.party],
+            "levels": [pokemon.Level for pokemon in self.party],
+            "moves": [list(int(m) for m in pokemon.Moves) for pokemon in self.party],
         }
 
     def start_video(self):
