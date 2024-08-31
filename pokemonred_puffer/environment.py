@@ -667,6 +667,8 @@ class RedGymEnv(Env):
         if self.disable_wild_encounters:
             self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = 0xFF
 
+        self.check_num_bag_items()
+
         # update the a press before we use it so we dont trigger the font loaded early return
         if VALID_ACTIONS[action] == WindowEvent.PRESS_BUTTON_A:
             self.update_a_press()
@@ -1200,12 +1202,12 @@ class RedGymEnv(Env):
         _, wNumBagItems = self.pyboy.symbol_lookup("wNumBagItems")
         numBagItems = self.read_m(wNumBagItems)
         bag = np.array(self.pyboy.memory[wBagItems : wBagItems + 40], dtype=np.uint8)
-        if not self.events.get_event("EVENT_GOT_HM03"):
+        if numBagItems < 20 and not self.events.get_event("EVENT_GOT_HM03"):
             self.events.set_event("EVENT_GOT_HM03", True)
             bag[numBagItems * 2] = Items.HM_03.value
             bag[numBagItems * 2 + 1] = 1
             numBagItems += 1
-        if not self.missables.get_missable("HS_SAFARI_ZONE_WEST_ITEM_4"):
+        if numBagItems < 20 and not self.missables.get_missable("HS_SAFARI_ZONE_WEST_ITEM_4"):
             self.missables.set_missable("HS_SAFARI_ZONE_WEST_ITEM_4", True)
             bag[numBagItems * 2] = Items.GOLD_TEETH.value
             bag[numBagItems * 2 + 1] = 1
@@ -1278,7 +1280,7 @@ class RedGymEnv(Env):
             _, wNumBagItems = self.pyboy.symbol_lookup("wNumBagItems")
             numBagItems = self.read_m(wNumBagItems)
             bag = np.array(self.pyboy.memory[wBagItems : wBagItems + 40], dtype=np.uint8)
-            if not {
+            if numBagItems < 20 and not {
                 Items.LEMONADE.value,
                 Items.FRESH_WATER.value,
                 Items.SODA_POP.value,
@@ -1671,7 +1673,7 @@ class RedGymEnv(Env):
             new_bag_items = [
                 (item, quantity)
                 for item, quantity in zip(bag_items[::2], bag_items[1::2])
-                if Items(item) in KEY_ITEMS | REQUIRED_ITEMS | USEFUL_ITEMS | HM_ITEMS
+                if Items(item) in KEY_ITEMS | REQUIRED_ITEMS | HM_ITEMS
             ]
             # Write the new count back to memory
             self.pyboy.memory[wNumBagItems] = len(new_bag_items)
@@ -1777,3 +1779,13 @@ class RedGymEnv(Env):
         ):
             return self.map_id_scalefactor
         return 1.0
+
+    def check_num_bag_items(self):
+        _, wBagItems = self.pyboy.symbol_lookup("wBagItems")
+        _, wNumBagItems = self.pyboy.symbol_lookup("wNumBagItems")
+        numBagItems = self.read_m(wNumBagItems)
+        bag = np.array(self.pyboy.memory[wBagItems : wBagItems + 40], dtype=np.uint8)
+        if numBagItems >= 20:
+            print(
+                f"WARNING: env id {int(self.env_id)} contains a full bag with items: {[Items(item) for item in bag[::2]]}"
+            )
