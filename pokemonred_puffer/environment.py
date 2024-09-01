@@ -767,8 +767,7 @@ class RedGymEnv(Env):
             ):
                 self.teach_hm(TmHmMoves.STRENGTH.value, 15, STRENGTH_SPECIES_IDS)
             if self.auto_solve_strength_puzzles:
-                self.solve_missable_strength_puzzle()
-                self.solve_switch_strength_puzzle()
+                self.solve_strength_puzzle()
 
         if self.events.get_event("EVENT_GOT_POKE_FLUTE") and self.auto_pokeflute:
             self.use_pokeflute()
@@ -1102,60 +1101,7 @@ class RedGymEnv(Env):
                     self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, delay=8)
                     self.pyboy.tick(4 * self.action_freq, self.animate_scripts)
 
-    def solve_missable_strength_puzzle(self):
-        in_cavern = self.read_m("wCurMapTileset") == Tilesets.CAVERN.value
-        if self.read_m(0xD057) == 0 and in_cavern:
-            _, wMissableObjectFlags = self.pyboy.symbol_lookup("wMissableObjectFlags")
-            _, wMissableObjectList = self.pyboy.symbol_lookup("wMissableObjectList")
-            missable_objects_list = self.pyboy.memory[
-                wMissableObjectList : wMissableObjectList + 34
-            ]
-            missable_objects_list = missable_objects_list[: missable_objects_list.index(0xFF)]
-            missable_objects_sprite_ids = missable_objects_list[::2]
-            missable_objects_flags = missable_objects_list[1::2]
-
-            for sprite_id in missable_objects_sprite_ids:
-                flags_bit = missable_objects_flags[missable_objects_sprite_ids.index(sprite_id)]
-                flags_byte = flags_bit // 8
-                flag_bit = flags_bit % 8
-                flag_byte_value = self.read_bit(wMissableObjectFlags + flags_byte, flag_bit)
-                if not flag_byte_value:  # True if missable
-                    picture_id = self.read_m(f"wSprite{sprite_id:02}StateData1PictureID")
-                    mapY = self.read_m(f"wSprite{sprite_id:02}StateData2MapY")
-                    mapX = self.read_m(f"wSprite{sprite_id:02}StateData2MapX")
-                    if solution := STRENGTH_SOLUTIONS.get(
-                        (picture_id, mapY, mapX) + self.get_game_coords(), []
-                    ):
-                        if not self.disable_wild_encounters:
-                            self.setup_disable_wild_encounters()
-                        # Activate strength
-                        _, status_flags_1 = self.pyboy.symbol_lookup("wStatusFlags1")
-                        self.pyboy.memory[status_flags_1] |= 0b0000_0001
-                        # Perform solution
-                        current_repel_steps = self.read_m("wRepelRemainingSteps")
-                        for step in solution:
-                            self.pyboy.memory[
-                                self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]
-                            ] = 0xFF
-                            match step:
-                                case str(button):
-                                    self.pyboy.button(button, 8)
-                                    self.pyboy.tick(self.action_freq * 2, self.animate_scripts)
-                                case (str(button), int(button_freq), int(action_freq)):
-                                    self.pyboy.button(button, button_freq)
-                                    self.pyboy.tick(action_freq, self.animate_scripts)
-                                case _:
-                                    raise
-                            while self.read_m("wJoyIgnore"):
-                                self.pyboy.tick(self.action_freq, render=False)
-                        self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = (
-                            current_repel_steps
-                        )
-                        if not self.disable_wild_encounters:
-                            self.setup_enable_wild_ecounters()
-                        break
-
-    def solve_switch_strength_puzzle(self):
+    def solve_strength_puzzle(self):
         in_cavern = self.read_m("wCurMapTileset") == Tilesets.CAVERN.value
         if self.read_m(0xD057) == 0 and in_cavern:
             for sprite_id in range(1, self.read_m("wNumSprites") + 1):
@@ -1163,8 +1109,11 @@ class RedGymEnv(Env):
                 mapY = self.read_m(f"wSprite{sprite_id:02}StateData2MapY")
                 mapX = self.read_m(f"wSprite{sprite_id:02}StateData2MapX")
                 if solution := STRENGTH_SOLUTIONS.get(
-                    (picture_id, mapY, mapX) + self.get_game_coords(), []
+                    (picture_id, mapY, mapX) + self.get_game_coords(), None
                 ):
+                    missable, steps = solution
+                    if missable and self.missables.get_missable(missable):
+                        break
                     if not self.disable_wild_encounters:
                         self.setup_disable_wild_encounters()
                     # Activate strength
@@ -1172,7 +1121,7 @@ class RedGymEnv(Env):
                     self.pyboy.memory[status_flags_1] |= 0b0000_0001
                     # Perform solution
                     current_repel_steps = self.read_m("wRepelRemainingSteps")
-                    for step in solution:
+                    for step in steps:
                         self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = (
                             0xFF
                         )
@@ -1187,9 +1136,9 @@ class RedGymEnv(Env):
                                 raise
                         while self.read_m("wJoyIgnore"):
                             self.pyboy.tick(self.action_freq, render=False)
-                        self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = (
-                            current_repel_steps
-                        )
+                    self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = (
+                        current_repel_steps
+                    )
                     if not self.disable_wild_encounters:
                         self.setup_enable_wild_ecounters()
                     break
