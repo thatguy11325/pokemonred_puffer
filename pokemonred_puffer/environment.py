@@ -1505,7 +1505,8 @@ class RedGymEnv(Env):
             x_pos -= 1
         if direction == 0xC:
             x_pos += 1
-        self.a_press.add((x_pos, y_pos, map_n))
+        if self.scale_map_id(map_n):
+            self.a_press.add((x_pos, y_pos, map_n))
 
     def get_explore_map(self):
         explore_map = np.zeros(GLOBAL_MAP_SHAPE)
