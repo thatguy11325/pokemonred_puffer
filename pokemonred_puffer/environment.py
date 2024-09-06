@@ -1244,17 +1244,19 @@ class RedGymEnv(Env):
     def sign_hook(self, *args, **kwargs):
         sign_id = self.read_m("hSpriteIndexOrTextID")
         map_id = self.read_m("wCurMap")
-        self.seen_signs[(map_id, sign_id)] = 1.0
+        self.seen_signs[(map_id, sign_id)] = 1.0 if self.scale_map_id(map_id) else 0.0
 
     def hidden_object_hook(self, *args, **kwargs):
         hidden_object_id = self.pyboy.memory[self.pyboy.symbol_lookup("wHiddenObjectIndex")[1]]
         map_id = self.pyboy.memory[self.pyboy.symbol_lookup("wCurMap")[1]]
-        self.seen_hidden_objs[(map_id, hidden_object_id)] = 1.0
+        self.seen_hidden_objs[(map_id, hidden_object_id)] = (
+            1.0 if self.scale_map_id(map_id) else 0.0
+        )
 
     def sprite_hook(self, *args, **kwargs):
         sprite_id = self.pyboy.memory[self.pyboy.symbol_lookup("hSpriteIndexOrTextID")[1]]
         map_id = self.pyboy.memory[self.pyboy.symbol_lookup("wCurMap")[1]]
-        self.seen_npcs[(map_id, sprite_id)] = 1.0
+        self.seen_npcs[(map_id, sprite_id)] = 1.0 if self.scale_map_id(map_id) else 0.0
 
     def start_menu_hook(self, *args, **kwargs):
         if self.read_m("wIsInBattle") == 0:
@@ -1485,7 +1487,7 @@ class RedGymEnv(Env):
         self.reward_explore_map[local_to_global(y_pos, x_pos, map_n)] = min(
             self.explore_map[local_to_global(y_pos, x_pos, map_n)] + inc,
             self.exploration_max,
-        ) * self.map_id_scaling(map_n)
+        ) * (self.map_id_scalefactor if self.scale_map_id(map_n) else 1.0)
         # self.seen_global_coords[local_to_global(y_pos, x_pos, map_n)] = 1
         self.seen_map_ids[map_n] = 1
 
@@ -1712,10 +1714,10 @@ class RedGymEnv(Env):
             0,
         )
 
-    def map_id_scaling(self, map_n: int) -> float:
+    def scale_map_id(self, map_n: int) -> float:
         map_id = MapIds(map_n)
         if map_id not in MAP_ID_COMPLETION_EVENTS:
-            return 1.0
+            return False
 
         if all(
             event_or_missable.startswith("EVENT_")
@@ -1726,8 +1728,8 @@ class RedGymEnv(Env):
             )
             for event_or_missable in MAP_ID_COMPLETION_EVENTS[map_id]
         ):
-            return self.map_id_scalefactor
-        return 1.0
+            return True
+        return False
 
     def check_num_bag_items(self):
         _, wBagItems = self.pyboy.symbol_lookup("wBagItems")
