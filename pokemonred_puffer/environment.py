@@ -1189,7 +1189,7 @@ class RedGymEnv(Env):
         self.pyboy.tick(self.action_freq, render=self.animate_scripts)
         self.pyboy.button("a", 8)
         self.pyboy.tick(5 * self.action_freq, render=self.animate_scripts)
-        for _ in range(NEXT_ELEVATORS[MapIds(self.read_m("wWarpedFromWhichMap"))]):
+        for _ in range(NEXT_ELEVATORS.get(MapIds(self.read_m("wWarpedFromWhichMap")), 0)):
             self.pyboy.button("down", 8)
             self.pyboy.tick(self.action_freq, render=self.animate_scripts)
 
