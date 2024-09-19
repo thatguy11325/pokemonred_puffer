@@ -33,7 +33,11 @@ from pokemonred_puffer.data.items import (
     USEFUL_ITEMS,
     Items,
 )
-from pokemonred_puffer.data.map import MAP_ID_COMPLETION_EVENTS, MapIds
+from pokemonred_puffer.data.map import (
+    DISABLE_WILD_ENCOUNTERS_EXCEPTIONS,
+    MAP_ID_COMPLETION_EVENTS,
+    MapIds,
+)
 from pokemonred_puffer.data.missable_objects import MissableFlags
 from pokemonred_puffer.data.party import PartyMons
 from pokemonred_puffer.data.strength_puzzles import STRENGTH_SOLUTIONS
@@ -1332,8 +1336,9 @@ class RedGymEnv(Env):
         self.cut_tiles[wTileInFrontOfPlayer] = 1
 
     def disable_wild_encounter_hook(self, *args, **kwargs):
-        self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = 0xFF
-        self.pyboy.memory[self.pyboy.symbol_lookup("wCurEnemyLevel")[1]] = 0x01
+        if MapIds(self.read_m("wCurMap")) not in DISABLE_WILD_ENCOUNTERS_EXCEPTIONS:
+            self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = 0xFF
+            self.pyboy.memory[self.pyboy.symbol_lookup("wCurEnemyLevel")[1]] = 0x01
 
     def agent_stats(self, action):
         levels = [self.read_m(f"wPartyMon{i+1}Level") for i in range(self.read_m("wPartyCount"))]
