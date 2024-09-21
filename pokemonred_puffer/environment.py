@@ -1727,15 +1727,25 @@ class RedGymEnv(Env):
         map_id = MapIds(map_n)
         if map_id not in MAP_ID_COMPLETION_EVENTS:
             return False
+        after_events, until_events = MAP_ID_COMPLETION_EVENTS[map_id]
 
         if all(
-            event_or_missable.startswith("EVENT_")
-            and not self.events.get_event(event_or_missable)
+            (event_or_missable.startswith("EVENT_") and self.events.get_event(event_or_missable))
+            or (
+                event_or_missable.startswith("HS_")
+                and self.missables.get_missable(event_or_missable)
+            )
+            for event_or_missable in after_events
+        ) and all(
+            (
+                event_or_missable.startswith("EVENT_")
+                and not self.events.get_event(event_or_missable)
+            )
             or (
                 event_or_missable.startswith("HS_")
                 and not self.missables.get_missable(event_or_missable)
             )
-            for event_or_missable in MAP_ID_COMPLETION_EVENTS[map_id]
+            for event_or_missable in until_events
         ):
             return True
         return False
