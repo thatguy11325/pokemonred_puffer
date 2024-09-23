@@ -34,7 +34,6 @@ from pokemonred_puffer.data.items import (
     Items,
 )
 from pokemonred_puffer.data.map import (
-    DISABLE_WILD_ENCOUNTERS_EXCEPTIONS,
     MAP_ID_COMPLETION_EVENTS,
     MapIds,
 )
@@ -115,7 +114,15 @@ class RedGymEnv(Env):
         self.log_frequency = env_config.log_frequency
         self.two_bit = env_config.two_bit
         self.auto_flash = env_config.auto_flash
-        self.disable_wild_encounters = env_config.disable_wild_encounters
+        if isinstance(env_config.disable_wild_encounters, bool):
+            self.disable_wild_encounters = env_config.disable_wild_encounters
+        elif isinstance(env_config.disable_wild_encounters, list):
+            self.disable_wild_encounters = {
+                MapIds[item].name for item in env_config.disable_wild_encounters
+            }
+        else:
+            raise ValueError("Disable wild enounters must be a boolean or a list of MapIds")
+
         self.disable_ai_actions = env_config.disable_ai_actions
         self.auto_teach_cut = env_config.auto_teach_cut
         self.auto_teach_surf = env_config.auto_teach_surf
@@ -668,9 +675,6 @@ class RedGymEnv(Env):
             and int.from_bytes(self.pyboy.memory[wPlayerMoney : wPlayerMoney + 3], "little") < 10000
         ):
             self.pyboy.memory[wPlayerMoney : wPlayerMoney + 3] = int(10000).to_bytes(3, "little")
-
-        if self.disable_wild_encounters:
-            self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = 0xFF
 
         self.check_num_bag_items()
 
@@ -1290,6 +1294,8 @@ class RedGymEnv(Env):
 
     def blackout_update_hook(self, *args, **kwargs):
         self.blackout_check = self.read_m("wLastBlackoutMap")
+        if MapIds(self.blackout_check) in self.disable_wild_encounters:
+            self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = 0x01
 
     def pokecenter_heal_hook(self, *args, **kwargs):
         self.pokecenter_heal = 1
@@ -1336,7 +1342,7 @@ class RedGymEnv(Env):
         self.cut_tiles[wTileInFrontOfPlayer] = 1
 
     def disable_wild_encounter_hook(self, *args, **kwargs):
-        if MapIds(self.read_m("wCurMap")) not in DISABLE_WILD_ENCOUNTERS_EXCEPTIONS:
+        if MapIds(self.blackout_check).name not in self.disable_wild_encounters:
             self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = 0xFF
             self.pyboy.memory[self.pyboy.symbol_lookup("wCurEnemyLevel")[1]] = 0x01
 
