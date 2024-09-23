@@ -322,7 +322,7 @@ rewards:
       required_event: 5.0
       required_item: 5.0
       useful_item: 1.0
-      pokecenter_heal: 0.2
+      pokecenter_heal: 0.5
       exploration: 0.02
       a_press: 0.0 # 0.00001
       explore_warps: 0.01
