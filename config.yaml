@@ -71,7 +71,7 @@ env:
   auto_solve_strength_puzzles: True
   auto_remove_all_nonuseful_items: True
   auto_pokeflute: True
-  auto_next_elevator_floor: False
+  auto_next_elevator_floor: True
   skip_safari_zone: True
   insert_saffron_guard_drinks: True
   infinite_money: True
