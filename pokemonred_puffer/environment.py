@@ -1294,7 +1294,7 @@ class RedGymEnv(Env):
 
     def blackout_update_hook(self, *args, **kwargs):
         self.blackout_check = self.read_m("wLastBlackoutMap")
-        if MapIds(self.blackout_check) in self.disable_wild_encounters:
+        if MapIds(self.blackout_check).name in self.disable_wild_encounters:
             self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = 0x01
 
     def pokecenter_heal_hook(self, *args, **kwargs):
