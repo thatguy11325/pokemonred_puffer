@@ -116,8 +116,10 @@ class RedGymEnv(Env):
         self.auto_flash = env_config.auto_flash
         if isinstance(env_config.disable_wild_encounters, bool):
             self.disable_wild_encounters = env_config.disable_wild_encounters
+            self.setup_disable_wild_encounters_maps = set([])
         elif isinstance(env_config.disable_wild_encounters, list):
-            self.disable_wild_encounters = {
+            self.disable_wild_encounters = len(env_config.disable_wild_encounters) > 0
+            self.disable_wild_encounters_maps = {
                 MapIds[item].name for item in env_config.disable_wild_encounters
             }
         else:
@@ -675,6 +677,12 @@ class RedGymEnv(Env):
             and int.from_bytes(self.pyboy.memory[wPlayerMoney : wPlayerMoney + 3], "little") < 10000
         ):
             self.pyboy.memory[wPlayerMoney : wPlayerMoney + 3] = int(10000).to_bytes(3, "little")
+
+        if (
+            self.disable_wild_encounters
+            and MapIds(self.blackout_check).name not in self.disable_wild_encounters_maps
+        ):
+            self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = 0xFF
 
         self.check_num_bag_items()
 
@@ -1294,7 +1302,10 @@ class RedGymEnv(Env):
 
     def blackout_update_hook(self, *args, **kwargs):
         self.blackout_check = self.read_m("wLastBlackoutMap")
-        if MapIds(self.blackout_check).name in self.disable_wild_encounters:
+        if (
+            self.disable_wild_encounters
+            and MapIds(self.blackout_check).name in self.disable_wild_encounters_maps
+        ):
             self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = 0x01
 
     def pokecenter_heal_hook(self, *args, **kwargs):
@@ -1342,7 +1353,10 @@ class RedGymEnv(Env):
         self.cut_tiles[wTileInFrontOfPlayer] = 1
 
     def disable_wild_encounter_hook(self, *args, **kwargs):
-        if MapIds(self.blackout_check).name not in self.disable_wild_encounters:
+        if (
+            self.disable_wild_encounters
+            and MapIds(self.blackout_check).name not in self.disable_wild_encounters_maps
+        ):
             self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = 0xFF
             self.pyboy.memory[self.pyboy.symbol_lookup("wCurEnemyLevel")[1]] = 0x01
 
