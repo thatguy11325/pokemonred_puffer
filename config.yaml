@@ -7,16 +7,17 @@ debug:
   env:
     headless: False
     stream_wrapper: False
-    init_state: "victory_road"
+    init_state: "victory_road_5"
     state_dir: pyboy_states
     max_steps: 20480
     log_frequency: 1
-    disable_wild_encounters: True
     disable_ai_actions: True
     use_global_map: False
     reduce_res: True
     animate_scripts: True
     save_state: False
+    auto_next_elevator_floor: True 
+    auto_solve_strength_puzzles: True
   train:
     device: cpu
     compile: False
@@ -59,7 +60,8 @@ env:
   two_bit: True
   log_frequency: 2000
   auto_flash: True
-  disable_wild_encounters: True
+  disable_wild_encounters: 
+    - INDIGO_PLATEAU
   disable_ai_actions: False
   auto_teach_cut: True
   auto_use_cut: True
@@ -69,12 +71,18 @@ env:
   auto_solve_strength_puzzles: True
   auto_remove_all_nonuseful_items: True
   auto_pokeflute: True
+  auto_next_elevator_floor: True
+  skip_safari_zone: True
+  insert_saffron_guard_drinks: True
   infinite_money: True
   use_global_map: False
   save_state: True
   animate_scripts: False
   exploration_inc: 1.0
   exploration_max: 1.0
+  max_steps_scaling: 0 # 0.2 # every 10 events or items gained, multiply max_steps by 2
+  map_id_scalefactor: 5.0 # multiply map ids whose events have not been completed by 5
+
 
 
 
@@ -277,7 +285,8 @@ rewards:
       pokemon_menu: 0.0
       stats_menu: 0.0
       bag_menu: 0.0
-      explore_hidden_objs: 0.02
+      explore_hidden_objs: 0.01
+      explore_signs: 0.015
       seen_action_bag_menu: 0.0
       required_event: 5.0
       required_item: 5.0
@@ -285,11 +294,39 @@ rewards:
       pokecenter_heal: 0.2
       exploration: 0.02
       exploration_gym: 0.025
-      exploration_facility: 0.10
+      exploration_facility: 0.11
       exploration_plateau: 0.025
       exploration_lobby: 0.035 # for game corner
-      a_press: 0.00001
+      a_press: 0.0 # 0.00001
       explore_warps: 0.05
+      use_surf: 0.05
+  
+  baseline.ObjectRewardRequiredEventsMapIds:
+    reward:
+      event: 1.0
+      seen_pokemon: 4.0
+      caught_pokemon: 4.0
+      moves_obtained: 4.0
+      hm_count: 10.0
+      level: 1.0
+      badges: 5.0
+      cut_coords: 0.0
+      cut_tiles: 0.0
+      start_menu: 0.0
+      pokemon_menu: 0.0
+      stats_menu: 0.0
+      bag_menu: 0.0
+      explore_hidden_objs: 0.0001
+      explore_signs: 0.015
+      seen_action_bag_menu: 0.0
+      required_event: 5.0
+      required_item: 5.0
+      useful_item: 1.0
+      pokecenter_heal: 0.5
+      exploration: 0.02
+      a_press: 0.0 # 0.00001
+      explore_warps: 0.01
+      use_surf: 0.5
 
 
 

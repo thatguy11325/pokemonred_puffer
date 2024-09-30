@@ -2578,12 +2578,26 @@ class EventFlags(Union):
 
     def __init__(self, emu: PyBoy):
         super().__init__()
+        self.emu = emu
         self.asbytes = (c_uint8 * 320)(
             *emu.memory[EVENT_FLAGS_START : EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH]
         )
 
-    def get_event(self, event_name: str) -> bool:
-        return bool(getattr(self.b, event_name))
+    def get_event(self, event_name: str) -> int:
+        """
+        1 if true, 0 if false
+        """
+        return getattr(self.b, event_name)
+
+    def set_event(self, event_name: str, value: bool):
+        # This is O(N) but it's so rare that I'm not too worried about it
+        idx = [x[0] for x in self.b._fields_].index(event_name)
+        addr = EVENT_FLAGS_START + idx // 8
+        bit = idx % 8
+        mask = int(value) << bit
+
+        self.emu.memory[addr] = (self.emu.memory[addr] & ~mask) | mask
+        setattr(self.b, event_name, int(value))
 
 
 EVENTS = {
@@ -2645,8 +2659,6 @@ REQUIRED_EVENTS = {
     "EVENT_BILL_SAID_USE_CELL_SEPARATOR",
     "EVENT_LEFT_BILLS_HOUSE_AFTER_HELPING",
     "EVENT_BEAT_MT_MOON_EXIT_SUPER_NERD",
-    "EVENT_GOT_DOME_FOSSIL",
-    "EVENT_GOT_HELIX_FOSSIL",
     "EVENT_GOT_HM01",
     "EVENT_RUBBED_CAPTAINS_BACK",
     "EVENT_ROCKET_HIDEOUT_4_DOOR_UNLOCKED",

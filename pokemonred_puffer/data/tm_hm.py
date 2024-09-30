@@ -3,7 +3,7 @@ from pokemonred_puffer.data.species import Species
 
 
 class TmHmMoves(Enum):
-    MEGA_PUNCH = (0x5,)
+    MEGA_PUNCH = 0x5
     RAZOR_WIND = 0xD
     SWORDS_DANCE = 0xE
     WHIRLWIND = 0x12

@@ -27,6 +27,8 @@ from rich.console import Console
 from rich.table import Table
 
 import wandb
+from pokemonred_puffer.data.moves import Moves
+from pokemonred_puffer.data.species import Species
 from pokemonred_puffer.eval import make_pokemon_red_overlay
 from pokemonred_puffer.global_map import GLOBAL_MAP_SHAPE
 from pokemonred_puffer.profile import Profile, Utilization
@@ -140,7 +142,7 @@ class CleanPuffeRL:
     stats: dict = field(default_factory=lambda: {})
     msg: str = ""
     infos: dict = field(default_factory=lambda: defaultdict(list))
-    states: dict = field(default_factory=lambda: defaultdict(partial(deque, maxlen=5)))
+    states: dict = field(default_factory=lambda: defaultdict(partial(deque, maxlen=1)))
     event_tracker: dict = field(default_factory=lambda: {})
     max_event_count: int = 0
 
@@ -205,6 +207,7 @@ class CleanPuffeRL:
         if self.config.archive_states:
             self.archive_path = pathlib.Path(datetime.now().strftime("%Y%m%d-%H%M%S"))
             self.archive_path.mkdir(exist_ok=False)
+            print(f"Will archive states to {self.archive_path}")
 
     @pufferlib.utils.profile
     def evaluate(self):
@@ -293,7 +296,6 @@ class CleanPuffeRL:
                 self.config.async_wrapper
                 and hasattr(self.config, "swarm")
                 and self.config.swarm
-                # and self.epoch % self.config.swarm_frequency == 0
                 and "required_count" in self.infos
                 and self.states
             ):
@@ -325,12 +327,17 @@ class CleanPuffeRL:
                 # If we do, migrate 100% of states to one of the states
                 max_event_count = 0
                 new_state_key = ""
+                max_state = None
                 for key in self.states.keys():
-                    if len(key) > max_event_count:
+                    candidate_max_state: deque = self.states[key]
+                    if (
+                        len(key) > max_event_count
+                        and len(candidate_max_state) == candidate_max_state.maxlen
+                    ):
                         max_event_count = len(key)
                         new_state_key = key
-                max_state: deque = self.states[key]
-                if max_event_count > self.max_event_count and len(max_state) == max_state.maxlen:
+                        max_state = candidate_max_state
+                if max_event_count > self.max_event_count and max_state:
                     self.max_event_count = max_event_count
 
                     # Need a way not to reset the env id counter for the driver env
@@ -347,7 +354,9 @@ class CleanPuffeRL:
                     for key in self.event_tracker.keys():
                         # print(f"\tWaiting for message from env-id {key}")
                         self.env_send_queues[key].get()
-                    print("State migration complete")
+                    print(
+                        f"State migration to {self.archive_path}/{str(hash(new_state_key))} complete"
+                    )
 
             self.stats = {}
 
@@ -359,13 +368,37 @@ class CleanPuffeRL:
                         overlay = make_pokemon_red_overlay(np.stack(self.infos[k], axis=0))
                         if self.wandb_client is not None:
                             self.stats["Media/aggregate_exploration_map"] = wandb.Image(overlay)
-                elif "state" in k:
+                elif any(s in k for s in ["state", "env_id", "species", "levels", "moves"]):
                     continue
+                else:
+                    try:  # TODO: Better checks on log data types
+                        self.stats[k] = np.mean(v)
+                    except:  # noqa: E722
+                        continue
 
-                try:  # TODO: Better checks on log data types
-                    self.stats[k] = np.mean(v)
-                except:  # noqa: E722
-                    continue
+            if (
+                all(k in self.infos.keys() for k in ["env_ids", "species", "levels", "moves"])
+                and self.wandb_client is not None
+            ):
+                table = {}
+                # The infos are in order of when they were received so this _should_ work
+                for env_id, species, levels, moves in zip(
+                    self.infos["env_ids"],
+                    self.infos["species"],
+                    self.infos["levels"],
+                    self.infos["moves"],
+                ):
+                    table[env_id] = [
+                        f"{Species(_species).name} @ {level} w/ {[Moves(move).name for move in _moves if move]}"
+                        if _species
+                        else ""
+                        for _species, level, _moves in zip(species, levels, moves)
+                    ]
+
+                self.stats["party/agents"] = wandb.Table(
+                    columns=["env_id"] + [str(v) for v in range(6)],
+                    data=[[str(k)] + v for k, v in table.items()],
+                )
 
             if self.config.verbose:
                 self.msg = f"Model Size: {abbreviate(count_params(self.policy))} parameters"
