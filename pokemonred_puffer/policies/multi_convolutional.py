@@ -58,6 +58,7 @@ class MultiConvolutionalPolicy(nn.Module):
         self.value_fn = nn.LazyLinear(1)
 
         self.two_bit = env.unwrapped.env.two_bit
+        self.skip_safari_zone = env.unwrapped.env.skip_safari_zone
         self.use_global_map = env.unwrapped.env.use_global_map
 
         if self.use_global_map:
@@ -95,7 +96,7 @@ class MultiConvolutionalPolicy(nn.Module):
 
         # pokemon has 0xF7 map ids
         # Lets start with 4 dims for now. Could try 8
-        self.map_embeddings = nn.Embedding(0xF7, 4, dtype=torch.float32)
+        self.map_embeddings = nn.Embedding(0xFF, 4, dtype=torch.float32)
         # N.B. This is an overestimate
         item_count = max(Items._value2member_map_.keys())
         self.item_embeddings = nn.Embedding(
@@ -215,7 +216,6 @@ class MultiConvolutionalPolicy(nn.Module):
                 # one_hot(observations["reset_map_id"].int(), 0xF7).float().squeeze(1),
                 one_hot(observations["battle_type"].int(), 4).float().squeeze(1),
                 # observations["cut_event"].float(),
-                observations["cut_in_party"].float(),
                 # observations["x"].float(),
                 # observations["y"].float(),
                 # one_hot(observations["map_id"].int(), 0xF7).float().squeeze(1),
@@ -225,10 +225,17 @@ class MultiConvolutionalPolicy(nn.Module):
                 items.flatten(start_dim=1),
                 party_latent,
                 observations["events"].float().squeeze(1),
-                observations["safari_steps"].float(),
             ),
             dim=-1,
         )
+        if not self.skip_safari_zone:
+            cat_obs = torch.cat(
+                (
+                    cat_obs,
+                    observations["safari_steps"].float() / 502.0,
+                ),
+                dim=-1,
+            )
         if self.use_global_map:
             cat_obs = torch.cat(
                 (
