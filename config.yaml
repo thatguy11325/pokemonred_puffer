@@ -65,6 +65,7 @@ env:
   disable_ai_actions: False
   auto_teach_cut: True
   auto_use_cut: True
+  auto_use_strength: True
   auto_use_surf: True
   auto_teach_surf: True
   auto_teach_strength: True

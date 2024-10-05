@@ -130,6 +130,7 @@ class RedGymEnv(Env):
         self.auto_teach_surf = env_config.auto_teach_surf
         self.auto_teach_strength = env_config.auto_teach_strength
         self.auto_use_cut = env_config.auto_use_cut
+        self.auto_use_strength = env_config.auto_use_strength
         self.auto_use_surf = env_config.auto_use_surf
         self.auto_solve_strength_puzzles = env_config.auto_solve_strength_puzzles
         self.auto_remove_all_nonuseful_items = env_config.auto_remove_all_nonuseful_items
@@ -785,6 +786,8 @@ class RedGymEnv(Env):
                 self.teach_hm(TmHmMoves.STRENGTH.value, 15, STRENGTH_SPECIES_IDS)
             if self.auto_solve_strength_puzzles:
                 self.solve_strength_puzzle()
+            if not self.check_if_party_has_hm(TmHmMoves.STRENGTH.value) and self.auto_use_strength:
+                self.use_strength()
 
         if self.events.get_event("EVENT_GOT_POKE_FLUTE") and self.auto_pokeflute:
             self.use_pokeflute()
@@ -1158,6 +1161,9 @@ class RedGymEnv(Env):
                     if not self.disable_wild_encounters:
                         self.setup_enable_wild_ecounters()
                     break
+
+    def use_strength(self):
+        self.flags.set_bit("BIT_STRENGTH_ACTIVE", 1)
 
     def skip_safari_zone_atn(self):
         # First move down
