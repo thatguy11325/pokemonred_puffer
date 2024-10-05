@@ -1496,6 +1496,7 @@ class RedGymEnv(Env):
 
     def get_max_steps(self):
         return max(
+            0,
             self.max_steps,
             self.max_steps
             * (len(self.required_events) + len(self.required_items))
@@ -1602,10 +1603,11 @@ class RedGymEnv(Env):
                     self.read_m(f"wEnemyMon{i+1}Level")
                     for i in range(self.read_m("wEnemyPartyCount"))
                 ]
+                + [0]
             )
             # - opp_base_level
         )
-        self.max_opponent_level = max(self.max_opponent_level, opponent_level)
+        self.max_opponent_level = max(0, self.max_opponent_level, opponent_level)
         return self.max_opponent_level
 
     def update_health(self):
@@ -1688,7 +1690,7 @@ class RedGymEnv(Env):
 
     def update_map_progress(self):
         map_idx = self.read_m(0xD35E)
-        self.max_map_progress = max(self.max_map_progress, self.get_map_progress(map_idx))
+        self.max_map_progress = max(0, self.max_map_progress, self.get_map_progress(map_idx))
 
     def get_map_progress(self, map_idx):
         if map_idx in self.essential_map_locations.keys():
@@ -1707,7 +1709,7 @@ class RedGymEnv(Env):
     def get_levels_reward(self):
         # Level reward
         party_levels = self.read_party()
-        self.max_level_sum = max(self.max_level_sum, sum(party_levels))
+        self.max_level_sum = max(0, self.max_level_sum, sum(party_levels))
         if self.max_level_sum < 30:
             level_reward = 1 * self.max_level_sum
         else:
