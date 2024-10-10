@@ -1,5 +1,5 @@
 import numpy as np
-import pufferlib
+from omegaconf import DictConfig
 
 from pokemonred_puffer.data.events import REQUIRED_EVENTS
 from pokemonred_puffer.data.items import REQUIRED_ITEMS, USEFUL_ITEMS
@@ -15,7 +15,7 @@ MUSEUM_TICKET = (0xD754, 0)
 
 
 class BaselineRewardEnv(RedGymEnv):
-    def __init__(self, env_config: pufferlib.namespace, reward_config: pufferlib.namespace):
+    def __init__(self, env_config: DictConfig, reward_config: DictConfig):
         super().__init__(env_config)
         self.reward_config = reward_config
         self.max_event_rew = 0

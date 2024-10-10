@@ -16,12 +16,14 @@ dependencies = [
     "mediapy",
     "numba",
     "numpy",
+    "omegaconf",
     "opencv-python",
     "pyboy>=2",
     "pufferlib[cleanrl]>=1.0.0",
     "scikit-image",
     "torch>=2.4",
     "torchvision",
+    "typer",
     "wandb",
     "websockets"
 ]
@@ -37,6 +39,10 @@ monitoring = [
 ]
 dev = [
     "ruff"
+]
+sweep = [
+    "carbs @ git+https://github.com/imbue-ai/carbs",
+    "sweeps"
 ]
 
 [tool.distutils.bdist_wheel]
