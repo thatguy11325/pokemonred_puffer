@@ -2,6 +2,7 @@ from collections import deque
 from threading import Thread
 import time
 
+from omegaconf import OmegaConf
 import psutil
 import torch
 
@@ -74,14 +75,16 @@ class Profile:
 
 
 def make_losses():
-    return pufferlib.namespace(
-        policy_loss=0,
-        value_loss=0,
-        entropy=0,
-        old_approx_kl=0,
-        approx_kl=0,
-        clipfrac=0,
-        explained_variance=0,
+    return OmegaConf.create(
+        dict(
+            policy_loss=0,
+            value_loss=0,
+            entropy=0,
+            old_approx_kl=0,
+            approx_kl=0,
+            clipfrac=0,
+            explained_variance=0,
+        )
     )
 
 
