@@ -24,7 +24,7 @@ dependencies = [
     "torch>=2.4",
     "torchvision",
     "typer",
-    "wandb",
+    "wandb[sweeps]",
     "websockets"
 ]
 
