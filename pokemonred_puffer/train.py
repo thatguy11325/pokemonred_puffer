@@ -22,7 +22,7 @@ from pokemonred_puffer.cleanrl_puffer import CleanPuffeRL
 from pokemonred_puffer.environment import RedGymEnv
 from pokemonred_puffer.wrappers.async_io import AsyncWrapper
 
-app = typer.Typer()
+app = typer.Typer(pretty_exceptions_enable=False)
 
 
 class Vectorization(Enum):
@@ -76,6 +76,8 @@ def make_env_creator(
         if async_wrapper and async_config:
             env = AsyncWrapper(env, async_config["send_queues"], async_config["recv_queues"])
         return pufferlib.emulation.GymnasiumPufferEnv(env=env)
+
+    breakpoint()
 
     return env_creator
 
@@ -306,6 +308,8 @@ def train(
         Vectorization, typer.Option(help="Vectorization method")
     ] = "multiprocessing",
 ):
+    # config = config.x.value
+    config = load_from_config(config, debug)
     config, env_creator = setup(
         config=config,
         debug=debug,
