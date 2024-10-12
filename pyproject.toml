@@ -13,7 +13,6 @@ classifiers = [
 ]
 dependencies = [
     "einops",
-    "mediapy",
     "numba",
     "numpy",
     "omegaconf",
@@ -24,7 +23,7 @@ dependencies = [
     "torch>=2.4",
     "torchvision",
     "typer",
-    "wandb[sweeps]",
+    "wandb",
     "websockets"
 ]
 
@@ -42,7 +41,8 @@ dev = [
 ]
 sweep = [
     "carbs @ git+https://github.com/imbue-ai/carbs",
-    "sweeps"
+    "sweeps",
+    "wandb-carbs"
 ]
 
 [tool.distutils.bdist_wheel]
