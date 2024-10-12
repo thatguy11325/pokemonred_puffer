@@ -17,8 +17,9 @@ from carbs import (
     ObservationInParam,
 )
 from omegaconf import DictConfig, OmegaConf
-
+from rich.console import Console
 import wandb
+
 from pokemonred_puffer import train
 
 app = typer.Typer(pretty_exceptions_enable=False)
@@ -76,6 +77,7 @@ def launch_sweep(
     ] = "sweep-config.yaml",
     sweep_name: Annotated[str, typer.Option(help="Sweep name")] = "PokeSweep",
 ):
+    console = Console()
     config = CARBSParams(
         better_direction_sign=1,
         is_wandb_logging_enabled=False,
@@ -99,8 +101,11 @@ def launch_sweep(
     pprint.pprint(params)
     sweep = wandb.controller(sweep_id)
 
-    print(f"Beginning sweep with id {sweep_id}")
-    print(f"On all nodes please run python -m pokemonred_puffer.sweep launch-agent {sweep_id}")
+    console.print(f"Beginning sweep with id {sweep_id}", style="bold")
+    console.print(
+        f"On all nodes please run python -m pokemonred_puffer.sweep launch-agent {sweep_id}",
+        style="bold",
+    )
     finished = set([])
     while not sweep.done():
         # Taken from sweep.schedule. Limits runs to only one at a time.
