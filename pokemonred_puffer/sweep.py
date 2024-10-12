@@ -1,15 +1,20 @@
 import math
+import os
 from typing import Annotated
 
 import carbs.utils
+import sweeps
 import typer
 from carbs import (
+    CARBS,
     Param,
     ParamDictType,
     ParamType,
+    CARBSParams,
+    WandbLoggingParams,
+    ObservationInParam,
 )
 from omegaconf import DictConfig, OmegaConf
-from wandb_carbs import create_sweep
 
 import wandb
 from pokemonred_puffer import train
@@ -69,19 +74,43 @@ def launch_sweep(
     ] = "sweep-config.yaml",
     sweep_name: Annotated[str, typer.Option(help="Sweep name")] = "PokeSweep",
 ):
+    config = CARBSParams(
+        better_direction_sign=-1,
+        is_wandb_logging_enabled=True,
+        wandb_params=WandbLoggingParams(project_name="Pokemon", run_name="Pokemon"),
+    )
     params = sweep_config_to_params(sweep_config)
+    carbs = CARBS(config=config, params=params)
+    sweep_id = wandb.sweep(
+        sweep={
+            "name": sweep_name,
+            "controller": {"type": "local"},
+            "parameters": {},
+            "command": ["${args_json}"],
+        },
+        entity=base_config.wandb.entity,
+        project=base_config.wandb.project,
+    )
+
     import pprint
 
     pprint.pprint(params)
-    sweep_id = create_sweep(
-        sweep_name=sweep_name,
-        wandb_entity=base_config.wandb.entity,
-        wandb_project=base_config.wandb.project,
-        carb_params=params,
-    )
+    sweep = wandb.controller(sweep_id)
 
     print(f"Beginning sweep with id {sweep_id}")
     print(f"On all nodes please run python -m pokemonred_puffer.sweep launch-agent {sweep_id}")
+    while not sweep.done():
+        sweep_obj = sweep._sweep_object_read_from_backend()
+        if sweep_obj["runs"]:
+            print(sweep_obj["runs"])
+            breakpoint()
+            obs_in = ObservationInParam(...)  # parsed from sweep_obj. Need to figure this out
+            carbs.observe(obs_in)
+        suggestion = carbs.suggest()
+        new_config = update_base_config(base_config, suggestion.suggestion)
+        run = sweeps.SweepRun(config={"x": {"value": OmegaConf.to_object(new_config)}})
+        sweep.schedule(run)
+        sweep.print_status()
 
 
 @app.command()
@@ -92,9 +121,9 @@ def launch_agent(
     ] = "config.yaml",
 ):
     def _fn():
-        new_config = update_base_config(base_config)
-        print(new_config)
-        train.train(config=new_config)
+        agent_config = OmegaConf.load(os.environ["WANDB_SWEEP_PARAM_PATH"]).x.value
+        agent_config.merge_with(base_config.debug)
+        train.train(config=agent_config)
 
     wandb.agent(
         sweep_id=sweep_id,
