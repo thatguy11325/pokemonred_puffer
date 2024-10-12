@@ -1,6 +1,5 @@
 import functools
 import importlib
-import json
 import os
 import uuid
 from contextlib import contextmanager
@@ -49,9 +48,7 @@ def make_policy(env: RedGymEnv, policy_name: str, config: DictConfig) -> nn.Modu
     return policy.to(config.train.device)
 
 
-def load_from_config(yaml: Path, debug: bool) -> DictConfig:
-    config: DictConfig = OmegaConf.load(yaml)
-
+def load_from_config(config: DictConfig, debug: bool) -> DictConfig:
     default_keys = ["env", "train", "policies", "rewards", "wrappers", "wandb"]
     defaults = OmegaConf.create({key: config.get(key, {}) for key in default_keys})
 
@@ -147,18 +144,13 @@ def init_wandb(
 
 
 def setup(
-    yaml: Path | str,
+    config: DictConfig,
     debug: bool,
     wrappers_name: str,
     reward_name: str,
     rom_path: Path,
     track: bool,
 ) -> tuple[DictConfig, Callable[[DictConfig, DictConfig], pufferlib.emulation.GymnasiumPufferEnv]]:
-    possible_dictconfig = json.load(yaml)
-    if isinstance(possible_dictconfig, dict):
-        config = OmegaConf.create(possible_dictconfig)
-    else:
-        config = load_from_config(yaml, debug)
     config.train.exp_id = f"pokemon-red-{str(uuid.uuid4())[:8]}"
     config.env.gb_path = rom_path
     config.track = track
@@ -172,7 +164,9 @@ def setup(
 
 @app.command()
 def evaluate(
-    yaml: Annotated[Path | str, typer.Option(help="Configuration file to use")] = "config.yaml",
+    config: Annotated[
+        DictConfig, typer.Option(help="Base configuration", parser=OmegaConf.load)
+    ] = "config.yaml",
     checkpoint_path: Path | None = None,
     policy_name: Annotated[
         str,
@@ -201,7 +195,7 @@ def evaluate(
     rom_path: Path = "red.gb",
 ):
     config, env_creator = setup(
-        yaml=yaml,
+        config=config,
         debug=False,
         wrappers_name=wrappers_name,
         reward_name=reward_name,
@@ -227,7 +221,9 @@ def evaluate(
 
 @app.command()
 def autotune(
-    yaml: Annotated[Path, typer.Option(help="Configuration file to use")] = "config.yaml",
+    config: Annotated[
+        DictConfig, typer.Option(help="Base configuration", parser=OmegaConf.load)
+    ] = "config.yaml",
     policy_name: Annotated[
         str,
         typer.Option(
@@ -255,7 +251,7 @@ def autotune(
     rom_path: Path = "red.gb",
 ):
     config, env_creator = setup(
-        yaml=yaml,
+        config=config,
         debug=False,
         wrappers_name=wrappers_name,
         reward_name=reward_name,
@@ -275,7 +271,9 @@ def autotune(
 
 @app.command()
 def train(
-    yaml: Annotated[Path | str, typer.Option(help="Configuration file to use")] = "config.yaml",
+    config: Annotated[
+        DictConfig, typer.Option(help="Base configuration", parser=OmegaConf.load)
+    ] = "config.yaml",
     policy_name: Annotated[
         str,
         typer.Option(
@@ -309,7 +307,7 @@ def train(
     ] = "multiprocessing",
 ):
     config, env_creator = setup(
-        yaml=yaml,
+        config=config,
         debug=debug,
         wrappers_name=wrappers_name,
         reward_name=reward_name,

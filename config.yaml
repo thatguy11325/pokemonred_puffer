@@ -31,7 +31,7 @@ debug:
     minibatch_size: 4
     batch_rows: 4
     bptt_horizon: 2
-    total_timesteps: 100_000_000
+    total_timesteps: 10
     save_checkpoint: True
     checkpoint_interval: 4
     save_overlay: True
