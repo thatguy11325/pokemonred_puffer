@@ -108,10 +108,10 @@ def launch_sweep(
         # Only one run will be scheduled at a time
         suggestion = carbs.suggest()
         run = sweeps.SweepRun(config={"x": {"value": suggestion.suggestion}})
+        sweep._step()
         sweep.schedule(run)
         # without this nothing updates...
-        sweep_obj = sweep._sweep_object_read_from_backend()
-        # sweep_obj = sweep._sweep_obj
+        sweep_obj = sweep._sweep_obj
         if runs := sweep_obj["runs"]:
             for run in runs:
                 if run["state"] == RunState.running.value:
