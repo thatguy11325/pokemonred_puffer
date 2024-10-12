@@ -145,11 +145,12 @@ def launch_agent(
         DictConfig,
         typer.Option(help="Base configuration. MUST MATCH PRIMARY NODE.", parser=OmegaConf.load),
     ] = "config.yaml",
+    debug: bool = False,
 ):
     def _fn():
         agent_config: DictConfig = OmegaConf.load(os.environ["WANDB_SWEEP_PARAM_PATH"]).x.value
         agent_config = update_base_config(base_config, agent_config)
-        train.train(config=agent_config, debug=True, track=True)
+        train.train(config=agent_config, debug=debug, track=True)
 
     wandb.agent(
         sweep_id=sweep_id,
