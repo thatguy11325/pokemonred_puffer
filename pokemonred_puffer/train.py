@@ -53,7 +53,7 @@ def load_from_config(config: DictConfig, debug: bool) -> DictConfig:
     defaults = OmegaConf.create({key: config.get(key, {}) for key in default_keys})
 
     # Package and subpackage (environment) configs
-    debug_config = config.get("debug", {}) if debug else OmegaConf.create({})
+    debug_config = config.get("debug", OmegaConf.create({})) if debug else OmegaConf.create({})
 
     defaults.merge_with(debug_config)
     return defaults
@@ -76,8 +76,6 @@ def make_env_creator(
         if async_wrapper and async_config:
             env = AsyncWrapper(env, async_config["send_queues"], async_config["recv_queues"])
         return pufferlib.emulation.GymnasiumPufferEnv(env=env)
-
-    breakpoint()
 
     return env_creator
 
@@ -129,20 +127,21 @@ def init_wandb(
             "config": {
                 "cleanrl": config.train,
                 "env": config.env,
-                "reward_module": config[reward_name],
-                "policy_module": config[policy_name],
+                "reward_module": reward_name,
+                "policy_module": policy_name,
                 "reward": config.rewards[reward_name],
                 "policy": config.policies[policy_name],
                 "wrappers": config.wrappers[wrappers_name],
-                "recurrent": "recurrent" in config.policies[policy_name],
+                "rnn": "rnn" in config.policies[policy_name],
             },
-            "name": config.exp_name,
+            "name": exp_name,
             "monitor_gym": True,
             "save_code": True,
             "resume": resume,
         }
-        with wandb.init(**wandb_kwargs) as client:
-            yield client
+        client = wandb.init(**wandb_kwargs)
+        yield client
+        client.finish()
 
 
 def setup(
@@ -308,7 +307,7 @@ def train(
         Vectorization, typer.Option(help="Vectorization method")
     ] = "multiprocessing",
 ):
-    # config = config.x.value
+    config.vectorization = vectorization
     config = load_from_config(config, debug)
     config, env_creator = setup(
         config=config,
@@ -318,7 +317,6 @@ def train(
         rom_path=rom_path,
         track=track,
     )
-    config.vectorization = vectorization
     with init_wandb(
         config=config,
         exp_name=exp_name,
@@ -369,6 +367,7 @@ def train(
             trainer.train()
 
         trainer.close()
+        print("Done training")
 
 
 if __name__ == "__main__":

@@ -1,9 +1,11 @@
+import json
 import math
 import os
 from typing import Annotated
 
 import carbs.utils
 import sweeps
+from sweeps import RunState
 import typer
 from carbs import (
     CARBS,
@@ -34,7 +36,7 @@ def sweep_config_to_params(sweep_config: DictConfig, prefix: str = "") -> list[P
                     param_class(**v),
                     (v["max"] + v["min"]) // 2
                     if v.get("is_integer", False)
-                    else math.sqrt(v["max"] ** 2 + v["min"] ** 2),
+                    else math.sqrt(v["max"] * v["min"]),
                 )
             ]
         elif isinstance(v, DictConfig):
@@ -75,8 +77,8 @@ def launch_sweep(
     sweep_name: Annotated[str, typer.Option(help="Sweep name")] = "PokeSweep",
 ):
     config = CARBSParams(
-        better_direction_sign=-1,
-        is_wandb_logging_enabled=True,
+        better_direction_sign=1,
+        is_wandb_logging_enabled=False,
         wandb_params=WandbLoggingParams(project_name="Pokemon", run_name="Pokemon"),
     )
     params = sweep_config_to_params(sweep_config)
@@ -99,17 +101,40 @@ def launch_sweep(
 
     print(f"Beginning sweep with id {sweep_id}")
     print(f"On all nodes please run python -m pokemonred_puffer.sweep launch-agent {sweep_id}")
+    finished = set([])
     while not sweep.done():
-        sweep_obj = sweep._sweep_object_read_from_backend()
-        if sweep_obj["runs"]:
-            print(sweep_obj["runs"])
-            breakpoint()
-            obs_in = ObservationInParam(...)  # parsed from sweep_obj. Need to figure this out
-            carbs.observe(obs_in)
+        # Taken from sweep.schedule. Limits runs to only one at a time.
+        # if not (sweep._controller and sweep._controller.get("schedule")):
+        # Only one run will be scheduled at a time
         suggestion = carbs.suggest()
-        new_config = update_base_config(base_config, suggestion.suggestion)
-        run = sweeps.SweepRun(config={"x": {"value": OmegaConf.to_object(new_config)}})
+        run = sweeps.SweepRun(config={"x": {"value": suggestion.suggestion}})
         sweep.schedule(run)
+        # without this nothing updates...
+        sweep_obj = sweep._sweep_object_read_from_backend()
+        # sweep_obj = sweep._sweep_obj
+        if runs := sweep_obj["runs"]:
+            for run in runs:
+                if run["state"] == RunState.running.value:
+                    pass
+                elif (
+                    run["state"]
+                    in [
+                        RunState.failed.value,
+                        RunState.finished.value,
+                        RunState.crashed.value,
+                    ]
+                    and run["name"] not in finished
+                ):
+                    finished.add(run["name"])
+                    summary_metrics = json.loads(run["summaryMetrics"])
+                    obs_in = ObservationInParam(
+                        input=json.loads(run["config"])["x"]["value"],
+                        output=summary_metrics["environment/reward_sum"],
+                        cost=summary_metrics["performance/uptime"],
+                    )
+                    carbs.observe(obs_in)
+                elif run["state"] == RunState.pending:
+                    print(f"PENDING RUN FOUND {run['name']}")
         sweep.print_status()
 
 
@@ -117,20 +142,21 @@ def launch_sweep(
 def launch_agent(
     sweep_id: str,
     base_config: Annotated[
-        DictConfig, typer.Option(help="Base configuration", parser=OmegaConf.load)
+        DictConfig,
+        typer.Option(help="Base configuration. MUST MATCH PRIMARY NODE.", parser=OmegaConf.load),
     ] = "config.yaml",
 ):
     def _fn():
-        agent_config = OmegaConf.load(os.environ["WANDB_SWEEP_PARAM_PATH"]).x.value
-        agent_config.merge_with(base_config.debug)
-        train.train(config=agent_config)
+        agent_config: DictConfig = OmegaConf.load(os.environ["WANDB_SWEEP_PARAM_PATH"]).x.value
+        agent_config = update_base_config(base_config, agent_config)
+        train.train(config=agent_config, debug=True, track=True)
 
     wandb.agent(
         sweep_id=sweep_id,
         entity=base_config.wandb.entity,
         project=base_config.wandb.project,
         function=_fn,
-        count=999999,
+        count=99999,
     )
 
 

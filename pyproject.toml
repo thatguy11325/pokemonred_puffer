@@ -42,7 +42,6 @@ dev = [
 sweep = [
     "carbs @ git+https://github.com/imbue-ai/carbs",
     "sweeps",
-    "wandb-carbs"
 ]
 
 [tool.distutils.bdist_wheel]

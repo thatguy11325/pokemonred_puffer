@@ -5,7 +5,7 @@ wandb:
 
 debug:
   env:
-    headless: False
+    headless: True
     stream_wrapper: False
     init_state: "victory_road_5"
     state_dir: pyboy_states
@@ -25,13 +25,13 @@ debug:
     num_envs: 1
     envs_per_worker: 1
     num_workers: 1
-    env_batch_size: 20480
+    env_batch_size: 4
     zero_copy: False
-    batch_size: 20480
+    batch_size: 4
     minibatch_size: 4
     batch_rows: 4
     bptt_horizon: 2
-    total_timesteps: 10
+    total_timesteps: 16
     save_checkpoint: True
     checkpoint_interval: 4
     save_overlay: True
