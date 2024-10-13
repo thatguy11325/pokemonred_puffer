@@ -1435,6 +1435,8 @@ class RedGymEnv(Env):
                 "in_battle": self.read_m("wIsInBattle") > 0,
                 "event": self.progress_reward["event"],
                 "max_steps": self.get_max_steps(),
+                # redundant but this is so we don't interfere with the swarm logic
+                "required_count": len(self.required_events) + len(self.required_items),
             }
             | {
                 "exploration": {

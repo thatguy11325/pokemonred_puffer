@@ -140,13 +140,13 @@ def launch_sweep(
                     finished.add(run["name"])
                     summary_metrics = json.loads(run["summaryMetrics"])
                     if (
-                        "environment/stats/event" in summary_metrics
+                        "environment/stats/required_count" in summary_metrics
                         and "performance/uptime" in summary_metrics
                     ):
                         obs_in = ObservationInParam(
                             input=json.loads(run["config"])["x"]["value"],
                             # TODO: try out other stats like required count
-                            output=summary_metrics["environment/stats/event"],
+                            output=summary_metrics["environment/stats/required_count"],
                             cost=summary_metrics["performance/uptime"],
                         )
                         carbs.observe(obs_in)
