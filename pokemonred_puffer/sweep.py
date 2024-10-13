@@ -131,21 +131,25 @@ def launch_sweep(
                 elif (
                     run["state"]
                     in [
-                        # RunState.failed.value,
+                        RunState.failed.value,
                         RunState.finished.value,
-                        # RunState.crashed.value,
+                        RunState.crashed.value,
                     ]
                     and run["name"] not in finished
                 ):
                     finished.add(run["name"])
                     summary_metrics = json.loads(run["summaryMetrics"])
-                    obs_in = ObservationInParam(
-                        input=json.loads(run["config"])["x"]["value"],
-                        # TODO: try out other stats like required count
-                        output=summary_metrics["environment/stats/event"],
-                        cost=summary_metrics["performance/uptime"],
-                    )
-                    carbs.observe(obs_in)
+                    if (
+                        "environment/stats/event" in summary_metrics
+                        and "performance/uptime" in summary_metrics
+                    ):
+                        obs_in = ObservationInParam(
+                            input=json.loads(run["config"])["x"]["value"],
+                            # TODO: try out other stats like required count
+                            output=summary_metrics["environment/stats/event"],
+                            cost=summary_metrics["performance/uptime"],
+                        )
+                        carbs.observe(obs_in)
                 elif run["state"] == RunState.pending:
                     print(f"PENDING RUN FOUND {run['name']}")
         sweep.print_status()
