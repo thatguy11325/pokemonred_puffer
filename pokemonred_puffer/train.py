@@ -307,8 +307,8 @@ def train(
         Vectorization, typer.Option(help="Vectorization method")
     ] = "multiprocessing",
 ):
-    config.vectorization = vectorization
     config = load_from_config(config, debug)
+    config.vectorization = vectorization
     config, env_creator = setup(
         config=config,
         debug=debug,

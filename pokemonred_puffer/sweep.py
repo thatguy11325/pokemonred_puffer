@@ -90,7 +90,6 @@ def launch_sweep(
         wandb_params=WandbLoggingParams(project_name="Pokemon", run_name="Pokemon"),
     )
     params = sweep_config_to_params(base_config, sweep_config)
-    breakpoint()
 
     carbs = CARBS(config=config, params=params)
     sweep_id = wandb.sweep(
@@ -132,9 +131,9 @@ def launch_sweep(
                 elif (
                     run["state"]
                     in [
-                        RunState.failed.value,
+                        # RunState.failed.value,
                         RunState.finished.value,
-                        RunState.crashed.value,
+                        # RunState.crashed.value,
                     ]
                     and run["name"] not in finished
                 ):
@@ -142,6 +141,7 @@ def launch_sweep(
                     summary_metrics = json.loads(run["summaryMetrics"])
                     obs_in = ObservationInParam(
                         input=json.loads(run["config"])["x"]["value"],
+                        # TODO: try out other stats like required count
                         output=summary_metrics["environment/stats/event"],
                         cost=summary_metrics["performance/uptime"],
                     )
