@@ -1,9 +1,9 @@
 env:
-   max_steps: 
-     carbs.utils.LinearSpace:
-       min: 10240
-       max: 81920 
-       is_integer: True
+  max_steps:
+    carbs.utils.LinearSpace:
+      min: 10240
+      max: 81920
+      is_integer: True
   map_id_scalefactor:
     carbs.utils.LogSpace:
       min: 0.001
@@ -44,7 +44,7 @@ rewards:
   baseline.ObjectRewardRequiredEventsMapIds:
     reward:
       event: &default_log
-        carbs.utils.LogSpace: 
+        carbs.utils.LogSpace:
           min: 1.0e-5
           max: 10.0
       seen_pokemon: *default_log
@@ -62,7 +62,6 @@ rewards:
       exploration: *default_log
       explore_warps: *default_log
       use_surf: *default_log
-
 # policies:
 #   multi_convolutional.MultiConvolutionalPolicy:
 #     policy:
@@ -86,8 +85,4 @@ rewards:
 #             min: 512
 #             max: 2048
 #             is_integer: True
-
-
-  
-
 
