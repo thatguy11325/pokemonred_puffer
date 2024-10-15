@@ -13,6 +13,7 @@ classifiers = [
 ]
 dependencies = [
     "einops",
+    "mediapy",
     "numba",
     "numpy",
     "omegaconf",
