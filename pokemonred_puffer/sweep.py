@@ -148,21 +148,22 @@ def launch_sweep(
                     and run["name"] not in finished
                 ):
                     finished.add(run["name"])
-                    summary_metrics = json.loads(run["summaryMetrics"])
-                    if (
-                        "environment/stats/required_count" in summary_metrics
-                        and "performance/uptime" in summary_metrics
-                    ):
-                        obs_in = ObservationInParam(
-                            input=json.loads(run["config"])["x"]["value"],
-                            # TODO: try out other stats like required count
-                            output=summary_metrics["environment/stats/required_count"],
-                            cost=summary_metrics["performance/uptime"],
-                        )
-                        carbs.observe(obs_in)
-                        # Because wandb stages the artifacts we have to keep these files
-                        # dangling around wasting good disk space.
-                        carbs.save_to_file(hash(finished) + ".pt", upload_to_wandb=True)
+                    if summaryMetrics_json := run.get("summaryMetrics", None):
+                        summary_metrics = json.loads(summaryMetrics_json)
+                        if (
+                            "environment/stats/required_count" in summary_metrics
+                            and "performance/uptime" in summary_metrics
+                        ):
+                            obs_in = ObservationInParam(
+                                input=json.loads(run["config"])["x"]["value"],
+                                # TODO: try out other stats like required count
+                                output=summary_metrics["environment/stats/required_count"],
+                                cost=summary_metrics["performance/uptime"],
+                            )
+                            carbs.observe(obs_in)
+                            # Because wandb stages the artifacts we have to keep these files
+                            # dangling around wasting good disk space.
+                            carbs.save_to_file(hash(finished) + ".pt", upload_to_wandb=True)
                 elif run["state"] == RunState.pending:
                     print(f"PENDING RUN FOUND {run['name']}")
         sweep.print_status()
