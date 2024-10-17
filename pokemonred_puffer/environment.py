@@ -10,11 +10,11 @@ import uuid
 
 import mediapy as media
 import numpy as np
+from omegaconf import DictConfig, OmegaConf
 from gymnasium import Env, spaces
 from pyboy import PyBoy
 from pyboy.utils import WindowEvent
 
-import pufferlib
 from pokemonred_puffer.data.elevators import NEXT_ELEVATORS
 from pokemonred_puffer.data.events import (
     EVENT_FLAGS_START,
@@ -94,8 +94,7 @@ class RedGymEnv(Env):
     env_id = shared_memory.SharedMemory(create=True, size=4)
     lock = Lock()
 
-    def __init__(self, env_config: pufferlib.namespace):
-        # TODO: Dont use pufferlib.namespace. It seems to confuse __init__
+    def __init__(self, env_config: DictConfig):
         self.video_dir = Path(env_config.video_dir)
         self.save_final_state = env_config.save_final_state
         self.print_rewards = env_config.print_rewards
@@ -114,10 +113,11 @@ class RedGymEnv(Env):
         self.log_frequency = env_config.log_frequency
         self.two_bit = env_config.two_bit
         self.auto_flash = env_config.auto_flash
-        if isinstance(env_config.disable_wild_encounters, bool):
+        disable_wild_encounters = OmegaConf.to_object(env_config.disable_wild_encounters)
+        if isinstance(disable_wild_encounters, bool):
             self.disable_wild_encounters = env_config.disable_wild_encounters
             self.setup_disable_wild_encounters_maps = set([])
-        elif isinstance(env_config.disable_wild_encounters, list):
+        elif isinstance(disable_wild_encounters, list):
             self.disable_wild_encounters = len(env_config.disable_wild_encounters) > 0
             self.disable_wild_encounters_maps = {
                 MapIds[item].name for item in env_config.disable_wild_encounters
@@ -225,7 +225,7 @@ class RedGymEnv(Env):
         self.observation_space = spaces.Dict(obs_dict)
 
         self.pyboy = PyBoy(
-            env_config.gb_path,
+            str(env_config.gb_path),
             debug=False,
             no_input=False,
             window="null" if self.headless else "SDL2",
@@ -712,6 +712,13 @@ class RedGymEnv(Env):
         if self.read_m("wWalkBikeSurfState") == 0x2:
             self.use_surf = 1
         info = {}
+
+        # self.memory[0xd16c] = 0xFF
+        self.pyboy.memory[0xD16D] = 0xFF
+        self.pyboy.memory[0xD188] = 0xFF
+        self.pyboy.memory[0xD189] = 0xFF
+        self.pyboy.memory[0xD18A] = 0xFF
+        self.pyboy.memory[0xD18B] = 0xFF
 
         required_events = self.get_required_events()
         required_items = self.get_required_items()
@@ -1428,6 +1435,8 @@ class RedGymEnv(Env):
                 "in_battle": self.read_m("wIsInBattle") > 0,
                 "event": self.progress_reward["event"],
                 "max_steps": self.get_max_steps(),
+                # redundant but this is so we don't interfere with the swarm logic
+                "required_count": len(self.required_events) + len(self.required_items),
             }
             | {
                 "exploration": {

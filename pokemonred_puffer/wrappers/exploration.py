@@ -3,7 +3,7 @@ import random
 import gymnasium as gym
 import numpy as np
 
-import pufferlib
+from omegaconf import DictConfig
 from pokemonred_puffer.environment import RedGymEnv
 from pokemonred_puffer.global_map import GLOBAL_MAP_SHAPE, local_to_global
 
@@ -36,7 +36,7 @@ class LRUCache:
 # Am I doing it anyway? Yes.
 # Why? To save memory
 class DecayWrapper(gym.Wrapper):
-    def __init__(self, env: RedGymEnv, reward_config: pufferlib.namespace):
+    def __init__(self, env: RedGymEnv, reward_config: DictConfig):
         super().__init__(env)
         self.step_forgetting_factor = reward_config.step_forgetting_factor
         self.forgetting_frequency = reward_config.forgetting_frequency
@@ -88,7 +88,7 @@ class DecayWrapper(gym.Wrapper):
 
 
 class MaxLengthWrapper(gym.Wrapper):
-    def __init__(self, env: RedGymEnv, reward_config: pufferlib.namespace):
+    def __init__(self, env: RedGymEnv, reward_config: DictConfig):
         super().__init__(env)
         self.capacity = reward_config.capacity
         self.cache = LRUCache(capacity=self.capacity)
@@ -109,7 +109,7 @@ class MaxLengthWrapper(gym.Wrapper):
 
 
 class OnResetExplorationWrapper(gym.Wrapper):
-    def __init__(self, env: RedGymEnv, reward_config: pufferlib.namespace):
+    def __init__(self, env: RedGymEnv, reward_config: DictConfig):
         super().__init__(env)
         self.full_reset_frequency = reward_config.full_reset_frequency
         self.jitter = reward_config.jitter
@@ -133,7 +133,7 @@ class OnResetExplorationWrapper(gym.Wrapper):
 
 
 class OnResetLowerToFixedValueWrapper(gym.Wrapper):
-    def __init__(self, env: RedGymEnv, reward_config: pufferlib.namespace):
+    def __init__(self, env: RedGymEnv, reward_config: DictConfig):
         super().__init__(env)
         self.fixed_value = reward_config.fixed_value
 

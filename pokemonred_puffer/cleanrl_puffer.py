@@ -40,8 +40,6 @@ from pokemonred_puffer.c_gae import compute_gae  # type: ignore  # noqa: E402
 def rollout(
     env_creator,
     env_kwargs,
-    agent_creator,
-    agent_kwargs,
     model_path=None,
     device="cuda",
 ):
@@ -54,12 +52,9 @@ def rollout(
     except:  # noqa: E722
         env = pufferlib.vector.make(env_creator, env_kwargs=env_kwargs)
 
-    if model_path is None:
-        agent = agent_creator(env, **agent_kwargs)
-    else:
-        agent = torch.load(model_path, map_location=device)
+    agent = torch.load(model_path, map_location=device)
 
-    ob, info = env.reset()
+    ob, _ = env.reset()
     driver = env.driver_env
     os.system("clear")
     state = None
@@ -574,13 +569,13 @@ class CleanPuffeRL:
         if self.config.verbose:
             self.utilization.stop()
 
-        if self.wandb_client is not None:
-            # artifact_name = f"{self.exp_name}_model"
-            # artifact = wandb.Artifact(artifact_name, type="model")
-            # model_path = self.save_checkpoint()
-            # artifact.add_file(model_path)
-            # self.wandb_client.log_artifact(artifact)
-            self.wandb_client.finish()
+        # if self.wandb_client is not None:
+        # artifact_name = f"{self.exp_name}_model"
+        # artifact = wandb.Artifact(artifact_name, type="model")
+        # model_path = self.save_checkpoint()
+        # artifact.add_file(model_path)
+        # self.wandb_client.log_artifact(artifact)
+        # self.wandb_client.finish()
 
     def save_checkpoint(self):
         config = self.config
