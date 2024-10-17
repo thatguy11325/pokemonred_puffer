@@ -123,7 +123,7 @@ def launch_sweep(
         f"On all nodes please run python -m pokemonred_puffer.sweep launch-agent {sweep_id}",
         style="bold",
     )
-    finished = set([])
+    finished = []
     while not sweep.done():
         # Taken from sweep.schedule. Limits runs to only one at a time.
         # Only one run will be scheduled at a time
@@ -147,7 +147,7 @@ def launch_sweep(
                     ]
                     and run["name"] not in finished
                 ):
-                    finished.add(run["name"])
+                    finished.append(run["name"])
                     if summaryMetrics_json := run.get("summaryMetrics", None):
                         summary_metrics = json.loads(summaryMetrics_json)
                         if (
@@ -163,7 +163,7 @@ def launch_sweep(
                             carbs.observe(obs_in)
                             # Because wandb stages the artifacts we have to keep these files
                             # dangling around wasting good disk space.
-                            carbs.save_to_file(hash(finished) + ".pt", upload_to_wandb=True)
+                            carbs.save_to_file(hash(tuple(finished)) + ".pt", upload_to_wandb=True)
                 elif run["state"] == RunState.pending:
                     print(f"PENDING RUN FOUND {run['name']}")
         sweep.print_status()
