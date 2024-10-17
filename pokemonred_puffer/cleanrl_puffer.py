@@ -5,6 +5,7 @@ from functools import partial
 import os
 import pathlib
 import random
+import sqlite3
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
@@ -204,6 +205,10 @@ class CleanPuffeRL:
             self.archive_path.mkdir(exist_ok=False)
             print(f"Will archive states to {self.archive_path}")
 
+        self.conn = sqlite3.connect("states.db")
+        self.cur = self.conn.cursor()
+        self.cur.execute("CREATE TABLE states(env_id INT PRIMARY_KEY, state TEXT)")
+
     @pufferlib.utils.profile
     def evaluate(self):
         # states are managed separately so dont worry about deleting them
@@ -338,17 +343,19 @@ class CleanPuffeRL:
                     # Need a way not to reset the env id counter for the driver env
                     # Until then env ids are 1-indexed
                     print(f"\tNew events ({len(new_state_key)}): {new_state_key}")
-                    for key in self.event_tracker.keys():
-                        new_state = random.choice(self.states[new_state_key])
-
-                        self.env_recv_queues[key].put(new_state)
-                        # Now copy the hidden state over
-                        # This may be a little slow, but so is this whole process
-                        # self.next_lstm_state[0][:, i, :] = self.next_lstm_state[0][:, new_state, :]
-                        # self.next_lstm_state[1][:, i, :] = self.next_lstm_state[1][:, new_state, :]
-                    for key in self.event_tracker.keys():
-                        # print(f"\tWaiting for message from env-id {key}")
-                        self.env_send_queues[key].get()
+                    new_states = [
+                        "({state})"
+                        for state in random.choices(
+                            self.states[new_state_key], k=len(self.event_tracker.keys())
+                        )
+                    ]
+                    self.cur.execute(
+                        "INSERT INTO states(state) VALUES "
+                        f"{','.join(new_states)} "
+                        "ON CONFLICT(env_id) "
+                        "DO UPDATE SET state=EXCLUDED.state;"
+                    )
+                    self.vecenv.async_reset()
                     print(
                         f"State migration to {self.archive_path}/{str(hash(new_state_key))} complete"
                     )
