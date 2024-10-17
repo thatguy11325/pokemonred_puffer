@@ -10,7 +10,7 @@ import uuid
 
 import mediapy as media
 import numpy as np
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig, ListConfig
 from gymnasium import Env, spaces
 from pyboy import PyBoy
 from pyboy.utils import WindowEvent
@@ -113,11 +113,10 @@ class RedGymEnv(Env):
         self.log_frequency = env_config.log_frequency
         self.two_bit = env_config.two_bit
         self.auto_flash = env_config.auto_flash
-        disable_wild_encounters = OmegaConf.to_object(env_config.disable_wild_encounters)
-        if isinstance(disable_wild_encounters, bool):
+        if isinstance(env_config.disable_wild_encounters, bool):
             self.disable_wild_encounters = env_config.disable_wild_encounters
             self.setup_disable_wild_encounters_maps = set([])
-        elif isinstance(disable_wild_encounters, list):
+        elif isinstance(env_config.disable_wild_encounters, ListConfig):
             self.disable_wild_encounters = len(env_config.disable_wild_encounters) > 0
             self.disable_wild_encounters_maps = {
                 MapIds[item].name for item in env_config.disable_wild_encounters

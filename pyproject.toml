@@ -37,12 +37,16 @@ include = ["pokered.sym"]
 monitoring = [
     "nvitop"
 ]
-dev = [
-    "ruff"
-]
 sweep = [
     "carbs @ git+https://github.com/imbue-ai/carbs",
     "sweeps",
+]
+test = [
+    "pytest"
+]
+dev = [
+    "pokemonred_puffer[test]",
+    "ruff"
 ]
 
 [tool.distutils.bdist_wheel]
