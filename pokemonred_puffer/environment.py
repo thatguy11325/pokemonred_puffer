@@ -1605,18 +1605,24 @@ class RedGymEnv(Env):
         raise NotImplementedError()
 
     def update_max_op_level(self):
-        # opp_base_level = 5
-        opponent_level = (
-            max(
-                [
-                    self.read_m(f"wEnemyMon{i+1}Level")
-                    for i in range(self.read_m("wEnemyPartyCount"))
-                ]
-                + [0]
-            )
-            # - opp_base_level
-        )
-        self.max_opponent_level = max(0, self.max_opponent_level, opponent_level)
+        try:
+            enemy_party_count = self.read_m("wEnemyPartyCount")
+            opponent_levels = [
+                self.read_m(f"wEnemyMon{i+1}Level")
+                for i in range(enemy_party_count)
+            ]
+            valid_opponent_levels = [level for level in opponent_levels if isinstance(level, (int, float))]
+            if valid_opponent_levels:
+                opponent_level = max(valid_opponent_levels)
+            else:
+                print("Warning: No valid opponent levels found. Using default level 0.")
+                opponent_level = 0
+            self.max_opponent_level = max(self.max_opponent_level, opponent_level)
+    
+        except Exception as e:
+            print(f"Error in update_max_op_level: {e}")
+            opponent_level = 0
+    
         return self.max_opponent_level
 
     def update_health(self):
