@@ -1,0 +1,88 @@
+env:
+  max_steps:
+    carbs.utils.LinearSpace:
+      min: 10240
+      max: 81920
+      is_integer: True
+  map_id_scalefactor:
+    carbs.utils.LogSpace:
+      min: 0.001
+      max: 10.0
+
+train:
+  total_timesteps:
+    carbs.utils.LogSpace:
+      min: 500_000_000
+      max: 10_000_000_000
+      is_integer: True
+  learning_rate:
+    carbs.utils.LogSpace:
+      min: 1.0e-5
+      max: 1.0e-3
+  gamma:
+    carbs.utils.LinearSpace:
+      min: .5
+      max: 1.0
+  gae_lambda:
+    carbs.utils.LinearSpace:
+      min: .5
+      max: 1.0
+  clip_coef:
+    carbs.utils.LogSpace:
+      min: 1.0e-3
+      max: 1.0
+  ent_coef:
+    carbs.utils.LogSpace:
+      min: 1.0e-5
+      max: 1.0e-1
+  vf_ent_coef:
+    carbs.utils.LogSpace:
+      min: 1.0e-5
+      max: 1.0e-1
+
+rewards:
+  baseline.ObjectRewardRequiredEventsMapIds:
+    reward:
+      event: &default_log
+        carbs.utils.LogSpace:
+          min: 1.0e-5
+          max: 10.0
+      seen_pokemon: *default_log
+      caught_pokemon: *default_log
+      moves_obtained: *default_log
+      hm_count: *default_log
+      level: *default_log
+      badges: *default_log
+      explore_hidden_objs: *default_log
+      explore_signs: *default_log
+      required_event: *default_log
+      required_item: *default_log
+      useful_item: *default_log
+      pokecenter_heal: *default_log
+      exploration: *default_log
+      explore_warps: *default_log
+      use_surf: *default_log
+# policies:
+#   multi_convolutional.MultiConvolutionalPolicy:
+#     policy:
+#       hidden_size:
+#         carbs.utils.LinearSpace:
+#           min: 512
+#           max: 1024
+#           is_integer: True
+
+#     rnn:
+#       # Assumed to be in the same module as the policy
+#       name: MultiConvolutionalRNN
+#       args:
+#         input_size:
+#           carbs.utils.LinearSpace:
+#             min: 512
+#             max: 2048
+#             is_integer: True
+#         hidden_size:
+#           carbs.utils.LinearSpace:
+#             min: 512
+#             max: 2048
+#             is_integer: True
+

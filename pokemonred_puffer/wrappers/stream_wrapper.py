@@ -3,13 +3,13 @@ import json
 
 import gymnasium as gym
 import websockets
+from omegaconf import DictConfig
 
-import pufferlib
 from pokemonred_puffer.environment import RedGymEnv
 
 
 class StreamWrapper(gym.Wrapper):
-    def __init__(self, env: RedGymEnv, config: pufferlib.namespace):
+    def __init__(self, env: RedGymEnv, config: DictConfig):
         super().__init__(env)
 
         self.user = config.user
