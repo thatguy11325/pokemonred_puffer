@@ -5,6 +5,7 @@ import os
 import random
 from collections import deque
 from pathlib import Path
+import sqlite3
 from typing import Any, Iterable, Optional
 import uuid
 
@@ -172,6 +173,8 @@ class RedGymEnv(Env):
             self.map_frame_writer = None
         self.reset_count = 0
         self.all_runs = []
+        self.conn = sqlite3.connect("states.db")
+        self.cur = self.conn.cursor()
 
         # Set this in SOME subclasses
         self.metadata = {"render.modes": []}
@@ -280,6 +283,7 @@ class RedGymEnv(Env):
             self.sign_hook,
             None,
         )
+        self.reset_count = 0
 
     def setup_disable_wild_encounters(self):
         bank, addr = self.pyboy.symbol_lookup("TryDoWildEncounter.gotWildEncounterType")
@@ -303,33 +307,18 @@ class RedGymEnv(Env):
 
         infos = {}
         self.explore_map_dim = 384
+        # res = self.cur.execute(f"SELECT state FROM states WHERE env_id={self.env_id}")
         if self.first or options.get("state", None) is not None:
-            self.recent_screens = deque()
-            self.recent_actions = deque()
             # We only init seen hidden objs once cause they can only be found once!
-            self.a_press = set()
             if options.get("state", None) is not None:
                 self.pyboy.load_state(io.BytesIO(options["state"]))
-                self.reset_count += 1
             else:
                 with open(self.init_state_path, "rb") as f:
                     self.pyboy.load_state(f)
-                self.reset_count = 0
                 self.base_event_flags = sum(
                     self.read_m(i).bit_count()
                     for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
                 )
-                # A bit of duplicate code. Blah.
-                self.events = EventFlags(self.pyboy)
-                self.missables = MissableFlags(self.pyboy)
-                self.flags = Flags(self.pyboy)
-                self.party = PartyMons(self.pyboy)
-                self.required_events = self.get_required_events()
-                self.required_items = self.get_required_items()
-                self.seen_pokemon = np.zeros(152, dtype=np.uint8)
-                self.caught_pokemon = np.zeros(152, dtype=np.uint8)
-                self.moves_obtained = np.zeros(0xA5, dtype=np.uint8)
-                self.pokecenters = np.zeros(252, dtype=np.uint8)
 
                 if self.save_state:
                     state = io.BytesIO()
@@ -348,24 +337,27 @@ class RedGymEnv(Env):
             # if not seed:
             #     seed = random.randint(0, 4096)
             #  self.pyboy.tick(seed, render=False)
-        else:
-            self.reset_count += 1
-
-        self.recent_screens.clear()
-        self.recent_actions.clear()
-        self.a_press.clear()
-        self.seen_pokemon.fill(0)
-        self.caught_pokemon.fill(0)
-        self.moves_obtained.fill(0)
-        self.explore_map *= 0
-        self.reward_explore_map *= 0
-        self.cut_explore_map *= 0
-        self.reset_mem()
+        self.reset_count += 1
 
         self.events = EventFlags(self.pyboy)
         self.missables = MissableFlags(self.pyboy)
         self.flags = Flags(self.pyboy)
         self.party = PartyMons(self.pyboy)
+        self.required_events = self.get_required_events()
+        self.required_items = self.get_required_items()
+        self.seen_pokemon = np.zeros(152, dtype=np.uint8)
+        self.caught_pokemon = np.zeros(152, dtype=np.uint8)
+        self.moves_obtained = np.zeros(0xA5, dtype=np.uint8)
+        self.pokecenters = np.zeros(252, dtype=np.uint8)
+
+        self.recent_screens = deque()
+        self.recent_actions = deque()
+        self.a_press = set()
+        self.explore_map *= 0
+        self.reward_explore_map *= 0
+        self.cut_explore_map *= 0
+        self.reset_mem()
+
         self.update_pokedex()
         self.update_tm_hm_moves_obtained()
         self.party_size = self.read_m("wPartyCount")
@@ -375,8 +367,6 @@ class RedGymEnv(Env):
         self.levels_satisfied = False
         self.base_explore = 0
         self.max_opponent_level = 0
-        self.required_events = self.get_required_events()
-        self.required_items = self.get_required_items()
         self.max_level_rew = 0
         self.max_level_sum = 0
         self.last_health = 1
@@ -741,11 +731,6 @@ class RedGymEnv(Env):
         obs = self._get_obs()
 
         self.step_count += 1
-        reset = (
-            self.step_count >= self.get_max_steps()
-            # or
-            # self.caught_pokemon[6] == 1  # squirtle
-        )
 
         # cut mon check
         if not self.party_has_cut_capable_mon():
