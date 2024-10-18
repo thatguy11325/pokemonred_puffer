@@ -314,7 +314,7 @@ class RedGymEnv(Env):
 
                 self.events = EventFlags(self.pyboy)
                 self.missables = MissableFlags(self.pyboy)
-                self.missables = MissableFlags(self.pyboy)
+                self.flags = Flags(self.pyboy)
                 self.required_events = self.get_required_events()
                 self.required_items = self.get_required_items()
                 self.base_event_flags = sum(
