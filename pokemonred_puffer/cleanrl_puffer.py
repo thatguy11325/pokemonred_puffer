@@ -356,8 +356,8 @@ class CleanPuffeRL:
                             cur.executemany(
                                 """
                                 UPDATE states
-                                SET state=:state
-                                SET reset=:reset
+                                SET state=:state,
+                                    reset=:reset
                                 WHERE env_id=:env_id
                                 """,
                                 tuple(
