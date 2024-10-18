@@ -24,6 +24,7 @@ class SqliteStateResetWrapper(gym.Wrapper):
                 """,
                 (self.env.unwrapped.env_id, b"", False),
             )
+        print(f"Initialized sqlite row {self.env.unwrapped.env_id}")
 
     def reset(self, seed: int | None = None, options: dict[str, Any] | None = None):
         with sqlite3.connect(self.database) as conn:
