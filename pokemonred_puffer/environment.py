@@ -311,6 +311,9 @@ class RedGymEnv(Env):
             else:
                 with open(self.init_state_path, "rb") as f:
                     self.pyboy.load_state(f)
+
+                self.required_events = self.get_required_events()
+                self.required_items = self.get_required_items()
                 self.base_event_flags = sum(
                     self.read_m(i).bit_count()
                     for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
