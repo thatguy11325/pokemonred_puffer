@@ -1,8 +1,10 @@
 import functools
 import importlib
 import os
+import sqlite3
+from tempfile import NamedTemporaryFile
 import uuid
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from enum import Enum
 from multiprocessing import Queue
 from pathlib import Path
@@ -21,6 +23,7 @@ from pokemonred_puffer import cleanrl_puffer
 from pokemonred_puffer.cleanrl_puffer import CleanPuffeRL
 from pokemonred_puffer.environment import RedGymEnv
 from pokemonred_puffer.wrappers.async_io import AsyncWrapper
+from pokemonred_puffer.wrappers.sqlite import SqliteStateResetWrapper
 
 app = typer.Typer(pretty_exceptions_enable=False)
 
@@ -62,26 +65,30 @@ def load_from_config(config: DictConfig, debug: bool) -> DictConfig:
 def make_env_creator(
     wrapper_classes: list[tuple[str, ModuleType]],
     reward_class: RedGymEnv,
-    async_wrapper: bool = True,
+    async_wrapper: bool = False,
+    sqlite_wrapper: bool = False,
 ) -> Callable[[DictConfig, DictConfig], pufferlib.emulation.GymnasiumPufferEnv]:
     def env_creator(
         env_config: DictConfig,
         wrappers_config: list[dict[str, Any]],
         reward_config: DictConfig,
         async_config: dict[str, Queue] | None = None,
+        sqlite_config: dict[str, str] | None = None,
     ) -> pufferlib.emulation.GymnasiumPufferEnv:
         env = reward_class(env_config, reward_config)
         for cfg, (_, wrapper_class) in zip(wrappers_config, wrapper_classes):
             env = wrapper_class(env, OmegaConf.create([x for x in cfg.values()][0]))
         if async_wrapper and async_config:
             env = AsyncWrapper(env, async_config["send_queues"], async_config["recv_queues"])
+        if sqlite_wrapper and sqlite_config:
+            env = SqliteStateResetWrapper(env, sqlite_config["database"])
         return pufferlib.emulation.GymnasiumPufferEnv(env=env)
 
     return env_creator
 
 
 def setup_agent(
-    wrappers: list[str], reward_name: str, async_wrapper: bool = True
+    wrappers: list[str], reward_name: str, async_wrapper: bool = False, sqlite_wrapper: bool = False
 ) -> Callable[[DictConfig, DictConfig], pufferlib.emulation.GymnasiumPufferEnv]:
     # TODO: Make this less dependent on the name of this repo and its file structure
     wrapper_classes = [
@@ -100,7 +107,7 @@ def setup_agent(
         importlib.import_module(f"pokemonred_puffer.rewards.{reward_module}"), reward_class_name
     )
     # NOTE: This assumes reward_module has RewardWrapper(RedGymEnv) class
-    env_creator = make_env_creator(wrapper_classes, reward_class, async_wrapper)
+    env_creator = make_env_creator(wrapper_classes, reward_class, async_wrapper, sqlite_wrapper)
 
     return env_creator
 
@@ -159,7 +166,10 @@ def setup(
         config.vectorization = Vectorization.serial
 
     async_wrapper = config.train.get("async_wrapper", False)
-    env_creator = setup_agent(config.wrappers[wrappers_name], reward_name, async_wrapper)
+    sqlite_wrapper = config.train.get("sqlite_wrapper", False)
+    env_creator = setup_agent(
+        config.wrappers[wrappers_name], reward_name, async_wrapper, sqlite_wrapper
+    )
     return config, env_creator
 
 
@@ -335,41 +345,64 @@ def train(
             vec = pufferlib.vector.Multiprocessing
 
         # TODO: Remove the +1 once the driver env doesn't permanently increase the env id
-        env_send_queues = [Queue() for _ in range(2 * config.train.num_envs + 1)]
-        env_recv_queues = [Queue() for _ in range(2 * config.train.num_envs + 1)]
+        env_send_queues = []
+        env_recv_queues = []
+        if config.train.get("async_wrapper", False):
+            env_send_queues = [Queue() for _ in range(2 * config.train.num_envs + 1)]
+            env_recv_queues = [Queue() for _ in range(2 * config.train.num_envs + 1)]
 
-        vecenv = pufferlib.vector.make(
-            env_creator,
-            env_kwargs={
-                "env_config": config.env,
-                "wrappers_config": config.wrappers[wrappers_name],
-                "reward_config": config.rewards[reward_name]["reward"],
-                "async_config": {"send_queues": env_send_queues, "recv_queues": env_recv_queues},
-            },
-            num_envs=config.train.num_envs,
-            num_workers=config.train.num_workers,
-            batch_size=config.train.env_batch_size,
-            zero_copy=config.train.zero_copy,
-            backend=vec,
-        )
-        policy = make_policy(vecenv.driver_env, policy_name, config)
+        sqlite_context = nullcontext
+        if config.train.get("sqlite_wrapper", False):
+            sqlite_context = NamedTemporaryFile
 
-        config.train.env = "Pokemon Red"
-        trainer = CleanPuffeRL(
-            exp_name=exp_name,
-            config=config.train,
-            vecenv=vecenv,
-            policy=policy,
-            env_recv_queues=env_recv_queues,
-            env_send_queues=env_send_queues,
-            wandb_client=wandb_client,
-        )
-        while not trainer.done_training():
-            trainer.evaluate()
-            trainer.train()
+        with sqlite_context() as sqlite_db:
+            db_filename = None
+            if config.train.get("sqlite_wrapper", False):
+                db_filename = sqlite_db.name
+                conn = sqlite3.connect(db_filename)
+                cur = conn.cursor()
+                cur.execute(
+                    "CREATE TABLE states(env_id INT PRIMARY_KEY, pyboy_state BLOB, reset BOOLEAN);"
+                )
+                cur.close()
 
-        trainer.close()
-        print("Done training")
+            vecenv = pufferlib.vector.make(
+                env_creator,
+                env_kwargs={
+                    "env_config": config.env,
+                    "wrappers_config": config.wrappers[wrappers_name],
+                    "reward_config": config.rewards[reward_name]["reward"],
+                    "async_config": {
+                        "send_queues": env_send_queues,
+                        "recv_queues": env_recv_queues,
+                    },
+                    "sqlite_config": {"database": db_filename},
+                },
+                num_envs=config.train.num_envs,
+                num_workers=config.train.num_workers,
+                batch_size=config.train.env_batch_size,
+                zero_copy=config.train.zero_copy,
+                backend=vec,
+            )
+            policy = make_policy(vecenv.driver_env, policy_name, config)
+
+            config.train.env = "Pokemon Red"
+            trainer = CleanPuffeRL(
+                exp_name=exp_name,
+                config=config.train,
+                vecenv=vecenv,
+                policy=policy,
+                env_recv_queues=env_recv_queues,
+                env_send_queues=env_send_queues,
+                sqlite_db=db_filename,
+                wandb_client=wandb_client,
+            )
+            while not trainer.done_training():
+                trainer.evaluate()
+                trainer.train()
+
+            trainer.close()
+            print("Done training")
 
 
 if __name__ == "__main__":

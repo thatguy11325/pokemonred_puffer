@@ -130,6 +130,7 @@ class CleanPuffeRL:
     policy: nn.Module
     env_send_queues: list[Queue]
     env_recv_queues: list[Queue]
+    sqlite_db: str | None
     wandb_client: wandb.wandb_sdk.wandb_run.Run | None = None
     profile: Profile = field(default_factory=lambda: Profile())
     losses: Losses = field(default_factory=lambda: Losses())
@@ -205,9 +206,9 @@ class CleanPuffeRL:
             self.archive_path.mkdir(exist_ok=False)
             print(f"Will archive states to {self.archive_path}")
 
-        self.conn = sqlite3.connect("states.db")
-        self.cur = self.conn.cursor()
-        self.cur.execute("CREATE TABLE states(env_id INT PRIMARY_KEY, state TEXT)")
+        if self.sqlite_db:
+            self.conn = sqlite3.connect(self.sqlite_db)
+            self.cur = self.conn.cursor()
 
     @pufferlib.utils.profile
     def evaluate(self):
@@ -293,7 +294,7 @@ class CleanPuffeRL:
             # progressing
             # env id in async queues is the index within self.infos - self.config.num_envs + 1
             if (
-                self.config.async_wrapper
+                (self.config.async_wrapper or self.config.sqlite_wrapper)
                 and hasattr(self.config, "swarm")
                 and self.config.swarm
                 and "required_count" in self.infos
@@ -344,18 +345,34 @@ class CleanPuffeRL:
                     # Until then env ids are 1-indexed
                     print(f"\tNew events ({len(new_state_key)}): {new_state_key}")
                     new_states = [
-                        "({state})"
+                        state
                         for state in random.choices(
                             self.states[new_state_key], k=len(self.event_tracker.keys())
                         )
                     ]
-                    self.cur.execute(
-                        "INSERT INTO states(state) VALUES "
-                        f"{','.join(new_states)} "
-                        "ON CONFLICT(env_id) "
-                        "DO UPDATE SET state=EXCLUDED.state;"
-                    )
-                    self.vecenv.async_reset()
+                    if self.sqlite_db:
+                        self.cur.executemany(
+                            """
+                            UPDATE states
+                            SET state=?
+                            SET reset=?
+                            WHERE env_id=?
+                            """,
+                            tuple(
+                                [
+                                    (state, True, env_id)
+                                    for state, env_id in zip(new_states, self.event_tracker.keys())
+                                ]
+                            ),
+                        )
+                        self.vecenv.async_reset()
+                    if self.config.async_wrapper:
+                        for key, state in zip(self.event_tracker.keys(), new_states):
+                            self.env_recv_queues[key].put(state)
+                        for key in self.event_tracker.keys():
+                            # print(f"\tWaiting for message from env-id {key}")
+                            self.env_send_queues[key].get()
+
                     print(
                         f"State migration to {self.archive_path}/{str(hash(new_state_key))} complete"
                     )
