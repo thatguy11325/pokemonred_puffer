@@ -5,7 +5,6 @@ import os
 import random
 from collections import deque
 from pathlib import Path
-import sqlite3
 from typing import Any, Iterable, Optional
 import uuid
 
@@ -173,8 +172,6 @@ class RedGymEnv(Env):
             self.map_frame_writer = None
         self.reset_count = 0
         self.all_runs = []
-        self.conn = sqlite3.connect("states.db")
-        self.cur = self.conn.cursor()
 
         # Set this in SOME subclasses
         self.metadata = {"render.modes": []}
@@ -307,7 +304,6 @@ class RedGymEnv(Env):
 
         infos = {}
         self.explore_map_dim = 384
-        # res = self.cur.execute(f"SELECT state FROM states WHERE env_id={self.env_id}")
         if self.first or options.get("state", None) is not None:
             # We only init seen hidden objs once cause they can only be found once!
             if options.get("state", None) is not None:
@@ -733,6 +729,7 @@ class RedGymEnv(Env):
         self.step_count += 1
 
         # cut mon check
+        reset = False
         if not self.party_has_cut_capable_mon():
             reset = True
             self.first = True
@@ -1590,16 +1587,12 @@ class RedGymEnv(Env):
 
     def update_max_op_level(self):
         # opp_base_level = 5
-        opponent_level = (
-            max(
-                [
-                    self.read_m(f"wEnemyMon{i+1}Level")
-                    for i in range(self.read_m("wEnemyPartyCount"))
-                ]
-                + [0]
-            )
-            # - opp_base_level
+        opponent_level = max(
+            [0]
+            + [self.read_m(f"wEnemyMon{i+1}Level") for i in range(self.read_m("wEnemyPartyCount"))]
         )
+        # - opp_base_level
+
         self.max_opponent_level = max(0, self.max_opponent_level, opponent_level)
         return self.max_opponent_level
 
