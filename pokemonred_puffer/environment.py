@@ -1613,12 +1613,11 @@ class RedGymEnv(Env):
 
     def update_pokedex(self):
         # TODO: Make a hook
-        for i in range(0xD30A - 0xD2F7):
-            caught_mem = self.pyboy.memory[i + 0xD2F7]
-            seen_mem = self.pyboy.memory[i + 0xD30A]
-            for j in range(8):
-                self.caught_pokemon[8 * i + j] = 1 if caught_mem & (1 << j) else 0
-                self.seen_pokemon[8 * i + j] = 1 if seen_mem & (1 << j) else 0
+        size = 0xD30A - 0xD2F7
+        caught_mem = self.pyboy.memory[0xD2F7 : 0xD2F7 + size]
+        seen_mem = self.pyboy.memory[0xD30A : 0xD30A + size]
+        self.caught_pokemon = np.unpackbits(caught_mem)
+        self.seen_pokemon = np.unpackbits(seen_mem)
 
     def update_tm_hm_moves_obtained(self):
         # TODO: Make a hook
