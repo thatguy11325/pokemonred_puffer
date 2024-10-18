@@ -359,12 +359,11 @@ def train(
             db_filename = None
             if config.train.get("sqlite_wrapper", False):
                 db_filename = sqlite_db.name
-                conn = sqlite3.connect(db_filename)
-                cur = conn.cursor()
-                cur.execute(
-                    "CREATE TABLE states(env_id INT PRIMARY_KEY, pyboy_state BLOB, reset BOOLEAN);"
-                )
-                cur.close()
+                with sqlite3.connect(db_filename) as conn:
+                    cur = conn.cursor()
+                    cur.execute(
+                        "CREATE TABLE states(env_id INT PRIMARY_KEY, pyboy_state BLOB, reset BOOLEAN);"
+                    )
 
             vecenv = pufferlib.vector.make(
                 env_creator,
