@@ -14,37 +14,40 @@ class SqliteStateResetWrapper(gym.Wrapper):
         database: str | bytes | PathLike[str] | PathLike[bytes],
     ):
         super().__init__(env)
-        self.conn = sqlite3.connect(database)
-        self.cur = self.conn.cursor()
-        self.cur.execute(
-            """
-            INSERT INTO states(env_id, pyboy_state, reset)
-            VALUES(?, ?, ?)
-            """,
-            (self.env.unwrapped.env_id, b"", False),
-        )
+        self.database = database
+        with sqlite3.connect(database) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                INSERT INTO states(env_id, pyboy_state, reset)
+                VALUES(?, ?, ?)
+                """,
+                (self.env.unwrapped.env_id, b"", False),
+            )
 
     def reset(self, seed: int | None = None, options: dict[str, Any] | None = None):
-        reset, pyboy_state = self.cur.execute(
-            """
-            SELECT reset, pyboy_state
-            FROM states
-            WHERE env_id = ?
-            """,
-            (self.env.unwrapped.env_id,),
-        ).fetchone()
-        if reset:
-            if options:
-                options["state"] = pyboy_state
-            else:
-                options = {"state": pyboy_state}
-        res = self.env.reset(seed=seed, options=options)
-        self.cur.execute(
-            """
-            UPDATE states
-            SET reset = False
-            WHERE env_id = ?
-            """,
-            (self.env.unwrapped.env_id,),
-        )
+        with sqlite3.connect(self.database) as conn:
+            cur = conn.cursor()
+            reset, pyboy_state = cur.execute(
+                """
+                SELECT reset, pyboy_state
+                FROM states
+                WHERE env_id = ?
+                """,
+                (self.env.unwrapped.env_id,),
+            ).fetchone()
+            if reset:
+                if options:
+                    options["state"] = pyboy_state
+                else:
+                    options = {"state": pyboy_state}
+            res = self.env.reset(seed=seed, options=options)
+            cur.execute(
+                """
+                UPDATE states
+                SET reset = False
+                WHERE env_id = ?
+                """,
+                (self.env.unwrapped.env_id,),
+            )
         return res

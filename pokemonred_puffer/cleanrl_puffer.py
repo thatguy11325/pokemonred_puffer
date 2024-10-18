@@ -351,20 +351,24 @@ class CleanPuffeRL:
                         )
                     ]
                     if self.sqlite_db:
-                        self.cur.executemany(
-                            """
-                            UPDATE states
-                            SET state=?
-                            SET reset=?
-                            WHERE env_id=?
-                            """,
-                            tuple(
-                                [
-                                    (state, True, env_id)
-                                    for state, env_id in zip(new_states, self.event_tracker.keys())
-                                ]
-                            ),
-                        )
+                        with sqlite3.connect(self.sqlite_db) as conn:
+                            cur = conn.cursor()
+                            cur.executemany(
+                                """
+                                UPDATE states
+                                SET state=?
+                                SET reset=?
+                                WHERE env_id=?
+                                """,
+                                tuple(
+                                    [
+                                        (state, True, env_id)
+                                        for state, env_id in zip(
+                                            new_states, self.event_tracker.keys()
+                                        )
+                                    ]
+                                ),
+                            )
                         self.vecenv.async_reset()
                     if self.config.async_wrapper:
                         for key, state in zip(self.event_tracker.keys(), new_states):
