@@ -356,7 +356,7 @@ class CleanPuffeRL:
                             cur.executemany(
                                 """
                                 UPDATE states
-                                SET state=:state,
+                                SET pyboy_state=:state,
                                     reset=:reset
                                 WHERE env_id=:env_id
                                 """,
