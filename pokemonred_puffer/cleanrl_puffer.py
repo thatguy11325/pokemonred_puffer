@@ -356,13 +356,13 @@ class CleanPuffeRL:
                             cur.executemany(
                                 """
                                 UPDATE states
-                                SET state=?
-                                SET reset=?
-                                WHERE env_id=?
+                                SET state=:state
+                                SET reset=:reset
+                                WHERE env_id=:env_id
                                 """,
                                 tuple(
                                     [
-                                        (state, True, env_id)
+                                        {"state": state, "reset": True, "env_id": env_id}
                                         for state, env_id in zip(
                                             new_states, self.event_tracker.keys()
                                         )
