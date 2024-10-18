@@ -1616,8 +1616,8 @@ class RedGymEnv(Env):
         size = 0xD30A - 0xD2F7
         caught_mem = self.pyboy.memory[0xD2F7 : 0xD2F7 + size]
         seen_mem = self.pyboy.memory[0xD30A : 0xD30A + size]
-        self.caught_pokemon = np.unpackbits(caught_mem)
-        self.seen_pokemon = np.unpackbits(seen_mem)
+        self.caught_pokemon = np.unpackbits(np.array(caught_mem, dtype=np.uint8))
+        self.seen_pokemon = np.unpackbits(np.array(seen_mem, dtype=np.uint8))
 
     def update_tm_hm_moves_obtained(self):
         # TODO: Make a hook
