@@ -1722,7 +1722,11 @@ class RedGymEnv(Env):
 
     def get_required_events(self) -> set[str]:
         return (
-            set(self.events.get_events(REQUIRED_EVENTS))
+            set(
+                event
+                for event, v in zip(REQUIRED_EVENTS, self.events.get_events(REQUIRED_EVENTS))
+                if v
+            )
             | ({"rival3"} if (self.read_m("wSSAnne2FCurScript") == 4) else set())
             | (
                 {"game_corner_rocket"}
