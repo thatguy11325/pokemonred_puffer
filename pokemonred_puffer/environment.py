@@ -620,14 +620,19 @@ class RedGymEnv(Env):
                 "events": np.concatenate(
                     (
                         np.fromiter(self.events.get_events(EVENTS), dtype=np.uint8),
-                        [
-                            self.read_m("wSSAnne2FCurScript") == 4,  # rival 3
-                            self.missables.get_missable(
-                                "HS_GAME_CORNER_ROCKET"
-                            ),  # game corner rocket
-                            self.flags.get_bit("BIT_GAVE_SAFFRON_GUARDS_DRINK"),  # saffron guard
-                            self.flags.get_bit("BIT_GOT_LAPRAS"),  # got lapras
-                        ],
+                        np.array(
+                            [
+                                self.read_m("wSSAnne2FCurScript") == 4,  # rival 3
+                                self.missables.get_missable(
+                                    "HS_GAME_CORNER_ROCKET"
+                                ),  # game corner rocket
+                                self.flags.get_bit(
+                                    "BIT_GAVE_SAFFRON_GUARDS_DRINK"
+                                ),  # saffron guard
+                                self.flags.get_bit("BIT_GOT_LAPRAS"),  # got lapras
+                            ],
+                            dtype=np.uint8,
+                        ),
                     ),
                     dtype=np.uint8,
                 ),
