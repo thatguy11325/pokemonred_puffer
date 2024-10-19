@@ -1,5 +1,6 @@
 from ctypes import c_uint8, LittleEndianStructure, Union
 import re
+from typing import Iterator
 
 from pyboy import PyBoy
 
@@ -2588,6 +2589,13 @@ class EventFlags(Union):
         1 if true, 0 if false
         """
         return getattr(self.b, event_name)
+
+    def get_events(self, event_names: Iterator[str]) -> Iterator[int]:
+        """
+        1 if true, 0 if false
+        """
+        for event_name in event_names:
+            yield getattr(self.b, event_name)
 
     def set_event(self, event_name: str, value: bool):
         # This is O(N) but it's so rare that I'm not too worried about it
