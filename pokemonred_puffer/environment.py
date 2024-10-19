@@ -617,14 +617,18 @@ class RedGymEnv(Env):
                 "speed": np.array([self.party[i].Speed for i in range(6)], dtype=np.uint32),
                 "special": np.array([self.party[i].Special for i in range(6)], dtype=np.uint32),
                 "moves": np.array([self.party[i].Moves for i in range(6)], dtype=np.uint8),
-                "events": np.array(
-                    [self.events.get_event(event) for event in EVENTS]
-                    + [
-                        self.read_m("wSSAnne2FCurScript") == 4,  # rival 3
-                        self.missables.get_missable("HS_GAME_CORNER_ROCKET"),  # game corner rocket
-                        self.flags.get_bit("BIT_GAVE_SAFFRON_GUARDS_DRINK"),  # saffron guard
-                        self.flags.get_bit("BIT_GOT_LAPRAS"),  # got lapras
-                    ],
+                "events": np.concatenate(
+                    (
+                        np.fromiter(self.events.get_events(EVENTS), dtype=np.uint8),
+                        [
+                            self.read_m("wSSAnne2FCurScript") == 4,  # rival 3
+                            self.missables.get_missable(
+                                "HS_GAME_CORNER_ROCKET"
+                            ),  # game corner rocket
+                            self.flags.get_bit("BIT_GAVE_SAFFRON_GUARDS_DRINK"),  # saffron guard
+                            self.flags.get_bit("BIT_GOT_LAPRAS"),  # got lapras
+                        ],
+                    ),
                     dtype=np.uint8,
                 ),
             }
@@ -1613,9 +1617,13 @@ class RedGymEnv(Env):
 
     def update_pokedex(self):
         # TODO: Make a hook
-        size = 0xD30A - 0xD2F7
-        caught_mem = self.pyboy.memory[0xD2F7 : 0xD2F7 + size]
-        seen_mem = self.pyboy.memory[0xD30A : 0xD30A + size]
+        _, wPokedexOwned = self.pyboy.symbol_lookup("wPokedexOwned")
+        _, wPokedexOwnedEnd = self.pyboy.symbol_lookup("wPokedexOwnedEnd")
+        _, wPokedexSeen = self.pyboy.symbol_lookup("wPokedexSeen")
+        _, wPokedexSeenEnd = self.pyboy.symbol_lookup("wPokedexSeenEnd")
+
+        caught_mem = self.pyboy.memory[wPokedexOwned:wPokedexOwnedEnd]
+        seen_mem = self.pyboy.memory[wPokedexSeen:wPokedexSeenEnd]
         self.caught_pokemon = np.unpackbits(np.array(caught_mem, dtype=np.uint8))
         self.seen_pokemon = np.unpackbits(np.array(seen_mem, dtype=np.uint8))
 
@@ -1709,7 +1717,7 @@ class RedGymEnv(Env):
 
     def get_required_events(self) -> set[str]:
         return (
-            {event for event in REQUIRED_EVENTS if self.events.get_event(event)}
+            set(self.events.get_events(REQUIRED_EVENTS))
             | ({"rival3"} if (self.read_m("wSSAnne2FCurScript") == 4) else set())
             | (
                 {"game_corner_rocket"}

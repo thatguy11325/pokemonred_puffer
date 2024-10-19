@@ -376,20 +376,22 @@ class ObjectRewardRequiredEventsMapIds(BaselineRewardEnv):
         return (
             {
                 "event": self.reward_config["event"] * self.update_max_event_rew(),
-                "seen_pokemon": self.reward_config["seen_pokemon"] * sum(self.seen_pokemon),
-                "caught_pokemon": self.reward_config["caught_pokemon"] * sum(self.caught_pokemon),
-                "moves_obtained": self.reward_config["moves_obtained"] * sum(self.moves_obtained),
+                "seen_pokemon": self.reward_config["seen_pokemon"] * np.sum(self.seen_pokemon),
+                "caught_pokemon": self.reward_config["caught_pokemon"]
+                * np.sum(self.caught_pokemon),
+                "moves_obtained": self.reward_config["moves_obtained"]
+                * np.sum(self.moves_obtained),
                 "hm_count": self.reward_config["hm_count"] * self.get_hm_count(),
                 "level": self.reward_config["level"] * self.get_levels_reward(),
                 "badges": self.reward_config["badges"] * self.get_badges(),
-                "cut_coords": self.reward_config["cut_coords"] * sum(self.cut_coords.values()),
-                "cut_tiles": self.reward_config["cut_tiles"] * sum(self.cut_tiles.values()),
+                "cut_coords": self.reward_config["cut_coords"] * np.sum(self.cut_coords.values()),
+                "cut_tiles": self.reward_config["cut_tiles"] * np.sum(self.cut_tiles.values()),
                 "start_menu": self.reward_config["start_menu"] * self.seen_start_menu,
                 "pokemon_menu": self.reward_config["pokemon_menu"] * self.seen_pokemon_menu,
                 "stats_menu": self.reward_config["stats_menu"] * self.seen_stats_menu,
                 "bag_menu": self.reward_config["bag_menu"] * self.seen_bag_menu,
-                "explore_hidden_objs": sum(self.seen_hidden_objs.values()),
-                "explore_signs": sum(self.seen_signs.values())
+                "explore_hidden_objs": np.sum(self.seen_hidden_objs.values()),
+                "explore_signs": np.sum(self.seen_signs.values())
                 * self.reward_config["explore_signs"],
                 "seen_action_bag_menu": self.seen_action_bag_menu
                 * self.reward_config["seen_action_bag_menu"],
