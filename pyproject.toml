@@ -19,7 +19,7 @@ dependencies = [
     "omegaconf",
     "opencv-python",
     "pyboy>=2",
-    "pufferlib[cleanrl]>=1.0.0",
+    "pufferlib[cleanrl] @ git+https://github.com/PufferAI/PufferLib.git@1.0",
     "scikit-image",
     "torch>=2.4",
     "torchvision",
