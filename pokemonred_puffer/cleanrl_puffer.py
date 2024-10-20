@@ -375,7 +375,7 @@ class CleanPuffeRL:
                             # We connect each time just in case we block the wrappers
                             with sqlite3.connect(self.sqlite_db) as conn:
                                 cur = conn.cursor()
-                                resets = cur.executemany(
+                                resets = cur.execute(
                                     """
                                     SELECT reset, env_id
                                     FROM states
