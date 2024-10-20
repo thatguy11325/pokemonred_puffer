@@ -362,7 +362,7 @@ class CleanPuffeRL:
                                 """,
                                 tuple(
                                     [
-                                        {"state": state, "reset": True, "env_id": env_id}
+                                        {"state": state, "reset": 1, "env_id": env_id}
                                         for state, env_id in zip(
                                             new_states, self.event_tracker.keys()
                                         )
@@ -384,6 +384,18 @@ class CleanPuffeRL:
                             if all(not reset for reset, env_id in resets if env_id in key_set):
                                 break
                             time.sleep(0.5)
+                        # Flush any waiting workers
+                        while self.vecenv.waiting_workers:
+                            worker = self.vecenv.waiting_workers.pop(0)
+                            sem = self.vecenv.buf.semaphores[worker]
+                            if sem >= pufferlib.vector.MAIN:
+                                self.vecenv.ready_workers.append(worker)
+                            else:
+                                self.vecenv.waiting_workers.append(worker)
+                        self.vecenv.waiting_workers, self.vecenv.ready_workers = (
+                            self.vecenv.ready_workers,
+                            self.vecenv.waiting_workers,
+                        )
                     if self.config.async_wrapper:
                         for key, state in zip(self.event_tracker.keys(), new_states):
                             self.env_recv_queues[key].put(state)
