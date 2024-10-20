@@ -4,6 +4,7 @@ import pufferlib.pytorch
 import torch
 from torch import nn
 
+from pokemonred_puffer.data.events import EVENTS_IDXS
 from pokemonred_puffer.data.items import Items
 from pokemonred_puffer.environment import PIXEL_VALUES
 
@@ -91,6 +92,16 @@ class MultiConvolutionalPolicy(nn.Module):
         )
         self.register_buffer(
             "unpack_shift", torch.tensor([6, 4, 2, 0], dtype=torch.uint8), persistent=False
+        )
+        self.register_buffer(
+            "unpack_bytes_mask",
+            torch.tensor([0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1], dtype=torch.uint8),
+            persistent=False,
+        )
+        self.register_buffer(
+            "unpack_bytes_shift",
+            torch.tensor([7, 6, 5, 4, 3, 2, 1, 0], dtype=torch.uint8),
+            persistent=False,
         )
         # self.register_buffer("badge_buffer", torch.arange(8) + 1, persistent=False)
 
@@ -209,6 +220,19 @@ class MultiConvolutionalPolicy(nn.Module):
         # event_obs = (
         #     observations["events"].float() @ self.event_embeddings.weight
         # ) / self.event_embeddings.weight.shape[0]
+        events_obs = (
+            (
+                (
+                    (observations["events"].reshape((-1, 1)) & self.unpack_bytes_mask)
+                    >> self.unpack_bytes_shift
+                )
+                .flatten()
+                .reshape((observations["events"].shape[0], -1))[:, EVENTS_IDXS]
+            )
+            .float()
+            .squeeze(1)
+        )
+
         cat_obs = torch.cat(
             (
                 self.screen_network(image_observation.float() / 255.0).squeeze(1),
@@ -224,7 +248,11 @@ class MultiConvolutionalPolicy(nn.Module):
                 blackout_map_id.squeeze(1),
                 items.flatten(start_dim=1),
                 party_latent,
-                observations["events"].float().squeeze(1),
+                events_obs,
+                observations["rival_3"].float(),
+                observations["game_corner_rocket"].float(),
+                observations["saffron_guard"].float(),
+                observations["lapras"].float(),
             ),
             dim=-1,
         )
