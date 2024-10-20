@@ -70,8 +70,8 @@ class BaselineRewardEnv(RedGymEnv):
             - self.base_event_flags
             - int(
                 self.events.get_event("EVENT_BOUGHT_MUSEUM_TICKET"),
-                0,
-            )
+            ),
+            0,
         )
 
     def get_levels_reward(self):
