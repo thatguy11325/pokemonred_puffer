@@ -2611,6 +2611,11 @@ class EventFlags(Union):
 EVENTS = {
     event for event, _, _ in EventFlagsBits._fields_ if not re.search("EVENT_[0-9,A-F]{3}$", event)
 }
+EVENTS_IDXS = [
+    i
+    for i, (event, _, _) in enumerate(EventFlagsBits._fields_)
+    if not re.search("EVENT_[0-9,A-F]{3}$", event)
+]
 
 
 REQUIRED_EVENTS = {

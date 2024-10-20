@@ -18,7 +18,6 @@ from pyboy.utils import WindowEvent
 from pokemonred_puffer.data.elevators import NEXT_ELEVATORS
 from pokemonred_puffer.data.events import (
     EVENT_FLAGS_START,
-    EVENTS,
     EVENTS_FLAGS_LENGTH,
     MUSEUM_TICKET,
     REQUIRED_EVENTS,
@@ -212,7 +211,11 @@ class RedGymEnv(Env):
             "special": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint32),
             "moves": spaces.Box(low=0, high=0xA4, shape=(6, 4), dtype=np.uint8),
             # Add 4 for rival_3, game corner rocket, saffron guard and lapras
-            "events": spaces.Box(low=0, high=1, shape=(len(EVENTS) + 4,), dtype=np.uint8),
+            "events": spaces.Box(low=0, high=1, shape=(320,), dtype=np.uint8),
+            "rival_3": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
+            "game_corner_rocket": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
+            "saffron_guard": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
+            "lapras": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
         }
         if not self.skip_safari_zone:
             obs_dict["safari_steps"] = spaces.Box(low=0, high=502.0, shape=(1,), dtype=np.uint32)
@@ -617,25 +620,17 @@ class RedGymEnv(Env):
                 "speed": np.array([self.party[i].Speed for i in range(6)], dtype=np.uint32),
                 "special": np.array([self.party[i].Special for i in range(6)], dtype=np.uint32),
                 "moves": np.array([self.party[i].Moves for i in range(6)], dtype=np.uint8),
-                "events": np.concatenate(
-                    (
-                        np.fromiter(self.events.get_events(EVENTS), dtype=np.uint8),
-                        np.array(
-                            [
-                                self.read_m("wSSAnne2FCurScript") == 4,  # rival 3
-                                self.missables.get_missable(
-                                    "HS_GAME_CORNER_ROCKET"
-                                ),  # game corner rocket
-                                self.flags.get_bit(
-                                    "BIT_GAVE_SAFFRON_GUARDS_DRINK"
-                                ),  # saffron guard
-                                self.flags.get_bit("BIT_GOT_LAPRAS"),  # got lapras
-                            ],
-                            dtype=np.uint8,
-                        ),
-                    ),
-                    dtype=np.uint8,
-                ),
+                "events": np.array(self.events.asbytes, dtype=np.uint8),
+                "rival_3": np.array(
+                    self.read_m("wSSAnne2FCurScript") == 4, dtype=np.uint8
+                ),  # rival 3
+                "game_corner_rocket": np.array(
+                    self.missables.get_missable("HS_GAME_CORNER_ROCKET"), np.uint8
+                ),  # game corner rocket
+                "saffron_guard": np.array(
+                    self.flags.get_bit("BIT_GAVE_SAFFRON_GUARDS_DRINK"), np.uint8
+                ),  # saffron guard
+                "lapras": np.array(self.flags.get_bit("BIT_GOT_LAPRAS"), np.uint8),  # got lapras
             }
             | (
                 {}
