@@ -69,7 +69,7 @@ class BaselineRewardEnv(RedGymEnv):
             np.sum(self.events.get_events(EVENTS))
             - self.base_event_flags
             - int(
-                self.get_event("EVENT_BOUGHT_MUSEUM_TICKET"),
+                self.events.get_event("EVENT_BOUGHT_MUSEUM_TICKET"),
                 0,
             )
         )
