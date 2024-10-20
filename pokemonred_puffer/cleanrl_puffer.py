@@ -381,9 +381,9 @@ class CleanPuffeRL:
                                     FROM states
                                     """,
                                 ).fetchall()
-                                if all(not reset for reset, env_id in resets if env_id in key_set):
-                                    break
-                                time.sleep(0.5)
+                            if all(not reset for reset, env_id in resets if env_id in key_set):
+                                break
+                            time.sleep(0.5)
                     if self.config.async_wrapper:
                         for key, state in zip(self.event_tracker.keys(), new_states):
                             self.env_recv_queues[key].put(state)
