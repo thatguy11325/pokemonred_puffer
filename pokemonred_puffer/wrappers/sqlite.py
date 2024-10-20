@@ -22,7 +22,7 @@ class SqliteStateResetWrapper(gym.Wrapper):
                 INSERT INTO states(env_id, pyboy_state, reset)
                 VALUES(?, ?, ?)
                 """,
-                (self.env.unwrapped.env_id, b"", False),
+                (self.env.unwrapped.env_id, b"", 0),
             )
         print(f"Initialized sqlite row {self.env.unwrapped.env_id}")
 
@@ -46,7 +46,7 @@ class SqliteStateResetWrapper(gym.Wrapper):
             cur.execute(
                 """
                 UPDATE states
-                SET reset = False
+                SET reset = 0 
                 WHERE env_id = ?
                 """,
                 (self.env.unwrapped.env_id,),
