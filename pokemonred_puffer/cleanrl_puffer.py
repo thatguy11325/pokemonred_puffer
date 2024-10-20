@@ -370,20 +370,18 @@ class CleanPuffeRL:
                                 ),
                             )
                         self.vecenv.async_reset()
-                        with sqlite3.connect(self.sqlite_db) as conn:
-                            cur = conn.cursor()
-                            while True:
+                        key_set = self.event_tracker.keys()
+                        while True:
+                            # We connect each time just in case we block the wrappers
+                            with sqlite3.connect(self.sqlite_db) as conn:
+                                cur = conn.cursor()
                                 resets = cur.executemany(
                                     """
-                                    SELECT reset
+                                    SELECT reset, env_id
                                     FROM states
-                                    WHERE env_id=:env_id
                                     """,
-                                    tuple(
-                                        [{"env_id": env_id} for env_id in self.event_tracker.keys()]
-                                    ),
                                 ).fetchall()
-                                if all(not reset for reset in resets):
+                                if all(not reset for reset, env_id in resets if env_id in key_set):
                                     break
                                 time.sleep(0.5)
                     if self.config.async_wrapper:
