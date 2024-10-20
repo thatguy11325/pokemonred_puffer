@@ -371,6 +371,7 @@ class CleanPuffeRL:
                             )
                         self.vecenv.async_reset()
                         with sqlite3.connect(self.sqlite_db) as conn:
+                            cur = conn.cursor()
                             while True:
                                 resets = cur.executemany(
                                     """
