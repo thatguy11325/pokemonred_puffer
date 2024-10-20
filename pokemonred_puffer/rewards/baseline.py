@@ -1,14 +1,10 @@
 import numpy as np
 from omegaconf import DictConfig, OmegaConf
 
-from pokemonred_puffer.data.events import REQUIRED_EVENTS
+from pokemonred_puffer.data.events import EVENTS, REQUIRED_EVENTS
 from pokemonred_puffer.data.items import REQUIRED_ITEMS, USEFUL_ITEMS
 from pokemonred_puffer.data.tilesets import Tilesets
-from pokemonred_puffer.environment import (
-    EVENT_FLAGS_START,
-    EVENTS_FLAGS_LENGTH,
-    RedGymEnv,
-)
+from pokemonred_puffer.environment import RedGymEnv
 
 
 MUSEUM_TICKET = (0xD754, 0)
@@ -70,15 +66,12 @@ class BaselineRewardEnv(RedGymEnv):
     def get_all_events_reward(self):
         # adds up all event flags, exclude museum ticket
         return max(
-            sum(
-                [
-                    self.read_m(i).bit_count()
-                    for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
-                ]
-            )
+            np.sum(self.events.get_events(EVENTS))
             - self.base_event_flags
-            - int(self.read_bit(*MUSEUM_TICKET)),
-            0,
+            - int(
+                self.get_event("EVENT_BOUGHT_MUSEUM_TICKET"),
+                0,
+            )
         )
 
     def get_levels_reward(self):
