@@ -387,6 +387,10 @@ class CleanPuffeRL:
                             self.vecenv.ready_workers.append(worker)
                         else:
                             self.vecenv.waiting_workers.append(worker)
+                    self.vecenv.ready_workers, self.vecenv.waiting_workers = (
+                        self.vecenv.waiting_workers,
+                        self.vecenv.ready_workers,
+                    )
 
                     print(
                         f"State migration to {self.archive_path}/{str(hash(new_state_key))} complete"
