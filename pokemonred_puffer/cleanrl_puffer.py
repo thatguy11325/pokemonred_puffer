@@ -376,6 +376,17 @@ class CleanPuffeRL:
                         for key in self.event_tracker.keys():
                             # print(f"\tWaiting for message from env-id {key}")
                             self.env_send_queues[key].get()
+                    # Alternative: reopoen sqlite3 connection with
+                    # SELECT count(*) FROM states WHERE reset=False
+                    # == SELECT count(*)
+                    # Flush any waiting workers
+                    while self.vecenv.waiting_workers:
+                        worker = self.vecenv.waiting_workers.pop(0)
+                        sem = self.vecenv.buf.semaphores[worker]
+                        if sem >= pufferlib.vector.MAIN:
+                            self.vecenv.ready_workers.append(worker)
+                        else:
+                            self.vecenv.waiting_workers.append(worker)
 
                     print(
                         f"State migration to {self.archive_path}/{str(hash(new_state_key))} complete"
