@@ -732,7 +732,7 @@ class RedGymEnv(Env):
             info["required_count"] = len(required_events) + len(required_items)
             info["env_id"] = self.env_id
             info = info | self.agent_stats(action)
-        elif self.step_count % self.log_frequency == 0:
+        elif self.step_count != 0 and self.step_count % self.log_frequency == 0:
             info = info | self.agent_stats(action)
         self.required_events = required_events
         self.required_items = required_items
