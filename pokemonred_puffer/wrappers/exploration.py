@@ -5,7 +5,7 @@ import numpy as np
 
 from omegaconf import DictConfig
 from pokemonred_puffer.environment import RedGymEnv
-from pokemonred_puffer.global_map import GLOBAL_MAP_SHAPE, local_to_global
+from pokemonred_puffer.global_map import local_to_global
 
 
 class LRUCache:
@@ -115,8 +115,8 @@ class OnResetExplorationWrapper(gym.Wrapper):
         if self.env.unwrapped.step_count >= self.env.unwrapped.get_max_steps():
             if (self.counter + random.randint(0, self.jitter)) >= self.full_reset_frequency:
                 self.counter = 0
-                self.env.unwrapped.explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
-                self.env.unwrapped.cut_explore_map = np.zeros(GLOBAL_MAP_SHAPE, dtype=np.float32)
+                self.env.unwrapped.explore_map *= 0
+                self.env.unwrapped.cut_explore_map *= 0
                 self.env.unwrapped.seen_coords.clear()
                 self.env.unwrapped.seen_map_ids *= 0
                 self.env.unwrapped.seen_npcs.clear()

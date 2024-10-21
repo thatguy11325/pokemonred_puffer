@@ -738,6 +738,9 @@ class RedGymEnv(Env):
 
         self.step_count += 1
 
+        if self.step_count >= self.get_max_steps():
+            self.step_count = 0
+
         # cut mon check
         reset = False
         if not self.party_has_cut_capable_mon():
