@@ -353,7 +353,7 @@ def train(
 
         sqlite_context = nullcontext
         if config.train.get("sqlite_wrapper", False):
-            sqlite_context = NamedTemporaryFile
+            sqlite_context = functools.partial(NamedTemporaryFile, suffix="sqlite")
 
         with sqlite_context() as sqlite_db:
             db_filename = None

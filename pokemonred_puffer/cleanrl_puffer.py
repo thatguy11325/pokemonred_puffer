@@ -206,10 +206,6 @@ class CleanPuffeRL:
             self.archive_path.mkdir(exist_ok=False)
             print(f"Will archive states to {self.archive_path}")
 
-        if self.sqlite_db:
-            self.conn = sqlite3.connect(self.sqlite_db)
-            self.cur = self.conn.cursor()
-
     @pufferlib.utils.profile
     def evaluate(self):
         # states are managed separately so dont worry about deleting them
@@ -384,18 +380,6 @@ class CleanPuffeRL:
                             if all(not reset for reset, env_id in resets if env_id in key_set):
                                 break
                             time.sleep(0.5)
-                        # Flush any waiting workers
-                        while self.vecenv.waiting_workers:
-                            worker = self.vecenv.waiting_workers.pop(0)
-                            sem = self.vecenv.buf.semaphores[worker]
-                            if sem >= pufferlib.vector.MAIN:
-                                self.vecenv.ready_workers.append(worker)
-                            else:
-                                self.vecenv.waiting_workers.append(worker)
-                        self.vecenv.waiting_workers, self.vecenv.ready_workers = (
-                            self.vecenv.ready_workers,
-                            self.vecenv.waiting_workers,
-                        )
                     if self.config.async_wrapper:
                         for key, state in zip(self.event_tracker.keys(), new_states):
                             self.env_recv_queues[key].put(state)
