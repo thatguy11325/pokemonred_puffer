@@ -1,4 +1,5 @@
 from os import PathLike
+import os
 import sqlite3
 from typing import Any
 
@@ -19,10 +20,10 @@ class SqliteStateResetWrapper(gym.Wrapper):
             cur = conn.cursor()
             cur.execute(
                 """
-                INSERT INTO states(env_id, pyboy_state, reset)
-                VALUES(?, ?, ?)
+                INSERT INTO states(env_id, pyboy_state, reset, pid)
+                VALUES(?, ?, ?, ?)
                 """,
-                (self.env.unwrapped.env_id, b"", 0),
+                (self.env.unwrapped.env_id, b"", 0, os.getpid()),
             )
         print(f"Initialized sqlite row {self.env.unwrapped.env_id}")
 
