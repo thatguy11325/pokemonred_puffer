@@ -657,6 +657,9 @@ class RedGymEnv(Env):
         return False
 
     def step(self, action):
+        if self.step_count >= self.get_max_steps():
+            self.step_count = 0
+
         if self.save_video and self.step_count == 0:
             self.start_video()
 
@@ -737,9 +740,6 @@ class RedGymEnv(Env):
         obs = self._get_obs()
 
         self.step_count += 1
-
-        if self.step_count >= self.get_max_steps():
-            self.step_count = 0
 
         # cut mon check
         reset = False
