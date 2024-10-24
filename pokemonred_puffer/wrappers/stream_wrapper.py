@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 
 import gymnasium as gym
 import websockets
@@ -14,10 +15,7 @@ class StreamWrapper(gym.Wrapper):
 
         self.user = config.user
         self.ws_address = "wss://transdimensional.xyz/broadcast"
-        self.stream_metadata = {
-            "user": self.user,
-            "env_id": self.env_id,
-        }
+        self.stream_metadata = {"user": self.user, "env_id": self.env_id, "extra": os.getpid()}
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         self.websocket = self.loop.run_until_complete(self.establish_wc_connection())
