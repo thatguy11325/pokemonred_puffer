@@ -130,7 +130,7 @@ train:
   pool_kernel: [0]
   load_optimizer_state: False
   use_rnn: True
-  async_wrapper: True
+  async_wrapper: False
   sqlite_wrapper: True
   archive_states: True
   swarm: True
