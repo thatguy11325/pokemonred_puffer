@@ -5,7 +5,7 @@ wandb:
 
 debug:
   env:
-    headless: True
+    headless: False
     stream_wrapper: False
     init_state: "victory_road_5"
     state_dir: pyboy_states
@@ -25,13 +25,13 @@ debug:
     num_envs: 1
     envs_per_worker: 1
     num_workers: 1
-    env_batch_size: 4
+    env_batch_size: 128
     zero_copy: False
-    batch_size: 4
-    minibatch_size: 4
+    batch_size: 1024
+    minibatch_size: 128
     batch_rows: 4
     bptt_horizon: 2
-    total_timesteps: 16
+    total_timesteps: 1_000_000
     save_checkpoint: True
     checkpoint_interval: 4
     save_overlay: True
@@ -40,6 +40,7 @@ debug:
     env_pool: False
     load_optimizer_state: False
     async_wrapper: False
+    sqlite_wrapper: True
     archive_states: False
 
 env:
@@ -130,6 +131,7 @@ train:
   load_optimizer_state: False
   use_rnn: True
   async_wrapper: True
+  sqlite_wrapper: True
   archive_states: True
   swarm: True
 

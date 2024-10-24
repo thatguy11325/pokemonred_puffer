@@ -18,7 +18,6 @@ from pyboy.utils import WindowEvent
 from pokemonred_puffer.data.elevators import NEXT_ELEVATORS
 from pokemonred_puffer.data.events import (
     EVENT_FLAGS_START,
-    EVENTS,
     EVENTS_FLAGS_LENGTH,
     MUSEUM_TICKET,
     REQUIRED_EVENTS,
@@ -212,7 +211,11 @@ class RedGymEnv(Env):
             "special": spaces.Box(low=0, high=714, shape=(6,), dtype=np.uint32),
             "moves": spaces.Box(low=0, high=0xA4, shape=(6, 4), dtype=np.uint8),
             # Add 4 for rival_3, game corner rocket, saffron guard and lapras
-            "events": spaces.Box(low=0, high=1, shape=(len(EVENTS) + 4,), dtype=np.uint8),
+            "events": spaces.Box(low=0, high=1, shape=(320,), dtype=np.uint8),
+            "rival_3": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
+            "game_corner_rocket": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
+            "saffron_guard": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
+            "lapras": spaces.Box(low=0, high=1, shape=(1,), dtype=np.uint8),
         }
         if not self.skip_safari_zone:
             obs_dict["safari_steps"] = spaces.Box(low=0, high=502.0, shape=(1,), dtype=np.uint32)
@@ -280,6 +283,7 @@ class RedGymEnv(Env):
             self.sign_hook,
             None,
         )
+        self.reset_count = 0
 
     def setup_disable_wild_encounters(self):
         bank, addr = self.pyboy.symbol_lookup("TryDoWildEncounter.gotWildEncounterType")
@@ -304,32 +308,22 @@ class RedGymEnv(Env):
         infos = {}
         self.explore_map_dim = 384
         if self.first or options.get("state", None) is not None:
-            self.recent_screens = deque()
-            self.recent_actions = deque()
             # We only init seen hidden objs once cause they can only be found once!
-            self.a_press = set()
             if options.get("state", None) is not None:
                 self.pyboy.load_state(io.BytesIO(options["state"]))
-                self.reset_count += 1
             else:
                 with open(self.init_state_path, "rb") as f:
                     self.pyboy.load_state(f)
-                self.reset_count = 0
+
+                self.events = EventFlags(self.pyboy)
+                self.missables = MissableFlags(self.pyboy)
+                self.flags = Flags(self.pyboy)
+                self.required_events = self.get_required_events()
+                self.required_items = self.get_required_items()
                 self.base_event_flags = sum(
                     self.read_m(i).bit_count()
                     for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
                 )
-                # A bit of duplicate code. Blah.
-                self.events = EventFlags(self.pyboy)
-                self.missables = MissableFlags(self.pyboy)
-                self.flags = Flags(self.pyboy)
-                self.party = PartyMons(self.pyboy)
-                self.required_events = self.get_required_events()
-                self.required_items = self.get_required_items()
-                self.seen_pokemon = np.zeros(152, dtype=np.uint8)
-                self.caught_pokemon = np.zeros(152, dtype=np.uint8)
-                self.moves_obtained = np.zeros(0xA5, dtype=np.uint8)
-                self.pokecenters = np.zeros(252, dtype=np.uint8)
 
                 if self.save_state:
                     state = io.BytesIO()
@@ -348,24 +342,27 @@ class RedGymEnv(Env):
             # if not seed:
             #     seed = random.randint(0, 4096)
             #  self.pyboy.tick(seed, render=False)
-        else:
-            self.reset_count += 1
-
-        self.recent_screens.clear()
-        self.recent_actions.clear()
-        self.a_press.clear()
-        self.seen_pokemon.fill(0)
-        self.caught_pokemon.fill(0)
-        self.moves_obtained.fill(0)
-        self.explore_map *= 0
-        self.reward_explore_map *= 0
-        self.cut_explore_map *= 0
-        self.reset_mem()
+        self.reset_count += 1
 
         self.events = EventFlags(self.pyboy)
         self.missables = MissableFlags(self.pyboy)
         self.flags = Flags(self.pyboy)
         self.party = PartyMons(self.pyboy)
+        self.required_events = self.get_required_events()
+        self.required_items = self.get_required_items()
+        self.seen_pokemon = np.zeros(152, dtype=np.uint8)
+        self.caught_pokemon = np.zeros(152, dtype=np.uint8)
+        self.moves_obtained = np.zeros(0xA5, dtype=np.uint8)
+        self.pokecenters = np.zeros(252, dtype=np.uint8)
+
+        self.recent_screens = deque()
+        self.recent_actions = deque()
+        self.a_press = set()
+        self.explore_map *= 0
+        self.reward_explore_map *= 0
+        self.cut_explore_map *= 0
+        self.reset_mem()
+
         self.update_pokedex()
         self.update_tm_hm_moves_obtained()
         self.party_size = self.read_m("wPartyCount")
@@ -375,8 +372,6 @@ class RedGymEnv(Env):
         self.levels_satisfied = False
         self.base_explore = 0
         self.max_opponent_level = 0
-        self.required_events = self.get_required_events()
-        self.required_items = self.get_required_items()
         self.max_level_rew = 0
         self.max_level_sum = 0
         self.last_health = 1
@@ -625,16 +620,17 @@ class RedGymEnv(Env):
                 "speed": np.array([self.party[i].Speed for i in range(6)], dtype=np.uint32),
                 "special": np.array([self.party[i].Special for i in range(6)], dtype=np.uint32),
                 "moves": np.array([self.party[i].Moves for i in range(6)], dtype=np.uint8),
-                "events": np.array(
-                    [self.events.get_event(event) for event in EVENTS]
-                    + [
-                        self.read_m("wSSAnne2FCurScript") == 4,  # rival 3
-                        self.missables.get_missable("HS_GAME_CORNER_ROCKET"),  # game corner rocket
-                        self.flags.get_bit("BIT_GAVE_SAFFRON_GUARDS_DRINK"),  # saffron guard
-                        self.flags.get_bit("BIT_GOT_LAPRAS"),  # got lapras
-                    ],
-                    dtype=np.uint8,
-                ),
+                "events": np.array(self.events.asbytes, dtype=np.uint8),
+                "rival_3": np.array(
+                    self.read_m("wSSAnne2FCurScript") == 4, dtype=np.uint8
+                ),  # rival 3
+                "game_corner_rocket": np.array(
+                    self.missables.get_missable("HS_GAME_CORNER_ROCKET"), np.uint8
+                ),  # game corner rocket
+                "saffron_guard": np.array(
+                    self.flags.get_bit("BIT_GAVE_SAFFRON_GUARDS_DRINK"), np.uint8
+                ),  # saffron guard
+                "lapras": np.array(self.flags.get_bit("BIT_GOT_LAPRAS"), np.uint8),  # got lapras
             }
             | (
                 {}
@@ -661,6 +657,9 @@ class RedGymEnv(Env):
         return False
 
     def step(self, action):
+        if self.step_count >= self.get_max_steps():
+            self.step_count = 0
+
         if self.save_video and self.step_count == 0:
             self.start_video()
 
@@ -733,7 +732,7 @@ class RedGymEnv(Env):
             info["required_count"] = len(required_events) + len(required_items)
             info["env_id"] = self.env_id
             info = info | self.agent_stats(action)
-        elif self.step_count % self.log_frequency == 0:
+        elif self.step_count != 0 and self.step_count % self.log_frequency == 0:
             info = info | self.agent_stats(action)
         self.required_events = required_events
         self.required_items = required_items
@@ -741,13 +740,9 @@ class RedGymEnv(Env):
         obs = self._get_obs()
 
         self.step_count += 1
-        reset = (
-            self.step_count >= self.get_max_steps()
-            # or
-            # self.caught_pokemon[6] == 1  # squirtle
-        )
 
         # cut mon check
+        reset = False
         if not self.party_has_cut_capable_mon():
             reset = True
             self.first = True
@@ -1605,16 +1600,12 @@ class RedGymEnv(Env):
 
     def update_max_op_level(self):
         # opp_base_level = 5
-        opponent_level = (
-            max(
-                [
-                    self.read_m(f"wEnemyMon{i+1}Level")
-                    for i in range(self.read_m("wEnemyPartyCount"))
-                ]
-                + [0]
-            )
-            # - opp_base_level
+        opponent_level = max(
+            [0]
+            + [self.read_m(f"wEnemyMon{i+1}Level") for i in range(self.read_m("wEnemyPartyCount"))]
         )
+        # - opp_base_level
+
         self.max_opponent_level = max(0, self.max_opponent_level, opponent_level)
         return self.max_opponent_level
 
@@ -1629,12 +1620,15 @@ class RedGymEnv(Env):
 
     def update_pokedex(self):
         # TODO: Make a hook
-        for i in range(0xD30A - 0xD2F7):
-            caught_mem = self.pyboy.memory[i + 0xD2F7]
-            seen_mem = self.pyboy.memory[i + 0xD30A]
-            for j in range(8):
-                self.caught_pokemon[8 * i + j] = 1 if caught_mem & (1 << j) else 0
-                self.seen_pokemon[8 * i + j] = 1 if seen_mem & (1 << j) else 0
+        _, wPokedexOwned = self.pyboy.symbol_lookup("wPokedexOwned")
+        _, wPokedexOwnedEnd = self.pyboy.symbol_lookup("wPokedexOwnedEnd")
+        _, wPokedexSeen = self.pyboy.symbol_lookup("wPokedexSeen")
+        _, wPokedexSeenEnd = self.pyboy.symbol_lookup("wPokedexSeenEnd")
+
+        caught_mem = self.pyboy.memory[wPokedexOwned:wPokedexOwnedEnd]
+        seen_mem = self.pyboy.memory[wPokedexSeen:wPokedexSeenEnd]
+        self.caught_pokemon = np.unpackbits(np.array(caught_mem, dtype=np.uint8))
+        self.seen_pokemon = np.unpackbits(np.array(seen_mem, dtype=np.uint8))
 
     def update_tm_hm_moves_obtained(self):
         # TODO: Make a hook
@@ -1726,7 +1720,11 @@ class RedGymEnv(Env):
 
     def get_required_events(self) -> set[str]:
         return (
-            {event for event in REQUIRED_EVENTS if self.events.get_event(event)}
+            set(
+                event
+                for event, v in zip(REQUIRED_EVENTS, self.events.get_events(REQUIRED_EVENTS))
+                if v
+            )
             | ({"rival3"} if (self.read_m("wSSAnne2FCurScript") == 4) else set())
             | (
                 {"game_corner_rocket"}

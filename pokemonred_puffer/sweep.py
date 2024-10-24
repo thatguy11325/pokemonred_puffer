@@ -163,7 +163,7 @@ def launch_sweep(
                             carbs.observe(obs_in)
                             # Because wandb stages the artifacts we have to keep these files
                             # dangling around wasting good disk space.
-                            carbs.save_to_file(hash(tuple(finished)) + ".pt", upload_to_wandb=True)
+                            # carbs.save_to_file(hash(tuple(finished)) + ".pt", upload_to_wandb=True)
                 elif run["state"] == RunState.pending:
                     print(f"PENDING RUN FOUND {run['name']}")
         sweep.print_status()

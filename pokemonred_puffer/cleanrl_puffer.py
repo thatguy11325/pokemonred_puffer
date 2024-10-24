@@ -5,6 +5,7 @@ from functools import partial
 import os
 import pathlib
 import random
+import sqlite3
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
@@ -129,6 +130,7 @@ class CleanPuffeRL:
     policy: nn.Module
     env_send_queues: list[Queue]
     env_recv_queues: list[Queue]
+    sqlite_db: str | None
     wandb_client: wandb.wandb_sdk.wandb_run.Run | None = None
     profile: Profile = field(default_factory=lambda: Profile())
     losses: Losses = field(default_factory=lambda: Losses())
@@ -288,7 +290,7 @@ class CleanPuffeRL:
             # progressing
             # env id in async queues is the index within self.infos - self.config.num_envs + 1
             if (
-                self.config.async_wrapper
+                (self.config.async_wrapper or self.config.sqlite_wrapper)
                 and hasattr(self.config, "swarm")
                 and self.config.swarm
                 and "required_count" in self.infos
@@ -338,17 +340,53 @@ class CleanPuffeRL:
                     # Need a way not to reset the env id counter for the driver env
                     # Until then env ids are 1-indexed
                     print(f"\tNew events ({len(new_state_key)}): {new_state_key}")
-                    for key in self.event_tracker.keys():
-                        new_state = random.choice(self.states[new_state_key])
+                    new_states = [
+                        state
+                        for state in random.choices(
+                            self.states[new_state_key], k=len(self.event_tracker.keys())
+                        )
+                    ]
+                    if self.sqlite_db:
+                        with sqlite3.connect(self.sqlite_db) as conn:
+                            cur = conn.cursor()
+                            cur.executemany(
+                                """
+                                UPDATE states
+                                SET pyboy_state=:state,
+                                    reset=:reset
+                                WHERE env_id=:env_id
+                                """,
+                                tuple(
+                                    [
+                                        {"state": state, "reset": 1, "env_id": env_id}
+                                        for state, env_id in zip(
+                                            new_states, self.event_tracker.keys()
+                                        )
+                                    ]
+                                ),
+                            )
+                        self.vecenv.async_reset()
+                        key_set = self.event_tracker.keys()
+                        while True:
+                            # We connect each time just in case we block the wrappers
+                            with sqlite3.connect(self.sqlite_db) as conn:
+                                cur = conn.cursor()
+                                resets = cur.execute(
+                                    """
+                                    SELECT reset, env_id
+                                    FROM states
+                                    """,
+                                ).fetchall()
+                            if all(not reset for reset, env_id in resets if env_id in key_set):
+                                break
+                            time.sleep(0.5)
+                    if self.config.async_wrapper:
+                        for key, state in zip(self.event_tracker.keys(), new_states):
+                            self.env_recv_queues[key].put(state)
+                        for key in self.event_tracker.keys():
+                            # print(f"\tWaiting for message from env-id {key}")
+                            self.env_send_queues[key].get()
 
-                        self.env_recv_queues[key].put(new_state)
-                        # Now copy the hidden state over
-                        # This may be a little slow, but so is this whole process
-                        # self.next_lstm_state[0][:, i, :] = self.next_lstm_state[0][:, new_state, :]
-                        # self.next_lstm_state[1][:, i, :] = self.next_lstm_state[1][:, new_state, :]
-                    for key in self.event_tracker.keys():
-                        # print(f"\tWaiting for message from env-id {key}")
-                        self.env_send_queues[key].get()
                     print(
                         f"State migration to {self.archive_path}/{str(hash(new_state_key))} complete"
                     )

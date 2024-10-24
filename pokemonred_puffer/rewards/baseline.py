@@ -1,14 +1,10 @@
 import numpy as np
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 
-from pokemonred_puffer.data.events import REQUIRED_EVENTS
+from pokemonred_puffer.data.events import EVENTS, REQUIRED_EVENTS
 from pokemonred_puffer.data.items import REQUIRED_ITEMS, USEFUL_ITEMS
 from pokemonred_puffer.data.tilesets import Tilesets
-from pokemonred_puffer.environment import (
-    EVENT_FLAGS_START,
-    EVENTS_FLAGS_LENGTH,
-    RedGymEnv,
-)
+from pokemonred_puffer.environment import RedGymEnv
 
 
 MUSEUM_TICKET = (0xD754, 0)
@@ -17,7 +13,7 @@ MUSEUM_TICKET = (0xD754, 0)
 class BaselineRewardEnv(RedGymEnv):
     def __init__(self, env_config: DictConfig, reward_config: DictConfig):
         super().__init__(env_config)
-        self.reward_config = reward_config
+        self.reward_config = OmegaConf.to_object(reward_config)
         self.max_event_rew = 0
 
     # TODO: make the reward weights configurable
@@ -70,14 +66,11 @@ class BaselineRewardEnv(RedGymEnv):
     def get_all_events_reward(self):
         # adds up all event flags, exclude museum ticket
         return max(
-            sum(
-                [
-                    self.read_m(i).bit_count()
-                    for i in range(EVENT_FLAGS_START, EVENT_FLAGS_START + EVENTS_FLAGS_LENGTH)
-                ]
-            )
+            np.sum(self.events.get_events(EVENTS))
             - self.base_event_flags
-            - int(self.read_bit(*MUSEUM_TICKET)),
+            - int(
+                self.events.get_event("EVENT_BOUGHT_MUSEUM_TICKET"),
+            ),
             0,
         )
 
@@ -376,9 +369,11 @@ class ObjectRewardRequiredEventsMapIds(BaselineRewardEnv):
         return (
             {
                 "event": self.reward_config["event"] * self.update_max_event_rew(),
-                "seen_pokemon": self.reward_config["seen_pokemon"] * sum(self.seen_pokemon),
-                "caught_pokemon": self.reward_config["caught_pokemon"] * sum(self.caught_pokemon),
-                "moves_obtained": self.reward_config["moves_obtained"] * sum(self.moves_obtained),
+                "seen_pokemon": self.reward_config["seen_pokemon"] * np.sum(self.seen_pokemon),
+                "caught_pokemon": self.reward_config["caught_pokemon"]
+                * np.sum(self.caught_pokemon),
+                "moves_obtained": self.reward_config["moves_obtained"]
+                * np.sum(self.moves_obtained),
                 "hm_count": self.reward_config["hm_count"] * self.get_hm_count(),
                 "level": self.reward_config["level"] * self.get_levels_reward(),
                 "badges": self.reward_config["badges"] * self.get_badges(),
