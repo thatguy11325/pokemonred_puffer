@@ -4,6 +4,7 @@ env:
       min: 10240
       max: 81920
       is_integer: True
+      scale: 1000
   map_id_scalefactor:
     carbs.utils.LogSpace:
       min: 0.001
@@ -15,6 +16,7 @@ train:
       min: 500_000_000
       max: 10_000_000_000
       is_integer: True
+      scale: 1_000_000
   learning_rate:
     carbs.utils.LogSpace:
       min: 1.0e-5
