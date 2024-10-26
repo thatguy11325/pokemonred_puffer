@@ -1,5 +1,6 @@
 import json
 import math
+import multiprocessing as mp
 import os
 from typing import Annotated
 
@@ -104,7 +105,12 @@ def launch_sweep(
             sweep={
                 "name": sweep_name,
                 "controller": {"type": "local"},
-                "parameters": {},
+                "parameters": {p.name: {"min": p.space.min, "max": p.space.max} for p in params},
+                "metric": {
+                    "name": "environment/stats/required_count",
+                    "goal": "maximize",
+                    "goal_value": 100,
+                },
                 "command": ["${args_json}"],
             },
             entity=base_config.wandb.entity,
@@ -130,7 +136,7 @@ def launch_sweep(
         sweep._step()
         if not (sweep._controller and sweep._controller.get("schedule")):
             suggestion = carbs.suggest()
-            run = sweeps.SweepRun(config={"x": {"value": suggestion.suggestion}})
+            run = sweeps.SweepRun(config=suggestion.suggestion)
             sweep.schedule(run)
         # without this nothing updates...
         sweep_obj = sweep._sweep_obj
@@ -155,7 +161,7 @@ def launch_sweep(
                             and "performance/uptime" in summary_metrics
                         ):
                             obs_in = ObservationInParam(
-                                input=json.loads(run["config"])["x"]["value"],
+                                input=json.loads(run["config"]),
                                 # TODO: try out other stats like required count
                                 output=summary_metrics["environment/stats/required_count"],
                                 cost=summary_metrics["performance/uptime"],
@@ -179,21 +185,23 @@ def launch_agent(
     debug: bool = False,
 ):
     def _fn():
-        import torch
-
-        torch.compiler.reset()
-
-        agent_config: DictConfig = OmegaConf.load(os.environ["WANDB_SWEEP_PARAM_PATH"]).x.value
+        agent_config: DictConfig = OmegaConf.load(os.environ["WANDB_SWEEP_PARAM_PATH"])
         agent_config = update_base_config(base_config, agent_config)
         train.train(config=agent_config, debug=debug, track=True)
 
-    wandb.agent(
-        sweep_id=sweep_id,
-        entity=base_config.wandb.entity,
-        project=base_config.wandb.project,
-        function=_fn,
-        count=99999,
-    )
+    for _ in range(99999):
+        proc = mp.Process(
+            target=wandb.agent,
+            kwargs=dict(
+                sweep_id=sweep_id,
+                entity=base_config.wandb.entity,
+                project=base_config.wandb.project,
+                function=_fn,
+                count=1,
+            ),
+        )
+        proc.start()
+        proc.join()
 
 
 if __name__ == "__main__":
