@@ -319,9 +319,9 @@ class CleanPuffeRL:
                     # pull a state within that list
                     new_state = random.choice(self.states[new_state_key])
                 """
-                if self.config.train.early_stop:
+                if self.config.early_stop:
                     to_delete = []
-                    for event, minutes in self.config.train.early_stop.values():
+                    for event, minutes in self.config.early_stop.values():
                         if any(event in key for key in self.state.keys()):
                             to_delete.append(event)
                         elif self.profile.uptime > minutes * 60 and all(
