@@ -134,6 +134,13 @@ train:
   sqlite_wrapper: True
   archive_states: True
   swarm: True
+  early_stop:
+    # event name: minutes. If we dont satisfy each condition
+    # we early stop
+    # The defaults have a margin of error
+    EVENT_BEAT_BROCK: 45
+    EVENT_BEAT_MISTY: 90
+    EVENT_GOT_HM01: 180
 
 wrappers:
   empty:

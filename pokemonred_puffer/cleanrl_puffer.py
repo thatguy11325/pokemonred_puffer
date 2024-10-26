@@ -142,6 +142,7 @@ class CleanPuffeRL:
     states: dict = field(default_factory=lambda: defaultdict(partial(deque, maxlen=1)))
     event_tracker: dict = field(default_factory=lambda: {})
     max_event_count: int = 0
+    early_stop: bool = False
 
     def __post_init__(self):
         seed_everything(self.config.seed, self.config.torch_deterministic)
@@ -318,6 +319,14 @@ class CleanPuffeRL:
                     # pull a state within that list
                     new_state = random.choice(self.states[new_state_key])
                 """
+                if self.config.train.early_stop:
+                    for event, minutes in self.config.train.early_stop.values():
+                        if any(event in key for key in self.state.keys()):
+                            del self.config.train.early_stop[event]
+                        elif self.profile.uptime > minutes * 60 and all(
+                            event not in key for key in self.states.keys()
+                        ):
+                            self.early_stop = True
 
                 # V2 implementation
                 # check if we have a new highest required_count with N save states available
@@ -366,6 +375,7 @@ class CleanPuffeRL:
                                 ),
                             )
                         self.vecenv.async_reset()
+                        # drain any INFO
                         key_set = self.event_tracker.keys()
                         while True:
                             # We connect each time just in case we block the wrappers
@@ -649,7 +659,7 @@ class CleanPuffeRL:
         self.optimizer.step()
 
     def done_training(self):
-        return self.global_step >= self.config.total_timesteps
+        return self.early_stop or self.global_step >= self.config.total_timesteps
 
     def __enter__(self):
         return self
