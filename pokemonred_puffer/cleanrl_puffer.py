@@ -320,13 +320,17 @@ class CleanPuffeRL:
                     new_state = random.choice(self.states[new_state_key])
                 """
                 if self.config.train.early_stop:
+                    to_delete = []
                     for event, minutes in self.config.train.early_stop.values():
                         if any(event in key for key in self.state.keys()):
-                            del self.config.train.early_stop[event]
+                            to_delete.append(event)
                         elif self.profile.uptime > minutes * 60 and all(
                             event not in key for key in self.states.keys()
                         ):
                             self.early_stop = True
+                            break
+                    for event in to_delete:
+                        del self.config.train.early_stop[event]
 
                 # V2 implementation
                 # check if we have a new highest required_count with N save states available
