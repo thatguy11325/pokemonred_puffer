@@ -330,7 +330,7 @@ class CleanPuffeRL:
                             self.early_stop = True
                             break
                     for event in to_delete:
-                        del self.config.train.early_stop[event]
+                        del self.config.early_stop[event]
 
                 # V2 implementation
                 # check if we have a new highest required_count with N save states available
