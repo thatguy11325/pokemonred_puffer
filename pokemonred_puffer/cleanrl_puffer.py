@@ -324,7 +324,7 @@ class CleanPuffeRL:
                     for event, minutes in self.config.early_stop.items():
                         if any(event in key for key in self.states.keys()):
                             to_delete.append(event)
-                        elif self.profile.uptime > minutes * 60 and all(
+                        elif (self.profile.uptime > (minutes * 60)) and all(
                             event not in key for key in self.states.keys()
                         ):
                             self.early_stop = True
