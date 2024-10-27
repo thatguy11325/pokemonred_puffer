@@ -334,6 +334,12 @@ class CleanPuffeRL:
                             )
                             self.early_stop = True
                             break
+                        else:
+                            print(
+                                f"Early stopping check. In {self.profile.uptime // 60} minutes, "
+                                f"Event {event} was not found in any states within its"
+                                f"{minutes} minutes time limit"
+                            )
                     for event in to_delete:
                         print(
                             f"Satisified early stopping constraint for {event} within "
