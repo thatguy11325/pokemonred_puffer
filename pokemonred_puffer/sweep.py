@@ -163,7 +163,11 @@ def launch_sweep(
                             and "performance/uptime" in summary_metrics
                         ):
                             obs_in = ObservationInParam(
-                                input={k: v["value"] for k, v in json.loads(run["config"]).items()},
+                                input={
+                                    k: v["value"]
+                                    for k, v in json.loads(run["config"]).items()
+                                    if k != "wandb_version"
+                                },
                                 # TODO: try out other stats like required count
                                 output=summary_metrics["environment/stats/required_count"],
                                 cost=summary_metrics["performance/uptime"],
@@ -188,7 +192,11 @@ def launch_agent(
 ):
     def _fn():
         agent_config: DictConfig = OmegaConf.create(
-            {k: v.value for k, v in OmegaConf.load(os.environ["WANDB_SWEEP_PARAM_PATH"]).items()}
+            {
+                k: v.value
+                for k, v in OmegaConf.load(os.environ["WANDB_SWEEP_PARAM_PATH"]).items()
+                if k != "wandb_version"
+            }
         )
         agent_config = update_base_config(base_config, agent_config)
         train.train(config=agent_config, debug=debug, track=True)
