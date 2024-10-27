@@ -22,6 +22,7 @@ from rich.console import Console
 import wandb
 
 from pokemonred_puffer import train
+from pokemonred_puffer.environment import RedGymEnv
 
 app = typer.Typer(pretty_exceptions_enable=False)
 
@@ -202,6 +203,11 @@ def launch_agent(
         train.train(config=agent_config, debug=debug, track=True)
 
     for _ in range(99999):
+        # Manually reset the env id counter between runs
+        RedGymEnv.env_id.buf[0] = 0
+        RedGymEnv.env_id.buf[1] = 0
+        RedGymEnv.env_id.buf[2] = 0
+        RedGymEnv.env_id.buf[3] = 0
         proc = mp.Process(
             target=wandb.agent,
             kwargs=dict(
