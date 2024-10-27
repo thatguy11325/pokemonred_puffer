@@ -284,7 +284,7 @@ class CleanPuffeRL:
         with self.profile.eval_misc:
             # TODO: use the event infos instead of the states.
             # I'm always running with state saving on right now so it's alright
-            if self.states and "required_count" in self.infos["stats"] and self.config.early_stop:
+            if self.states and self.config.early_stop:
                 to_delete = []
                 for event, minutes in self.config.early_stop.items():
                     if any(event in key for key in self.states.keys()):
