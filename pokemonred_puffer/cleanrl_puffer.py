@@ -327,10 +327,20 @@ class CleanPuffeRL:
                         elif (self.profile.uptime > (minutes * 60)) and all(
                             event not in key for key in self.states.keys()
                         ):
+                            print(
+                                f"Early stopping. In {self.profile.uptime // 60} minutes, "
+                                f"Event {event} was not found in any states within its"
+                                f"{minutes} minutes time limit"
+                            )
                             self.early_stop = True
                             break
                     for event in to_delete:
                         del self.config.early_stop[event]
+                        print(
+                            f"Satisified early stopping constraint for {event} within "
+                            f"{self.config.early_stop[event]} minutes. "
+                            f"Event found n {self.profile.uptime // 60} minutes"
+                        )
 
                 # V2 implementation
                 # check if we have a new highest required_count with N save states available
