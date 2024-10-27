@@ -282,6 +282,37 @@ class CleanPuffeRL:
                 self.vecenv.send(actions)
 
         with self.profile.eval_misc:
+            # TODO: use the event infos instead of the states.
+            # I'm always running with state saving on right now so it's alright
+            if self.states and "required_count" in self.infos["stats"] and self.config.early_stop:
+                to_delete = []
+                for event, minutes in self.config.early_stop.items():
+                    if any(event in key for key in self.states.keys()):
+                        to_delete.append(event)
+                    elif (self.profile.uptime > (minutes * 60)) and all(
+                        event not in key for key in self.states.keys()
+                    ):
+                        print(
+                            f"Early stopping. In {self.profile.uptime // 60} minutes, "
+                            f"Event {event} was not found in any states within its"
+                            f"{minutes} minutes time limit"
+                        )
+                        self.early_stop = True
+                        break
+                    else:
+                        print(
+                            f"Early stopping check. In {self.profile.uptime // 60} minutes, "
+                            f"Event {event} was not found in any states within its"
+                            f"{minutes} minutes time limit"
+                        )
+                for event in to_delete:
+                    print(
+                        f"Satisified early stopping constraint for {event} within "
+                        f"{self.config.early_stop[event]} minutes. "
+                        f"Event found n {self.profile.uptime // 60} minutes"
+                    )
+                    del self.config.early_stop[event]
+
             # now for a tricky bit:
             # if we have swarm_frequency, we will migrate the bottom
             # % of envs in the batch (by required events count)
@@ -319,34 +350,6 @@ class CleanPuffeRL:
                     # pull a state within that list
                     new_state = random.choice(self.states[new_state_key])
                 """
-                if self.config.early_stop:
-                    to_delete = []
-                    for event, minutes in self.config.early_stop.items():
-                        if any(event in key for key in self.states.keys()):
-                            to_delete.append(event)
-                        elif (self.profile.uptime > (minutes * 60)) and all(
-                            event not in key for key in self.states.keys()
-                        ):
-                            print(
-                                f"Early stopping. In {self.profile.uptime // 60} minutes, "
-                                f"Event {event} was not found in any states within its"
-                                f"{minutes} minutes time limit"
-                            )
-                            self.early_stop = True
-                            break
-                        else:
-                            print(
-                                f"Early stopping check. In {self.profile.uptime // 60} minutes, "
-                                f"Event {event} was not found in any states within its"
-                                f"{minutes} minutes time limit"
-                            )
-                    for event in to_delete:
-                        print(
-                            f"Satisified early stopping constraint for {event} within "
-                            f"{self.config.early_stop[event]} minutes. "
-                            f"Event found n {self.profile.uptime // 60} minutes"
-                        )
-                        del self.config.early_stop[event]
 
                 # V2 implementation
                 # check if we have a new highest required_count with N save states available
