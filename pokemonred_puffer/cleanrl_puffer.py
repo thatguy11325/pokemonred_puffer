@@ -335,12 +335,12 @@ class CleanPuffeRL:
                             self.early_stop = True
                             break
                     for event in to_delete:
-                        del self.config.early_stop[event]
                         print(
                             f"Satisified early stopping constraint for {event} within "
                             f"{self.config.early_stop[event]} minutes. "
                             f"Event found n {self.profile.uptime // 60} minutes"
                         )
+                        del self.config.early_stop[event]
 
                 # V2 implementation
                 # check if we have a new highest required_count with N save states available
