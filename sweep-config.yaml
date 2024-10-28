@@ -39,27 +39,27 @@ rewards:
     reward:
       event: 
         carbs.utils.LogSpace:
-          min: 1.0e-1
+          min: 1.0e-3
           max: 10.0
           scale: 0.5
       seen_pokemon: 
         carbs.utils.LogSpace:
-          min: 1.0e-1
+          min: 1.0e-3
           max: 10.0
           scale: 2.0
       caught_pokemon: 
         carbs.utils.LogSpace:
-          min: 1.0e-1
+          min: 1.0e-3
           max: 10.0
           scale: 2.0
       moves_obtained: 
         carbs.utils.LogSpace:
-          min: 1.0e-1
+          min: 1.0e-3
           max: 10.0
           scale: 2.0
       hm_count: 
         carbs.utils.LogSpace:
-          min: 1.0e-1
+          min: 1.0e-3
           max: 10.0
           scale: 2.0
       level: 
@@ -111,7 +111,7 @@ rewards:
         carbs.utils.LogSpace:
           min: 1.0e-3
           max: 10.0
-          scale: 0.05
+          scale: 0.005
       use_surf: 
         carbs.utils.LogSpace:
           min: 1.0e-3
