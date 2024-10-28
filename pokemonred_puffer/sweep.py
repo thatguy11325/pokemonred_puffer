@@ -99,7 +99,7 @@ def launch_sweep(
             better_direction_sign=1,
             is_wandb_logging_enabled=False,
             wandb_params=WandbLoggingParams(project_name="Pokemon", run_name=sweep_id),
-            resample_frequency=5,
+            resample_frequency=25,
             num_random_samples=len(params),
         )
 
