@@ -99,8 +99,9 @@ def launch_sweep(
             better_direction_sign=1,
             is_wandb_logging_enabled=False,
             wandb_params=WandbLoggingParams(project_name="Pokemon", run_name=sweep_id),
-            resample_frequency=25,
+            resample_frequency=5,
             num_random_samples=len(params),
+            is_pareto_group_selection_conservative=False,
         )
 
         carbs = CARBS(config=config, params=params)
