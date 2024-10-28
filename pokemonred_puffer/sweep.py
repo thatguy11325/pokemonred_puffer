@@ -111,7 +111,7 @@ def launch_sweep(
                 "controller": {"type": "local"},
                 "parameters": {p.name: {"min": p.space.min, "max": p.space.max} for p in params},
                 "metric": {
-                    "name": "environment/stats/event_plus_required",
+                    "name": "environment/stats/required_count",
                     "goal": "maximize",
                     "goal_value": 100,
                 },
@@ -173,7 +173,7 @@ def launch_sweep(
                                     if k != "wandb_version"
                                 },
                                 # TODO: try out other stats like required count
-                                output=summary_metrics["environment/stats/event_plus_required"],
+                                output=summary_metrics["environment/stats/required_count"],
                                 cost=summary_metrics["performance/uptime"],
                             )
                             carbs.observe(obs_in)
