@@ -94,12 +94,14 @@ def launch_sweep(
 ):
     console = Console()
     if not sweep_id:
+        params = sweep_config_to_params(base_config, sweep_config)
         config = CARBSParams(
             better_direction_sign=1,
             is_wandb_logging_enabled=False,
             wandb_params=WandbLoggingParams(project_name="Pokemon", run_name=sweep_id),
+            resample_frequency=5,
+            num_random_samples=len(params),
         )
-        params = sweep_config_to_params(base_config, sweep_config)
 
         carbs = CARBS(config=config, params=params)
         sweep_id = wandb.sweep(
