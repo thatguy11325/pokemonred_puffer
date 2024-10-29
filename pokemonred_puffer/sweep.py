@@ -104,8 +104,8 @@ def launch_sweep(
                 < param.search_center + param.space.scale
                 < param.space.max
             ), (
-                f"{param.space.min} < "
-                f"{param.search_center} - {param.space.scale} "
+                f"{param.space.min} "
+                f"< {param.search_center} - {param.space.scale} "
                 f"< {param.search_center} + {param.space.scale} "
                 f"< {param.space.max}"
             )
