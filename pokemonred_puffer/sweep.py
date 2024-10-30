@@ -10,6 +10,7 @@ from sweeps import RunState
 import typer
 from carbs import (
     CARBS,
+    LogitSpace,
     Param,
     ParamDictType,
     ParamType,
@@ -98,17 +99,34 @@ def launch_sweep(
         params = sweep_config_to_params(base_config, sweep_config)
         for param in params:
             print(f"Checking param: {param}")
-            assert (
-                param.space.min
-                < param.search_center - param.space.scale
-                < param.search_center + param.space.scale
-                < param.space.max
-            ), (
-                f"{param.space.min} "
-                f"< {param.search_center} - {param.space.scale} "
-                f"< {param.search_center} + {param.space.scale} "
-                f"< {param.space.max}"
-            )
+            if isinstance(param.space, LogitSpace):
+                assert (
+                    0.0
+                    <= param.space.min
+                    < param.search_center - param.space.scale
+                    < param.search_center + param.space.scale
+                    < param.space.max
+                    <= 1.0
+                ), (
+                    "0.0 "
+                    f"<= {param.space.min} "
+                    f"< {param.search_center} - {param.space.scale} "
+                    f"< {param.search_center} + {param.space.scale} "
+                    f"< {param.space.max} "
+                    f"<= 1.0"
+                )
+            else:
+                assert (
+                    param.space.min
+                    < param.search_center - param.space.scale
+                    < param.search_center + param.space.scale
+                    < param.space.max
+                ), (
+                    f"{param.space.min} "
+                    f"< {param.search_center} - {param.space.scale} "
+                    f"< {param.search_center} + {param.space.scale} "
+                    f"< {param.space.max}"
+                )
 
         config = CARBSParams(
             better_direction_sign=1,
