@@ -141,6 +141,7 @@ train:
     EVENT_BEAT_BROCK: 30
     EVENT_BEAT_MISTY: 90
     EVENT_GOT_HM01: 180
+  one_epoch: True
 
 wrappers:
   empty:

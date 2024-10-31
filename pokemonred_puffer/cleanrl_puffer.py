@@ -682,7 +682,15 @@ class CleanPuffeRL:
         self.optimizer.step()
 
     def done_training(self):
-        return self.early_stop or self.global_step >= self.config.total_timesteps
+        return (
+            self.early_stop
+            or self.global_step >= self.config.total_timesteps
+            or (
+                self.config.one_epoch
+                and self.states
+                and any("EVENT_BEAT_CHAMPION_RIVAL" in key for key in self.states.keys())
+            )
+        )
 
     def __enter__(self):
         return self
