@@ -33,6 +33,7 @@ from pokemonred_puffer.data.species import Species
 from pokemonred_puffer.eval import make_pokemon_red_overlay
 from pokemonred_puffer.global_map import GLOBAL_MAP_SHAPE
 from pokemonred_puffer.profile import Profile, Utilization
+from pokemonred_puffer.wrappers.sqlite import SqliteStateResetWrapper
 
 pyximport.install(setup_args={"include_dirs": np.get_include()})
 from pokemonred_puffer.c_gae import compute_gae  # type: ignore  # noqa: E402
@@ -379,37 +380,39 @@ class CleanPuffeRL:
                         )
                     ]
                     if self.sqlite_db:
-                        with sqlite3.connect(self.sqlite_db) as conn:
-                            cur = conn.cursor()
-                            cur.executemany(
-                                """
-                                UPDATE states
-                                SET pyboy_state=:state,
-                                    reset=:reset
-                                WHERE env_id=:env_id
-                                """,
-                                tuple(
-                                    [
-                                        {"state": state, "reset": 1, "env_id": env_id}
-                                        for state, env_id in zip(
-                                            new_states, self.event_tracker.keys()
-                                        )
-                                    ]
-                                ),
-                            )
+                        with SqliteStateResetWrapper.DB_LOCK:
+                            with sqlite3.connect(self.sqlite_db) as conn:
+                                cur = conn.cursor()
+                                cur.executemany(
+                                    """
+                                    UPDATE states
+                                    SET pyboy_state=:state,
+                                        reset=:reset
+                                    WHERE env_id=:env_id
+                                    """,
+                                    tuple(
+                                        [
+                                            {"state": state, "reset": 1, "env_id": env_id}
+                                            for state, env_id in zip(
+                                                new_states, self.event_tracker.keys()
+                                            )
+                                        ]
+                                    ),
+                                )
                         self.vecenv.async_reset()
                         # drain any INFO
                         key_set = self.event_tracker.keys()
                         while True:
                             # We connect each time just in case we block the wrappers
-                            with sqlite3.connect(self.sqlite_db) as conn:
-                                cur = conn.cursor()
-                                resets = cur.execute(
-                                    """
-                                    SELECT reset, env_id
-                                    FROM states
-                                    """,
-                                ).fetchall()
+                            with SqliteStateResetWrapper.DB_LOCK:
+                                with sqlite3.connect(self.sqlite_db) as conn:
+                                    cur = conn.cursor()
+                                    resets = cur.execute(
+                                        """
+                                        SELECT reset, env_id
+                                        FROM states
+                                        """,
+                                    ).fetchall()
                             if all(not reset for reset, env_id in resets if env_id in key_set):
                                 break
                             time.sleep(0.5)
