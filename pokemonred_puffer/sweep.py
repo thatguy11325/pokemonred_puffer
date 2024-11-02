@@ -202,6 +202,9 @@ def launch_sweep(
                             if (
                                 "environment/stats/required_count" in summary_metrics
                                 and "performance/uptime" in summary_metrics
+                                # Only count agents that have run more than 1M steps
+                                and "Overview/agent_steps" in summary_metrics
+                                and summary_metrics["overview/agent_steps"] > 1e6
                             ):
                                 obs_in = ObservationInParam(
                                     input={
@@ -242,7 +245,10 @@ def launch_agent(
             }
         )
         agent_config = update_base_config(base_config, agent_config)
-        train.train(config=agent_config, debug=debug, track=True)
+        try:
+            train.train(config=agent_config, debug=debug, track=True)
+        except Exception as e:
+            print(f"Exception in training: {e!r}")
 
     for _ in range(99999):
         # Manually reset the env id counter between runs
