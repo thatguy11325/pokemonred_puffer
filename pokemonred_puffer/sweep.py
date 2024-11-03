@@ -204,7 +204,7 @@ def launch_sweep(
                                 and "performance/uptime" in summary_metrics
                                 # Only count agents that have run more than 1M steps
                                 and "Overview/agent_steps" in summary_metrics
-                                and summary_metrics["overview/agent_steps"] > 1e6
+                                and summary_metrics["Overview/agent_steps"] > 1e6
                             ):
                                 obs_in = ObservationInParam(
                                     input={
