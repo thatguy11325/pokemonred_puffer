@@ -143,7 +143,11 @@ def launch_sweep(
     carbs = CARBS(config=config, params=params)
     if not dry_run:
         if sweep_id:
-            carbs.warm_start_from_wandb(run_name=sweep_id, is_prior_observation_valid=True)
+            # runname = entity/project/run_id
+            carbs.warm_start_from_wandb(
+                run_name=f"{base_config.wandb.entity}/{base_config.wandb.project}/{sweep_id}",
+                is_prior_observation_valid=True,
+            )
         else:
             sweep_id = wandb.sweep(
                 sweep={
