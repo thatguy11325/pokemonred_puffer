@@ -1,5 +1,7 @@
 # Pokemon Red (RL Edition)
 
+![Tests](https://github.com/thatguy11325/pokemonred_puffer/actions/workflows/workflow.yml/badge.svg)
+
 This repo is designed as a library to be used for Pokemon Red RL development. It contains some convenience functions that should not be used in a library setting and should be forked. In the future, those convenience functions will be migrated so no forking is needed.
 
 ## Quickstart
@@ -19,16 +21,36 @@ pip3 install -e .
 
 ### Running
 
-After installation you can start training by running
+Below are commands that use default arguments in some cases. Please run `python3 -m pokemonred_puffer.train --help` if you are unsure how to use the commandline actions associated with this repo. Some commands may not have been tested recently so please make an issue if you have one. 
+
+After installation you can start training by running:
 
 ```sh
 # Run before training to test what num_envs value you should use
-python3 -m pokemonred_puffer.train  --mode autotune   --yaml config.yaml --vectorization multiprocessing -w empty -r baseline.CutWithObjectRewardRequiredEventsEnv
+python3 -m pokemonred_puffer.train autotune
 # Default
-python3 -m pokemonred_puffer.train --mode train --yaml config.yaml
-# Currently used configuration
-python3 -m pokemonred_puffer.train  --mode train   --yaml config.yaml --vectorization multiprocessing  -w stream_only -r baseline.CutWithObjectRewardRequiredEventsEnv
+python3 -m pokemonred_puffer.train train
 ```
+
+### Multinode Hyperparameter Sweeps (in progress)
+
+If you want to run hyperparameter sweeps, you can do so by installing related packages and launching two commands:
+
+```sh
+pip3 install -e '.[sweep]'
+python3 -m pokemonred_puffer.sweep launch-sweep
+python3 -m pokemonred_puffer.sweep launch-agent <sweep-id>
+```
+
+The sweep id will be printed when launching the sweep. To resume a sweep, you can relaunch your sweep with
+
+```sh
+python3 -m pokemonred_puffer.sweep launch-sweep --sweep-id <sweep-id>
+```
+
+The sweeps can be configured with a sweep configuration (defaulted to `sweep-config.yaml`) and base configuration (defaulted to `config.yaml`). The hyperparamter sweep sets bounds using the sweep config and centers the hyperparamters at paramters in the base config. To learn more about the hyperparamter algorithm, you can visit [Imbue's CARBS repo](https://github.com/imbue-ai/carbs/tree/main).
+
+N.B. Currently single node sweeps are not supported. If this is a desired feature, please make an issue.
 
 ### Modifying for Training
 
