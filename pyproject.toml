@@ -20,12 +20,15 @@ dependencies = [
     "numpy",
     "omegaconf",
     "opencv-python",
+    "psutil",
     "pyboy>=2",
-    "pufferlib[cleanrl] @ git+https://github.com/thatguy11325/PufferLib.git@1.0",
+    "pynvml",
+    "pufferlib @ git+https://github.com/thatguy11325/PufferLib.git@1.0",
     "scikit-image",
     "torch>=2.4",
     "torchvision",
     "typer",
+    "tyro",
     "wandb",
     "websockets"
 ]
@@ -41,7 +44,7 @@ monitoring = [
     "nvitop"
 ]
 sweep = [
-    "carbs @ git+https://github.com/imbue-ai/carbs",
+    "carbs @ git+https://github.com/kywch/carbs",
     "sweeps",
 ]
 test = [
