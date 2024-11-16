@@ -66,7 +66,7 @@ You have a few options:
 If you want to test your changes you can run 
 
 ```sh
-python3 -m pokemonred_puffer.train --mode train --yaml config.yaml --debug
+python3 -m pokemonred_puffer.train --config config.yaml --debug
 ```
 
 In emergency cases, it is advised to remove the `send_input` function calls from `environment.py` so you can test the rewards on your own schedule and not the model's.
