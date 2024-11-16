@@ -691,7 +691,7 @@ class CleanPuffeRL:
             or (
                 self.config.one_epoch
                 and self.states
-                and any("EVENT_BEAT_CHAMPION_RIVAL" in key for key in self.states.keys())
+                and any(self.config.one_epoch in key for key in self.states.keys())
             )
         )
 
