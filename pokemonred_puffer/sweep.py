@@ -1,26 +1,31 @@
 import json
 import math
+import multiprocessing as mp
 import os
+import pprint
+import re
 from typing import Annotated
 
 import carbs.utils
 import sweeps
-from sweeps import RunState
 import typer
 from carbs import (
     CARBS,
+    CARBSParams,
+    LogitSpace,
+    ObservationInParam,
     Param,
     ParamDictType,
     ParamType,
-    CARBSParams,
     WandbLoggingParams,
-    ObservationInParam,
 )
 from omegaconf import DictConfig, OmegaConf
 from rich.console import Console
-import wandb
+from sweeps import RunState
 
+import wandb
 from pokemonred_puffer import train
+from pokemonred_puffer.environment import RedGymEnv
 
 app = typer.Typer(pretty_exceptions_enable=False)
 
@@ -89,40 +94,128 @@ def launch_sweep(
             "N.B. The sweep and base config MUST BE THE SAME"
         ),
     ] = None,
+    dry_run: Annotated[bool, typer.Option(help="Attempts to start CARBS, but not wandb")] = False,
 ):
     console = Console()
-    if not sweep_id:
+    params = sweep_config_to_params(base_config, sweep_config)
+    for param in params:
+        print(f"Checking param: {param}")
+        if isinstance(param.space, LogitSpace):
+            assert (
+                0.0
+                <= param.space.min
+                < param.search_center - param.space.scale
+                < param.search_center + param.space.scale
+                < param.space.max
+                <= 1.0
+            ), (
+                "0.0 "
+                f"<= {param.space.min} "
+                f"< {param.search_center} - {param.space.scale} "
+                f"< {param.search_center} + {param.space.scale} "
+                f"< {param.space.max} "
+                f"<= 1.0"
+            )
+        else:
+            assert (
+                param.space.min
+                < param.search_center - param.space.scale
+                < param.search_center + param.space.scale
+                < param.space.max
+            ), (
+                f"{param.space.min} "
+                f"< {param.search_center} - {param.space.scale} "
+                f"< {param.search_center} + {param.space.scale} "
+                f"< {param.space.max}"
+            )
+
+    if sweep_id:
         config = CARBSParams(
             better_direction_sign=1,
-            is_wandb_logging_enabled=False,
-            wandb_params=WandbLoggingParams(project_name="Pokemon", run_name=sweep_id),
+            is_wandb_logging_enabled=True,
+            wandb_params=WandbLoggingParams(
+                project_name="Pokemon",
+                run_id=sweep_id,
+                run_name=sweep_name,
+                root_dir=f"carbs/checkpoints/{sweep_id}",
+            ),
+            resample_frequency=5,
+            num_random_samples=len(params),
+            checkpoint_dir=f"carbs/checkpoints/{sweep_id}",
         )
-        params = sweep_config_to_params(base_config, sweep_config)
 
         carbs = CARBS(config=config, params=params)
+        # for wandb
+        # runname = entity/project/run_id
+        # find most recent file in checkpoint dir
+        experiment_dir = f"carbs/checkpoints/{sweep_id}/{sweep_name}"
+        saves = [
+            save_filename
+            for save_filename in os.listdir(experiment_dir)
+            if re.match(r"carbs_\d+obs.pt", save_filename)
+        ]
+
+        if saves:
+            # sort by the middle int and take the highest value
+            # dont need split, could also use a regex group
+            save_filename = sorted(
+                saves, key=lambda x: int(x.replace("carbs_", "").replace("obs.pt", ""))
+            )[0]
+            carbs.warm_start(
+                filename=os.path.join(experiment_dir, save_filename),
+                is_prior_observation_valid=True,
+            )
+
+    if not sweep_id and not dry_run:
         sweep_id = wandb.sweep(
             sweep={
                 "name": sweep_name,
                 "controller": {"type": "local"},
-                "parameters": {},
+                "parameters": {p.name: {"min": p.space.min, "max": p.space.max} for p in params},
+                "metric": {
+                    "name": "environment/stats/required_count",
+                    "goal": "maximize",
+                },
                 "command": ["${args_json}"],
             },
             entity=base_config.wandb.entity,
             project=base_config.wandb.project,
         )
-    else:
-        carbs = CARBS.warm_start_from_wandb(run_name=sweep_id, is_prior_observation_valid=True)
+        config = CARBSParams(
+            better_direction_sign=1,
+            is_wandb_logging_enabled=True,
+            wandb_params=WandbLoggingParams(
+                project_name="Pokemon",
+                run_id=sweep_id,
+                run_name=sweep_name,
+                root_dir=f"carbs/checkpoints/{sweep_id}",
+            ),
+            resample_frequency=5,
+            num_random_samples=len(params),
+            checkpoint_dir=f"carbs/checkpoints/{sweep_id}",
+        )
+        carbs = CARBS(config=config, params=params)
+        os.makedirs(os.path.join(config.checkpoint_dir, carbs.experiment_name), exist_ok=True)
 
-    import pprint
+        carbs._autosave()
 
     pprint.pprint(params)
-    sweep = wandb.controller(sweep_id)
+    if dry_run:
+        carbs.suggest()
+        return
+
+    sweep = wandb.controller(
+        sweep_id_or_config=sweep_id,
+        entity=base_config.wandb.entity,
+        project=base_config.wandb.project,
+    )
 
     console.print(f"Beginning sweep with id {sweep_id}", style="bold")
     console.print(
         f"On all nodes please run python -m pokemonred_puffer.sweep launch-agent {sweep_id}",
         style="bold",
     )
+
     finished = []
     while not sweep.done():
         # Taken from sweep.schedule. Limits runs to only one at a time.
@@ -130,7 +223,9 @@ def launch_sweep(
         sweep._step()
         if not (sweep._controller and sweep._controller.get("schedule")):
             suggestion = carbs.suggest()
-            run = sweeps.SweepRun(config={"x": {"value": suggestion.suggestion}})
+            run = sweeps.SweepRun(
+                config={k: {"value": v} for k, v in suggestion.suggestion.items()}
+            )
             sweep.schedule(run)
         # without this nothing updates...
         sweep_obj = sweep._sweep_obj
@@ -153,9 +248,16 @@ def launch_sweep(
                         if (
                             "environment/stats/required_count" in summary_metrics
                             and "performance/uptime" in summary_metrics
+                            # Only count agents that have run more than 1M steps
+                            and "Overview/agent_steps" in summary_metrics
+                            and summary_metrics["Overview/agent_steps"] > 1e6
                         ):
                             obs_in = ObservationInParam(
-                                input=json.loads(run["config"])["x"]["value"],
+                                input={
+                                    k: v["value"]
+                                    for k, v in json.loads(run["config"]).items()
+                                    if k != "wandb_version"
+                                },
                                 # TODO: try out other stats like required count
                                 output=summary_metrics["environment/stats/required_count"],
                                 cost=summary_metrics["performance/uptime"],
@@ -179,17 +281,37 @@ def launch_agent(
     debug: bool = False,
 ):
     def _fn():
-        agent_config: DictConfig = OmegaConf.load(os.environ["WANDB_SWEEP_PARAM_PATH"]).x.value
+        agent_config: DictConfig = OmegaConf.create(
+            {
+                k: v.value
+                for k, v in OmegaConf.load(os.environ["WANDB_SWEEP_PARAM_PATH"]).items()
+                if k != "wandb_version"
+            }
+        )
         agent_config = update_base_config(base_config, agent_config)
-        train.train(config=agent_config, debug=debug, track=True)
+        try:
+            train.train(config=agent_config, debug=debug, track=True)
+        except Exception as e:
+            print(f"Exception in training: {e!r}")
 
-    wandb.agent(
-        sweep_id=sweep_id,
-        entity=base_config.wandb.entity,
-        project=base_config.wandb.project,
-        function=_fn,
-        count=99999,
-    )
+    for _ in range(99999):
+        # Manually reset the env id counter between runs
+        RedGymEnv.env_id.buf[0] = 0
+        RedGymEnv.env_id.buf[1] = 0
+        RedGymEnv.env_id.buf[2] = 0
+        RedGymEnv.env_id.buf[3] = 0
+        proc = mp.Process(
+            target=wandb.agent,
+            kwargs=dict(
+                sweep_id=sweep_id,
+                entity=base_config.wandb.entity,
+                project=base_config.wandb.project,
+                function=_fn,
+                count=1,
+            ),
+        )
+        proc.start()
+        proc.join()
 
 
 if __name__ == "__main__":

@@ -4,10 +4,7 @@ env:
       min: 10240
       max: 81920
       is_integer: True
-  map_id_scalefactor:
-    carbs.utils.LogSpace:
-      min: 0.001
-      max: 10.0
+      scale: 2500
 
 train:
   total_timesteps:
@@ -15,53 +12,116 @@ train:
       min: 500_000_000
       max: 10_000_000_000
       is_integer: True
+      scale: 10_000_000
   learning_rate:
     carbs.utils.LogSpace:
       min: 1.0e-5
       max: 1.0e-3
+      scale: 1.0e-4
   gamma:
-    carbs.utils.LinearSpace:
-      min: .5
+    carbs.utils.LogitSpace:
+      min: .75
       max: 1.0
+      scale: .0005
   gae_lambda:
-    carbs.utils.LinearSpace:
-      min: .5
+    carbs.utils.LogitSpace:
+      min: .75
       max: 1.0
-  clip_coef:
-    carbs.utils.LogSpace:
-      min: 1.0e-3
-      max: 1.0
+      scale: .01
   ent_coef:
     carbs.utils.LogSpace:
       min: 1.0e-5
       max: 1.0e-1
-  vf_ent_coef:
+      scale: .005
+  vf_coef:
     carbs.utils.LogSpace:
-      min: 1.0e-5
-      max: 1.0e-1
+      min: 1e-1
+      max: 1.0
+      scale: .05
 
 rewards:
   baseline.ObjectRewardRequiredEventsMapIds:
     reward:
-      event: &default_log
+      event: 
+        carbs.utils.LogSpace:
+          min: 1.0e-3
+          max: 10.0
+          scale: 0.5
+      seen_pokemon: 
+        carbs.utils.LogSpace:
+          min: 1.0e-3
+          max: 10.0
+          scale: 1.0
+      caught_pokemon: 
+        carbs.utils.LogSpace:
+          min: 1.0e-3
+          max: 10.0
+          scale: 1.0
+      moves_obtained: 
+        carbs.utils.LogSpace:
+          min: 1.0e-3
+          max: 10.0
+          scale: 1.0
+      hm_count: 
+        carbs.utils.LogSpace:
+          min: 1.0e-3
+          max: 15.0
+          scale: 1.0
+      level: 
         carbs.utils.LogSpace:
           min: 1.0e-5
           max: 10.0
-      seen_pokemon: *default_log
-      caught_pokemon: *default_log
-      moves_obtained: *default_log
-      hm_count: *default_log
-      level: *default_log
-      badges: *default_log
-      explore_hidden_objs: *default_log
-      explore_signs: *default_log
-      required_event: *default_log
-      required_item: *default_log
-      useful_item: *default_log
-      pokecenter_heal: *default_log
-      exploration: *default_log
-      explore_warps: *default_log
-      use_surf: *default_log
+          scale: 0.1
+      badges: 
+        carbs.utils.LogSpace:
+          min: 1.0e-5
+          max: 10.0
+          scale: 2.0
+      explore_hidden_objs: 
+        carbs.utils.LogSpace:
+          min: 1.0e-7
+          max: 1.0
+          scale: 5e-5
+      explore_signs: 
+        carbs.utils.LogSpace:
+          min: 1.0e-4
+          max: 1.0
+          scale: 1e-3
+      required_event: 
+        carbs.utils.LogSpace:
+          min: 1.0e-3
+          max: 10.0
+          scale: 1.0
+      required_item: 
+        carbs.utils.LogSpace:
+          min: 1.0e-3
+          max: 10.0
+          scale: 1.0
+      useful_item: 
+        carbs.utils.LogSpace:
+          min: 1.0e-3
+          max: 10.0
+          scale: 0.5
+      pokecenter_heal: 
+        carbs.utils.LogSpace:
+          min: 1.0e-4
+          max: 10.0
+          scale: 0.1
+      exploration: 
+        carbs.utils.LogSpace:
+          min: 1.0e-3
+          max: 1.0
+          scale: 0.01
+      explore_warps: 
+        carbs.utils.LogSpace:
+          min: 1.0e-3
+          max: 10.0
+          scale: 0.005
+      use_surf: 
+        carbs.utils.LogSpace:
+          min: 1.0e-3
+          max: 2.0
+          scale: 0.25
 # policies:
 #   multi_convolutional.MultiConvolutionalPolicy:
 #     policy:

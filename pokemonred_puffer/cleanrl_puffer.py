@@ -33,6 +33,7 @@ from pokemonred_puffer.data.species import Species
 from pokemonred_puffer.eval import make_pokemon_red_overlay
 from pokemonred_puffer.global_map import GLOBAL_MAP_SHAPE
 from pokemonred_puffer.profile import Profile, Utilization
+from pokemonred_puffer.wrappers.sqlite import SqliteStateResetWrapper
 
 pyximport.install(setup_args={"include_dirs": np.get_include()})
 from pokemonred_puffer.c_gae import compute_gae  # type: ignore  # noqa: E402
@@ -142,6 +143,7 @@ class CleanPuffeRL:
     states: dict = field(default_factory=lambda: defaultdict(partial(deque, maxlen=1)))
     event_tracker: dict = field(default_factory=lambda: {})
     max_event_count: int = 0
+    early_stop: bool = False
 
     def __post_init__(self):
         seed_everything(self.config.seed, self.config.torch_deterministic)
@@ -281,6 +283,37 @@ class CleanPuffeRL:
                 self.vecenv.send(actions)
 
         with self.profile.eval_misc:
+            # TODO: use the event infos instead of the states.
+            # I'm always running with state saving on right now so it's alright
+            if self.states and self.config.early_stop:
+                to_delete = []
+                for event, minutes in self.config.early_stop.items():
+                    if any(event in key for key in self.states.keys()):
+                        to_delete.append(event)
+                    elif (self.profile.uptime > (minutes * 60)) and all(
+                        event not in key for key in self.states.keys()
+                    ):
+                        print(
+                            f"Early stopping. In {self.profile.uptime // 60} minutes, "
+                            f"Event {event} was not found in any states within its"
+                            f"{minutes} minutes time limit"
+                        )
+                        self.early_stop = True
+                        break
+                    else:
+                        print(
+                            f"Early stopping check. In {self.profile.uptime // 60} minutes, "
+                            f"Event {event} was not found in any states within its"
+                            f"{minutes} minutes time limit"
+                        )
+                for event in to_delete:
+                    print(
+                        f"Satisified early stopping constraint for {event} within "
+                        f"{self.config.early_stop[event]} minutes. "
+                        f"Event found n {self.profile.uptime // 60} minutes"
+                    )
+                    del self.config.early_stop[event]
+
             # now for a tricky bit:
             # if we have swarm_frequency, we will migrate the bottom
             # % of envs in the batch (by required events count)
@@ -347,36 +380,39 @@ class CleanPuffeRL:
                         )
                     ]
                     if self.sqlite_db:
-                        with sqlite3.connect(self.sqlite_db) as conn:
-                            cur = conn.cursor()
-                            cur.executemany(
-                                """
-                                UPDATE states
-                                SET pyboy_state=:state,
-                                    reset=:reset
-                                WHERE env_id=:env_id
-                                """,
-                                tuple(
-                                    [
-                                        {"state": state, "reset": 1, "env_id": env_id}
-                                        for state, env_id in zip(
-                                            new_states, self.event_tracker.keys()
-                                        )
-                                    ]
-                                ),
-                            )
+                        with SqliteStateResetWrapper.DB_LOCK:
+                            with sqlite3.connect(self.sqlite_db) as conn:
+                                cur = conn.cursor()
+                                cur.executemany(
+                                    """
+                                    UPDATE states
+                                    SET pyboy_state=:state,
+                                        reset=:reset
+                                    WHERE env_id=:env_id
+                                    """,
+                                    tuple(
+                                        [
+                                            {"state": state, "reset": 1, "env_id": env_id}
+                                            for state, env_id in zip(
+                                                new_states, self.event_tracker.keys()
+                                            )
+                                        ]
+                                    ),
+                                )
                         self.vecenv.async_reset()
+                        # drain any INFO
                         key_set = self.event_tracker.keys()
                         while True:
                             # We connect each time just in case we block the wrappers
-                            with sqlite3.connect(self.sqlite_db) as conn:
-                                cur = conn.cursor()
-                                resets = cur.execute(
-                                    """
-                                    SELECT reset, env_id
-                                    FROM states
-                                    """,
-                                ).fetchall()
+                            with SqliteStateResetWrapper.DB_LOCK:
+                                with sqlite3.connect(self.sqlite_db) as conn:
+                                    cur = conn.cursor()
+                                    resets = cur.execute(
+                                        """
+                                        SELECT reset, env_id
+                                        FROM states
+                                        """,
+                                    ).fetchall()
                             if all(not reset for reset, env_id in resets if env_id in key_set):
                                 break
                             time.sleep(0.5)
@@ -649,7 +685,15 @@ class CleanPuffeRL:
         self.optimizer.step()
 
     def done_training(self):
-        return self.global_step >= self.config.total_timesteps
+        return (
+            self.early_stop
+            or self.global_step >= self.config.total_timesteps
+            or (
+                self.config.one_epoch
+                and self.states
+                and any("EVENT_BEAT_CHAMPION_RIVAL" in key for key in self.states.keys())
+            )
+        )
 
     def __enter__(self):
         return self
