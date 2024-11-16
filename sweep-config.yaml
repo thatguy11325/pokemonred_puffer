@@ -8,11 +8,11 @@ env:
 
 train:
   total_timesteps:
-    carbs.utils.LogSpace:
+    carbs.utils.LinearSpace:
       min: 500_000_000
       max: 10_000_000_000
       is_integer: True
-      scale: 10_000_000
+      scale: 100_000_000
   learning_rate:
     carbs.utils.LogSpace:
       min: 1.0e-5
