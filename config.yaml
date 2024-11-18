@@ -44,7 +44,7 @@ debug:
     archive_states: False
 
 env:
-  headless: True
+  headless: False
   save_final_state: True
   print_rewards: True
   video_dir: video

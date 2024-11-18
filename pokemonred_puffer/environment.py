@@ -97,7 +97,9 @@ class RedGymEnv(Env):
         self.video_dir = Path(env_config.video_dir)
         self.save_final_state = env_config.save_final_state
         self.print_rewards = env_config.print_rewards
+        self.debug = env_config.debug
         self.headless = env_config.headless
+        self.head_id = 0 if self.debug else 1
         self.state_dir = Path(env_config.state_dir)
         self.init_state = env_config.init_state
         self.init_state_name = self.init_state
@@ -226,21 +228,6 @@ class RedGymEnv(Env):
             )
         self.observation_space = spaces.Dict(obs_dict)
 
-        self.pyboy = PyBoy(
-            str(env_config.gb_path),
-            debug=False,
-            no_input=False,
-            window="null" if self.headless else "SDL2",
-            log_level="CRITICAL",
-            symbols=os.path.join(os.path.dirname(__file__), "pokered.sym"),
-        )
-        self.register_hooks()
-        if not self.headless:
-            self.pyboy.set_emulation_speed(6)
-        self.screen = self.pyboy.screen
-
-        self.first = True
-
         with RedGymEnv.lock:
             env_id = (
                 (int(RedGymEnv.env_id.buf[0]) << 24)
@@ -254,6 +241,22 @@ class RedGymEnv(Env):
             RedGymEnv.env_id.buf[1] = (env_id >> 16) & 0xFF
             RedGymEnv.env_id.buf[2] = (env_id >> 8) & 0xFF
             RedGymEnv.env_id.buf[3] = (env_id) & 0xFF
+
+        self.pyboy = PyBoy(
+            str(env_config.gb_path),
+            debug=False,
+            no_input=False,
+            window="null" if self.headless or self.env_id != self.head_id else "SDL2",
+            log_level="CRITICAL",
+            symbols=os.path.join(os.path.dirname(__file__), "pokered.sym"),
+        )
+        self.register_hooks()
+        #if not self.headless:
+            #self.pyboy.set_emulation_speed(6)
+        self.screen = self.pyboy.screen
+
+        self.first = True
+
         self.init_mem()
 
     def register_hooks(self):

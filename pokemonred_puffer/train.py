@@ -59,6 +59,7 @@ def load_from_config(config: DictConfig, debug: bool) -> DictConfig:
     debug_config = config.get("debug", OmegaConf.create({})) if debug else OmegaConf.create({})
 
     defaults.merge_with(debug_config)
+    defaults.env.debug = True if debug else False
     return defaults
 
 
