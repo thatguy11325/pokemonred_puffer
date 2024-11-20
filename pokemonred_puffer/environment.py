@@ -99,7 +99,6 @@ class RedGymEnv(Env):
         self.print_rewards = env_config.print_rewards
         self.debug = env_config.debug
         self.headless = env_config.headless
-        self.head_id = 0 if self.debug else 1
         self.state_dir = Path(env_config.state_dir)
         self.init_state = env_config.init_state
         self.init_state_name = self.init_state
@@ -124,6 +123,10 @@ class RedGymEnv(Env):
             }
         else:
             raise ValueError("Disable wild enounters must be a boolean or a list of MapIds")
+        if "head_ids" in env_config and isinstance(env_config.head_ids, ListConfig):
+            self.head_ids = env_config.head_ids
+        else:
+            self.head_ids = {0} if self.debug else {1}
 
         self.disable_ai_actions = env_config.disable_ai_actions
         self.auto_teach_cut = env_config.auto_teach_cut
@@ -246,7 +249,7 @@ class RedGymEnv(Env):
             str(env_config.gb_path),
             debug=False,
             no_input=False,
-            window="null" if self.headless or self.env_id != self.head_id else "SDL2",
+            window="null" if self.headless or self.env_id not in self.head_ids else "SDL2",
             log_level="CRITICAL",
             symbols=os.path.join(os.path.dirname(__file__), "pokered.sym"),
         )

@@ -6,6 +6,8 @@ wandb:
 debug:
   env:
     headless: False
+    head_ids: #Which environment IDs to display in pyboy (env_id starts at 0 when serial in debug mode)
+      - 0
     stream_wrapper: False
     init_state: "victory_road_5"
     state_dir: pyboy_states
@@ -45,6 +47,10 @@ debug:
 
 env:
   headless: False
+  head_ids: #Which environment IDs to display in pyboy (env_id starts at 1 when multithreaded)
+    - 1
+    - 5
+  disable_ai_actions: False
   save_final_state: True
   print_rewards: True
   video_dir: video
