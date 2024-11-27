@@ -250,7 +250,7 @@ def autotune(
             "-r",
             help="Reward module to use in rewards",
         ),
-    ] = "baseline.BaselineRewardEnv",
+    ] = "baseline.ObjectRewardRequiredEventsMapIds",
     wrappers_name: Annotated[
         str,
         typer.Option(
@@ -258,9 +258,11 @@ def autotune(
             "-w",
             help="Wrappers to use _in order of instantion_",
         ),
-    ] = "baseline",
+    ] = "empty",
     rom_path: Path = "red.gb",
 ):
+    config = load_from_config(config, False)
+    config.vectorization = "multiprocessing"
     config, env_creator = setup(
         config=config,
         debug=False,
