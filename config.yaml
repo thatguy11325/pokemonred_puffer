@@ -59,9 +59,8 @@ env:
   reduce_res: True
   two_bit: True
   log_frequency: 2000
-  auto_flash: True
-  disable_wild_encounters: 
-    - INDIGO_PLATEAU
+  auto_flash: False
+  disable_wild_encounters: False
   disable_ai_actions: False
   auto_teach_cut: True
   auto_use_cut: True
@@ -72,9 +71,9 @@ env:
   auto_solve_strength_puzzles: True
   auto_remove_all_nonuseful_items: True
   auto_pokeflute: True
-  auto_next_elevator_floor: True
+  auto_next_elevator_floor: False
   skip_safari_zone: True
-  insert_saffron_guard_drinks: True
+  insert_saffron_guard_drinks: False
   infinite_money: True
   use_global_map: False
   save_state: True
