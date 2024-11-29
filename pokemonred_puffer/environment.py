@@ -296,7 +296,7 @@ class RedGymEnv(Env):
 
     def setup_enable_wild_ecounters(self):
         bank, addr = self.pyboy.symbol_lookup("TryDoWildEncounter.gotWildEncounterType")
-        self.pyboy.hook_deregister(bank, addr)
+        self.pyboy.hook_deregister(bank, addr + 8)
 
     def update_state(self, state: bytes):
         self.reset(seed=random.randint(0, 10), options={"state": state})
