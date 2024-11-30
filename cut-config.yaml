@@ -1,7 +1,7 @@
 rewards:
   baseline.ObjectRewardRequiredEventsMapIds:
     reward:
-      exploration: 
+      cut_coords: 
         carbs.utils.LinearSpace:
           min: 1.0e-3
           max: 10.0
