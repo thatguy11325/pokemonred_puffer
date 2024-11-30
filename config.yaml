@@ -65,9 +65,9 @@ env:
   auto_teach_cut: False 
   auto_use_cut: False
   auto_use_strength: True
-  auto_use_surf: True
-  auto_teach_surf: True
-  auto_teach_strength: True
+  auto_use_surf: False
+  auto_teach_surf: False
+  auto_teach_strength: False
   auto_solve_strength_puzzles: True
   auto_remove_all_nonuseful_items: True
   auto_pokeflute: True

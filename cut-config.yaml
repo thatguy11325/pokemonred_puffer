@@ -1,0 +1,62 @@
+rewards:
+  baseline.ObjectRewardRequiredEventsMapIds:
+    reward:
+      exploration: 
+        carbs.utils.LinearSpace:
+          min: 1.0e-3
+          max: 10.0
+          scale: 0.01
+      exploration: 
+        carbs.utils.LogSpace:
+          min: 1.0e-3
+          max: 1.0
+          scale: 0.01
+      explore_signs: 
+        carbs.utils.LogSpace:
+          min: 1.0e-4
+          max: 1.0
+          scale: 1e-3
+      explore_warps: 
+        carbs.utils.LogSpace:
+          min: 1.0e-3
+          max: 10.0
+          scale: 0.005
+      moves_obtained: 
+        carbs.utils.LogSpace:
+          min: 1.0e-3
+          max: 10.0
+          scale: 1.0
+      required_item: 
+        carbs.utils.LogSpace:
+          min: 1.0e-3
+          max: 10.0
+          scale: 1.0
+      use_surf: 
+        carbs.utils.LogSpace:
+          min: 1.0e-3
+          max: 2.0
+          scale: 0.25
+# policies:
+#   multi_convolutional.MultiConvolutionalPolicy:
+#     policy:
+#       hidden_size:
+#         carbs.utils.LinearSpace:
+#           min: 512
+#           max: 1024
+#           is_integer: True
+
+#     rnn:
+#       # Assumed to be in the same module as the policy
+#       name: MultiConvolutionalRNN
+#       args:
+#         input_size:
+#           carbs.utils.LinearSpace:
+#             min: 512
+#             max: 2048
+#             is_integer: True
+#         hidden_size:
+#           carbs.utils.LinearSpace:
+#             min: 512
+#             max: 2048
+#             is_integer: True
+
