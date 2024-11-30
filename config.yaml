@@ -60,10 +60,10 @@ env:
   two_bit: True
   log_frequency: 2000
   auto_flash: False
-  disable_wild_encounters: False
+  disable_wild_encounters: True
   disable_ai_actions: False
-  auto_teach_cut: True
-  auto_use_cut: True
+  auto_teach_cut: False 
+  auto_use_cut: False
   auto_use_strength: True
   auto_use_surf: True
   auto_teach_surf: True
@@ -140,6 +140,7 @@ train:
     EVENT_BEAT_BROCK: 30
     EVENT_BEAT_MISTY: 90
     EVENT_GOT_HM01: 180
+    EVENT_BEAT_ROUTE_9_TRAINER_0: 300
   one_epoch: "EVENT_BEAT_CHAMPION_RIVAL"
 
 wrappers:
@@ -316,8 +317,8 @@ rewards:
       badges: 3.0
       bag_menu: 0.0
       caught_pokemon: 2.5
-      cut_coords: 0.0
-      cut_tiles: 0.0
+      cut_coords: 0.75
+      cut_tiles: 
       event: .75
       exploration: 0.019
       explore_hidden_objs: 0.00009999
