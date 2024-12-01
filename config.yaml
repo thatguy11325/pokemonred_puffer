@@ -110,7 +110,7 @@ train:
   max_grad_norm: 0.5
   target_kl: ~
   vf_clip_coef: 0.1
-  vf_coef: 0.495
+  vf_coef: 0.5
   batch_rows: 128
   bptt_horizon: 16 
 
@@ -315,7 +315,7 @@ rewards:
   baseline.ObjectRewardRequiredEventsMapIds:
     reward:
       a_press: 0.0 # 0.00001
-      badges: .6
+      badges: 1.5
       bag_menu: 0.0
       caught_pokemon: 1.0
       cut_coords: 0.75

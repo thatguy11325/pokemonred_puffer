@@ -76,7 +76,7 @@ rewards:
         carbs.utils.LogSpace:
           min: 1.0e-5
           max: 10.0
-          scale: 2.0
+          scale: 0.1
       explore_hidden_objs: 
         carbs.utils.LogSpace:
           min: 1.0e-7
