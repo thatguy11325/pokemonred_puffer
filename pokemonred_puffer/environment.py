@@ -135,6 +135,7 @@ class RedGymEnv(Env):
         self.auto_pokeflute = env_config.auto_pokeflute
         self.auto_next_elevator_floor = env_config.auto_next_elevator_floor
         self.skip_safari_zone = env_config.skip_safari_zone
+        self.infinte_safari_steps = env_config.infinite_safari_steps
         self.insert_saffron_guard_drinks = env_config.insert_saffron_guard_drinks
         self.infinite_money = env_config.infinite_money
         self.use_global_map = env_config.use_global_map
@@ -682,6 +683,9 @@ class RedGymEnv(Env):
             and MapIds(self.blackout_check).name not in self.disable_wild_encounters_maps
         ):
             self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = 0xFF
+
+        if self.infinte_safari_steps:
+            self.update_safari_steps()
 
         self.check_num_bag_items()
 
@@ -1682,6 +1686,19 @@ class RedGymEnv(Env):
             # that have been removed - 1
             self.pyboy.memory[wBagSavedMenuItem] = 0
             self.pyboy.memory[wListScrollOffset] = 0
+
+    def update_safari_steps(self):
+        curMapId = MapIds(self.read_m("wCurMap"))
+        if curMapId in {
+            MapIds.SAFARI_ZONE_CENTER,
+            MapIds.SAFARI_ZONE_EAST,
+            MapIds.SAFARI_ZONE_WEST,
+            MapIds.SAFARI_ZONE_NORTH,
+        }:
+            _, wSafariSteps = self.pyboy.symbol_lookup("wSafariSteps")
+            # lazily set safari steps to 256. I dont want to do the math for 512
+            self.pyboy.memory[wSafariSteps] = 0
+            self.pyboy.memory[wSafariSteps + 1] = 0xFF
 
     def read_hp_fraction(self):
         party_size = self.read_m("wPartyCount")
