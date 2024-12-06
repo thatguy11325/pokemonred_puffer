@@ -403,7 +403,8 @@ class ObjectRewardRequiredEventsMapIds(BaselineRewardEnv):
                 "exploration": self.reward_config["exploration"] * np.sum(self.reward_explore_map),
                 "safari_zone": sum(
                     self.reward_config["safari_zone"] * v for k, v in self.safari_zone_steps.items()
-                ),
+                )
+                / 502.0,
             }
             | {
                 event: self.reward_config["required_event"] * float(self.events.get_event(event))
