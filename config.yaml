@@ -16,7 +16,7 @@ debug:
     reduce_res: True
     animate_scripts: True
     save_state: False
-    auto_next_elevator_floor: True 
+    auto_next_elevator_floor: True
     auto_solve_strength_puzzles: True
   train:
     device: cpu
@@ -60,7 +60,7 @@ env:
   two_bit: True
   log_frequency: 2000
   auto_flash: True
-  disable_wild_encounters: 
+  disable_wild_encounters:
     - INDIGO_PLATEAU
   disable_ai_actions: False
   auto_teach_cut: True
@@ -85,9 +85,6 @@ env:
   max_steps_scaling: 0 # 0.2 # every 10 events or items gained, multiply max_steps by 2
   map_id_scalefactor: 5.0 # multiply map ids whose events have not been completed by 5
 
-
-
-
 train:
   seed: 1
   torch_deterministic: True
@@ -96,7 +93,7 @@ train:
   compile_mode: "reduce-overhead"
   float32_matmul_precision: "high"
   total_timesteps: 1_000_000_000 # 100_000_000_000 for full games
-  batch_size: 65536 
+  batch_size: 65536
   minibatch_size: 2048
   anneal_lr: False
   num_minibatches: 4
@@ -113,7 +110,7 @@ train:
   vf_clip_coef: 0.1
   vf_coef: 0.5
   batch_rows: 128
-  bptt_horizon: 16 
+  bptt_horizon: 16
 
   num_envs: 288
   num_workers: 24
@@ -167,7 +164,7 @@ wrappers:
     - exploration.OnResetExplorationWrapper:
         full_reset_frequency: 1
         jitter: 0
-  
+
   finite_coords:
     - stream_wrapper.StreamWrapper:
         user: thatguy
@@ -179,14 +176,14 @@ wrappers:
 
   stream_only:
     - stream_wrapper.StreamWrapper:
-        user: thatguy 
+        user: thatguy
     - exploration.OnResetExplorationWrapper:
         full_reset_frequency: 1
         jitter: 1
 
   fixed_reset_value:
     - stream_wrapper.StreamWrapper:
-        user: thatguy 
+        user: thatguy
     - exploration.OnResetLowerToFixedValueWrapper:
         fixed_value:
           coords: 0.33
@@ -258,7 +255,7 @@ rewards:
       rocket_hideout_found: 5.0
       explore_hidden_objs: 0.02
       seen_action_bag_menu: 0.1
-  
+
   baseline.CutWithObjectRewardRequiredEventsEnv:
     reward:
       event: 1.0
@@ -281,7 +278,7 @@ rewards:
       required_item: 5.0
       useful_item: 1.0
       pokecenter_heal: 1.0
-    
+
   baseline.ObjectRewardRequiredEventsEnvTilesetExploration:
     reward:
       event: 1.0
@@ -312,7 +309,7 @@ rewards:
       a_press: 0.0 # 0.00001
       explore_warps: 0.05
       use_surf: 0.05
-  
+
   baseline.ObjectRewardRequiredEventsMapIds:
     reward:
       a_press: 0.0 # 0.00001
@@ -339,8 +336,7 @@ rewards:
       stats_menu: 0.0
       use_surf: 0.4
       useful_item: 0.825
-
-
+      safari_zone: 0.825
 
 policies:
   multi_convolutional.MultiConvolutionalPolicy:

@@ -405,6 +405,13 @@ class RedGymEnv(Env):
         self.seen_map_ids = np.zeros(256)
         self.seen_npcs = {}
         self.seen_warps = {}
+        self.safari_zone_steps = {
+            MapIds.SAFARI_ZONE_CENTER: 0,
+            MapIds.SAFARI_ZONE_EAST: 0,
+            MapIds.SAFARI_ZONE_NORTH: 0,
+            MapIds.SAFARI_ZONE_WEST: 0,
+            MapIds.SAFARI_ZONE_SECRET_HOUSE: 0,
+        }
 
         self.cut_coords = {}
         self.cut_tiles = {}
@@ -684,8 +691,7 @@ class RedGymEnv(Env):
         ):
             self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = 0xFF
 
-        if self.infinte_safari_steps:
-            self.update_safari_steps()
+        self.update_safari_zone()
 
         self.check_num_bag_items()
 
@@ -1435,6 +1441,7 @@ class RedGymEnv(Env):
                 "max_steps": self.get_max_steps(),
                 # redundant but this is so we don't interfere with the swarm logic
                 "required_count": len(self.required_events) + len(self.required_items),
+                "safari_zone": {k.name: v for k, v in self.safari_zone_steps.items()},
             }
             | {
                 "exploration": {
@@ -1687,18 +1694,34 @@ class RedGymEnv(Env):
             self.pyboy.memory[wBagSavedMenuItem] = 0
             self.pyboy.memory[wListScrollOffset] = 0
 
-    def update_safari_steps(self):
+    def update_safari_zone(self):
         curMapId = MapIds(self.read_m("wCurMap"))
+        # scale map id performs the same check
         if curMapId in {
             MapIds.SAFARI_ZONE_CENTER,
             MapIds.SAFARI_ZONE_EAST,
             MapIds.SAFARI_ZONE_WEST,
             MapIds.SAFARI_ZONE_NORTH,
         }:
-            _, wSafariSteps = self.pyboy.symbol_lookup("wSafariSteps")
-            # lazily set safari steps to 256. I dont want to do the math for 512
-            self.pyboy.memory[wSafariSteps] = 0
-            self.pyboy.memory[wSafariSteps + 1] = 0xFF
+            if (
+                self.infinte_safari_steps
+                and not self.events.get_event("EVENT_GOT_HM03")
+                and not self.missables.get_missable("HS_SAFARI_ZONE_WEST_ITEM_4")
+            ):
+                _, wSafariSteps = self.pyboy.symbol_lookup("wSafariSteps")
+                # lazily set safari steps to 256. I dont want to do the math for 512
+                self.pyboy.memory[wSafariSteps] = 1
+                self.pyboy.memory[wSafariSteps] = 0
+                self.pyboy.memory[wSafariSteps + 1] = 0xFF
+
+            # update safari zone
+            self.safari_zone_steps[curMapId] = max(
+                self.safari_zone_steps[curMapId], self.read_short("wSafariSteps")
+            )
+        if curMapId == MapIds.SAFARI_ZONE_SECRET_HOUSE:
+            self.safari_zone_steps[curMapId] = max(
+                self.safari_zone_steps[curMapId], self.read_short("wSafariSteps")
+            )
 
     def read_hp_fraction(self):
         party_size = self.read_m("wPartyCount")
@@ -1772,7 +1795,7 @@ class RedGymEnv(Env):
             0,
         )
 
-    def scale_map_id(self, map_n: int) -> float:
+    def scale_map_id(self, map_n: int) -> bool:
         map_id = MapIds(map_n)
         if map_id not in MAP_ID_COMPLETION_EVENTS:
             return False

@@ -401,6 +401,9 @@ class ObjectRewardRequiredEventsMapIds(BaselineRewardEnv):
                 "warps": len(self.seen_warps) * self.reward_config["explore_warps"],
                 "use_surf": self.reward_config["use_surf"] * self.use_surf,
                 "exploration": self.reward_config["exploration"] * np.sum(self.reward_explore_map),
+                "safari_zone": sum(
+                    self.reward_config["safari_zone"] * v for k, v in self.safari_zone_steps.items()
+                ),
             }
             | {
                 event: self.reward_config["required_event"] * float(self.events.get_event(event))
