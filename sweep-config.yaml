@@ -122,6 +122,12 @@ rewards:
           min: 1.0e-3
           max: 2.0
           scale: 0.25
+      safari_zone:
+        carbs.utils.LogSpace:
+          min: 1.0e-3
+          max: 1.0
+          scale: 0.01
+
 # policies:
 #   multi_convolutional.MultiConvolutionalPolicy:
 #     policy:
