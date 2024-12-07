@@ -256,9 +256,9 @@ class MultiConvolutionalPolicy(nn.Module):
             )
             + (() if self.skip_safari_zone else (observations["safari_steps"].float() / 502.0,))
             + (
-                ()
+                (self.global_map_network(global_map.float() / 255.0).squeeze(1),)
                 if self.use_global_map
-                else (self.global_map_network(global_map.float() / 255.0).squeeze(1),)
+                else ()
             ),
             dim=-1,
         )
