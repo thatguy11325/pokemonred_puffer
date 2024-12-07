@@ -253,25 +253,15 @@ class MultiConvolutionalPolicy(nn.Module):
                 observations["game_corner_rocket"].float(),
                 observations["saffron_guard"].float(),
                 observations["lapras"].float(),
+            )
+            + (() if self.skip_safari_zone else (observations["safari_steps"].float() / 502.0,))
+            + (
+                ()
+                if self.use_global_map
+                else (self.global_map_network(global_map.float() / 255.0).squeeze(1),)
             ),
             dim=-1,
         )
-        if not self.skip_safari_zone:
-            cat_obs = torch.cat(
-                (
-                    cat_obs,
-                    observations["safari_steps"].float() / 502.0,
-                ),
-                dim=-1,
-            )
-        if self.use_global_map:
-            cat_obs = torch.cat(
-                (
-                    cat_obs,
-                    self.global_map_network(global_map.float() / 255.0).squeeze(1),
-                ),
-                dim=-1,
-            )
         return self.encode_linear(cat_obs), None
 
     def decode_actions(self, flat_hidden, lookup, concat=None):
