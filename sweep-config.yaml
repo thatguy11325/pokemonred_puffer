@@ -9,6 +9,7 @@ env:
     carbs.utils.LinearSpace:
       min: 1.0
       max: 10.0
+      scale: 1.0
 
 train:
   total_timesteps:
