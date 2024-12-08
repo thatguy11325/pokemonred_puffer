@@ -130,7 +130,7 @@ rewards:
         carbs.utils.LogSpace:
           min: 1.0e-3
           max: 5.0
-          scale: 0.1
+          scale: 0.5
 
 # policies:
 #   multi_convolutional.MultiConvolutionalPolicy:
