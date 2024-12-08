@@ -339,7 +339,7 @@ rewards:
       stats_menu: 0.0
       use_surf: 0.4
       useful_item: 0.825
-      safari_zone: 0.825
+      safari_zone: 3.0
 
 policies:
   multi_convolutional.MultiConvolutionalPolicy:
