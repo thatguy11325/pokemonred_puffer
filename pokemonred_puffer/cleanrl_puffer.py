@@ -691,7 +691,10 @@ class CleanPuffeRL:
             or (
                 self.config.one_epoch
                 and self.states
-                and any(self.config.one_epoch in key for key in self.states.keys())
+                and (
+                    len(set(self.config.one_epoch).intersection(self.states.keys()))
+                    == len(self.config.one_epoch)
+                )
             )
         )
 

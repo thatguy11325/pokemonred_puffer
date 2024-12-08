@@ -5,6 +5,10 @@ env:
       max: 81920
       is_integer: True
       scale: 2500
+  map_id_scalefactor:
+    carbs.utils.LinearSpace:
+      min: 1.0
+      max: 10.0
 
 train:
   total_timesteps:

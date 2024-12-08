@@ -92,7 +92,7 @@ train:
   compile: True
   compile_mode: "reduce-overhead"
   float32_matmul_precision: "high"
-  total_timesteps: 1_000_000_000 # 100_000_000_000 for full games
+  total_timesteps: 250_000_000 # 1_000_000_000 # 100_000_000_000 for full games
   batch_size: 65536
   minibatch_size: 2048
   anneal_lr: False
@@ -140,7 +140,10 @@ train:
     EVENT_BEAT_MISTY: 90
     EVENT_GOT_HM01: 180
     EVENT_BEAT_ROUTE_9_TRAINER_0: 300
-  one_epoch: "EVENT_BEAT_CHAMPION_RIVAL"
+  one_epoch:
+    # - "EVENT_BEAT_CHAMPION_RIVAL"
+    - HM_03
+    - HM_04
 
 wrappers:
   empty:
