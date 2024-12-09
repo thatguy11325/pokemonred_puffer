@@ -159,15 +159,19 @@ def launch_sweep(
         if saves:
             # sort by the middle int and take the highest value
             # dont need split, could also use a regex group
+            print(f"Found saves {saves}")
             save_filename = sorted(
                 saves,
                 key=lambda x: int(x.replace("carbs_", "").replace("obs.pt", "")),
                 reverse=True,
             )[0]
+            print(f"Warm starting carbs from save {save_filename}")
             carbs.warm_start(
                 filename=os.path.join(experiment_dir, save_filename),
                 is_prior_observation_valid=True,
             )
+        else:
+            print("Found no saves. Carbs will not be warm started.")
 
     if not sweep_id and not dry_run:
         sweep_id = wandb.sweep(
