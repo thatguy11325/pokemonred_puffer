@@ -160,7 +160,9 @@ def launch_sweep(
             # sort by the middle int and take the highest value
             # dont need split, could also use a regex group
             save_filename = sorted(
-                saves, key=lambda x: int(x.replace("carbs_", "").replace("obs.pt", ""))
+                saves,
+                key=lambda x: int(x.replace("carbs_", "").replace("obs.pt", "")),
+                reverse=True,
             )[0]
             carbs.warm_start(
                 filename=os.path.join(experiment_dir, save_filename),
