@@ -1699,9 +1699,14 @@ class RedGymEnv(Env):
         # scale map id performs the same check
         if curMapId in {
             MapIds.SAFARI_ZONE_CENTER,
+            MapIds.SAFARI_ZONE_CENTER_REST_HOUSE,
             MapIds.SAFARI_ZONE_EAST,
+            MapIds.SAFARI_ZONE_EAST_REST_HOUSE,
             MapIds.SAFARI_ZONE_WEST,
+            MapIds.SAFARI_ZONE_WEST_REST_HOUSE,
             MapIds.SAFARI_ZONE_NORTH,
+            MapIds.SAFARI_ZONE_NORTH_REST_HOUSE,
+            MapIds.SAFARI_ZONE_SECRET_HOUSE,
         }:
             if (
                 self.infinte_safari_steps
@@ -1710,15 +1715,10 @@ class RedGymEnv(Env):
             ):
                 _, wSafariSteps = self.pyboy.symbol_lookup("wSafariSteps")
                 # lazily set safari steps to 256. I dont want to do the math for 512
-                self.pyboy.memory[wSafariSteps] = 1
                 self.pyboy.memory[wSafariSteps] = 0
                 self.pyboy.memory[wSafariSteps + 1] = 0xFF
 
             # update safari zone
-            self.safari_zone_steps[curMapId] = max(
-                self.safari_zone_steps[curMapId], self.read_short("wSafariSteps")
-            )
-        if curMapId == MapIds.SAFARI_ZONE_SECRET_HOUSE:
             self.safari_zone_steps[curMapId] = max(
                 self.safari_zone_steps[curMapId], self.read_short("wSafariSteps")
             )
