@@ -406,11 +406,18 @@ class RedGymEnv(Env):
         self.seen_npcs = {}
         self.seen_warps = {}
         self.safari_zone_steps = {
-            MapIds.SAFARI_ZONE_CENTER: 0,
-            MapIds.SAFARI_ZONE_EAST: 0,
-            MapIds.SAFARI_ZONE_NORTH: 0,
-            MapIds.SAFARI_ZONE_WEST: 0,
-            MapIds.SAFARI_ZONE_SECRET_HOUSE: 0,
+            k: 0
+            for k in [
+                MapIds.SAFARI_ZONE_CENTER,
+                MapIds.SAFARI_ZONE_CENTER_REST_HOUSE,
+                MapIds.SAFARI_ZONE_EAST,
+                MapIds.SAFARI_ZONE_EAST_REST_HOUSE,
+                MapIds.SAFARI_ZONE_WEST,
+                MapIds.SAFARI_ZONE_WEST_REST_HOUSE,
+                MapIds.SAFARI_ZONE_NORTH,
+                MapIds.SAFARI_ZONE_NORTH_REST_HOUSE,
+                MapIds.SAFARI_ZONE_SECRET_HOUSE,
+            ]
         }
 
         self.cut_coords = {}
