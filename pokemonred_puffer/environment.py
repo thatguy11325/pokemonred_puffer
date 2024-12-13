@@ -1813,7 +1813,7 @@ class RedGymEnv(Env):
             or (item.startswith("HS_") and self.missables.get_missable(item))
             or (item.startswith("BIT_") and self.flags.get_bit(item))
             for item in after
-        ) and all(
+        ) and any(
             (item.startswith("EVENT_") and not self.events.get_event(item))
             or (item.startswith("HS_") and not self.missables.get_missable(item))
             or (item.startswith("BIT_") and not self.flags.get_bit(item))
