@@ -322,10 +322,10 @@ rewards:
       cut_coords: 0.0
       cut_tiles: 0.0
       event: .75
-      exploration: 0.019
-      explore_hidden_objs: 0.00009999
-      explore_signs: 0.015
-      explore_warps: 0.01006
+      exploration: 0.018999755680454297
+      explore_hidden_objs: 0.00009999136567868017
+      explore_signs: 0.015025767686371013
+      explore_warps: 0.010135211705238394
       hm_count: 7.5
       level: 1.05
       moves_obtained: 4.0
@@ -339,7 +339,7 @@ rewards:
       stats_menu: 0.0
       use_surf: 0.4
       useful_item: 0.825
-      safari_zone: 3.0
+      safari_zone: 3.4493650422686217
 
 policies:
   multi_convolutional.MultiConvolutionalPolicy:
