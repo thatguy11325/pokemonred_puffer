@@ -63,8 +63,8 @@ env:
   disable_wild_encounters:
     - INDIGO_PLATEAU
   disable_ai_actions: False
-  auto_teach_cut: True
-  auto_use_cut: True
+  auto_teach_cut: False
+  auto_use_cut: False
   auto_use_strength: True
   auto_use_surf: True
   auto_teach_surf: True
@@ -92,7 +92,7 @@ train:
   compile: True
   compile_mode: "reduce-overhead"
   float32_matmul_precision: "high"
-  total_timesteps: 1_000_000_000 # 100_000_000_000 for full games
+  total_timesteps: 500_000_000 # 1_000_000_000 # 100_000_000_000 for full games
   batch_size: 65536
   minibatch_size: 2048
   anneal_lr: False
@@ -142,8 +142,9 @@ train:
     EVENT_BEAT_ROUTE_9_TRAINER_0: 300
   one_epoch:
     # - "EVENT_BEAT_CHAMPION_RIVAL"
-    - HM_03
-    - HM_04
+    # - HM_03
+    # - HM_04
+    - "EVENT_BEAT_ERIKA"
 
 wrappers:
   empty:
@@ -319,7 +320,7 @@ rewards:
       badges: 3.0
       bag_menu: 0.0
       caught_pokemon: 2.5
-      cut_coords: 0.0
+      cut_coords: 1.0
       cut_tiles: 0.0
       event: .75
       exploration: 0.018999755680454297
