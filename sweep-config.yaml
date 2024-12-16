@@ -48,87 +48,92 @@ rewards:
   baseline.ObjectRewardRequiredEventsMapIds:
     reward:
       event: 
-        carbs.utils.LogSpace:
+        carbs.utils.LinearSpace:
           min: 1.0e-3
           max: 10.0
           scale: 0.5
       seen_pokemon: 
-        carbs.utils.LogSpace:
+        carbs.utils.LinearSpace:
           min: 1.0e-3
           max: 10.0
           scale: 1.0
       caught_pokemon: 
-        carbs.utils.LogSpace:
+        carbs.utils.LinearSpace:
+          min: 1.0e-3
+          max: 10.0
+          scale: 1.0
+      cut_coords: 
+        carbs.utils.LinearSpace:
           min: 1.0e-3
           max: 10.0
           scale: 1.0
       moves_obtained: 
-        carbs.utils.LogSpace:
+        carbs.utils.LinearSpace:
           min: 1.0e-3
           max: 10.0
           scale: 1.0
       hm_count: 
-        carbs.utils.LogSpace:
+        carbs.utils.LinearSpace:
           min: 1.0e-3
           max: 15.0
           scale: 1.0
       level: 
-        carbs.utils.LogSpace:
+        carbs.utils.LinearSpace:
           min: 1.0e-5
           max: 10.0
           scale: 0.1
       badges: 
-        carbs.utils.LogSpace:
+        carbs.utils.LinearSpace:
           min: 1.0e-5
           max: 10.0
           scale: 2.0
       explore_hidden_objs: 
-        carbs.utils.LogSpace:
+        carbs.utils.LinearSpace:
           min: 1.0e-7
           max: 1.0
           scale: 5e-5
       explore_signs: 
-        carbs.utils.LogSpace:
+        carbs.utils.LinearSpace:
           min: 1.0e-4
           max: 1.0
           scale: 1e-3
       required_event: 
-        carbs.utils.LogSpace:
+        carbs.utils.LinearSpace:
           min: 1.0e-3
           max: 10.0
           scale: 1.0
       required_item: 
-        carbs.utils.LogSpace:
+        carbs.utils.LinearSpace:
           min: 1.0e-3
           max: 10.0
           scale: 1.0
       useful_item: 
-        carbs.utils.LogSpace:
+        carbs.utils.LinearSpace:
           min: 1.0e-3
           max: 10.0
           scale: 0.5
       pokecenter_heal: 
-        carbs.utils.LogSpace:
+        carbs.utils.LinearSpace:
           min: 1.0e-4
           max: 10.0
           scale: 0.1
       exploration: 
-        carbs.utils.LogSpace:
+        carbs.utils.LinearSpace:
           min: 1.0e-3
           max: 1.0
           scale: 0.01
       explore_warps: 
-        carbs.utils.LogSpace:
+        carbs.utils.LinearSpace:
           min: 1.0e-3
           max: 10.0
           scale: 0.005
       use_surf: 
-        carbs.utils.LogSpace:
+        carbs.utils.LinearSpace:
           min: 1.0e-3
           max: 2.0
           scale: 0.25
       safari_zone:
-        carbs.utils.LogSpace:
+        carbs.utils.LinearSpace:
           min: 1.0e-3
           max: 5.0
           scale: 0.5
