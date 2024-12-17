@@ -62,7 +62,7 @@ rewards:
           min: 1.0e-3
           max: 10.0
           scale: 1.0
-      cut_coords: 
+      valid_cut_coords: 
         carbs.utils.LinearSpace:
           min: 1.0e-3
           max: 10.0
