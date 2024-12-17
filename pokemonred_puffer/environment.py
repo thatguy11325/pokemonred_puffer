@@ -270,8 +270,8 @@ class RedGymEnv(Env):
         )
         self.pyboy.hook_register(None, "HandleBlackOut", self.blackout_hook, None)
         self.pyboy.hook_register(None, "SetLastBlackoutMap.done", self.blackout_update_hook, None)
-        # self.pyboy.hook_register(None, "UsedCut.nothingToCut", self.cut_hook, context=True)
-        # self.pyboy.hook_register(None, "UsedCut.canCut", self.cut_hook, context=False)
+        self.pyboy.hook_register(None, "UsedCut.nothingToCut", self.cut_hook, context=True)
+        self.pyboy.hook_register(None, "UsedCut.canCut", self.cut_hook, context=False)
         if self.disable_wild_encounters:
             self.setup_disable_wild_encounters()
         self.pyboy.hook_register(None, "AnimateHealingMachine", self.pokecenter_heal_hook, None)
@@ -420,8 +420,8 @@ class RedGymEnv(Env):
             ]
         }
 
-        self.cut_coords = {}
-        self.cut_tiles = {}
+        self.valid_cut_coords = {}
+        self.invalid_cut_coords = {}
 
         self.seen_hidden_objs = {}
         self.seen_signs = {}
@@ -1348,7 +1348,7 @@ class RedGymEnv(Env):
         if key[-1] != 0xFF:
             self.seen_warps[key] = 1
 
-    def cut_hook(self, context):
+    def cut_hook(self, context: bool):
         player_direction = self.pyboy.memory[
             self.pyboy.symbol_lookup("wSpritePlayerStateData1FacingDirection")[1]
         ]
@@ -1367,14 +1367,13 @@ class RedGymEnv(Env):
         ]
         if context:
             if wTileInFrontOfPlayer in [0x3D, 0x50]:
-                self.cut_coords[coords] = 10
+                self.valid_cut_coords[coords] = 1
             else:
-                self.cut_coords[coords] = 0.001
+                self.invalid_cut_coords[coords] = 1
         else:
-            self.cut_coords[coords] = 0.001
+            self.invalid_cut_coords[coords] = 1
 
         self.cut_explore_map[local_to_global(y, x, map_id)] = 1
-        self.cut_tiles[wTileInFrontOfPlayer] = 1
 
     def disable_wild_encounter_hook(self, *args, **kwargs):
         if (
@@ -1428,8 +1427,8 @@ class RedGymEnv(Env):
                 "taught_cut": int(self.check_if_party_has_hm(TmHmMoves.CUT.value)),
                 "taught_surf": int(self.check_if_party_has_hm(TmHmMoves.SURF.value)),
                 "taught_strength": int(self.check_if_party_has_hm(TmHmMoves.STRENGTH.value)),
-                # "cut_coords": sum(self.cut_coords.values()),
-                # "cut_tiles": len(self.cut_tiles),
+                "valid_cut_coords": len(self.valid_cut_coords),
+                "invalid_cut_coords": len(self.invalid_cut_coords),
                 "menu": {
                     "start_menu": self.seen_start_menu,
                     "pokemon_menu": self.seen_pokemon_menu,
