@@ -124,8 +124,8 @@ class OnResetExplorationWrapper(gym.Wrapper):
                 self.env.unwrapped.seen_coords.clear()
                 self.env.unwrapped.seen_map_ids *= 0
                 self.env.unwrapped.seen_npcs.clear()
-                self.env.unwrapped.cut_coords.clear()
-                self.env.unwrapped.cut_tiles.clear()
+                self.env.unwrapped.valid_cut_coords.clear()
+                self.env.unwrapped.invalid_cut_coords.clear()
                 self.env.unwrapped.seen_warps.clear()
                 self.env.unwrapped.seen_hidden_objs.clear()
                 self.env.unwrapped.seen_signs.clear()
@@ -156,13 +156,13 @@ class OnResetLowerToFixedValueWrapper(gym.Wrapper):
                 for k, v in self.env.unwrapped.seen_npcs.items()
                 if v > 0
             )
-            self.env.unwrapped.cut_tiles.update(
-                (k, self.fixed_value["cut"])
+            self.env.unwrapped.valid_cut_coords.update(
+                (k, self.fixed_value["valid_cut"])
                 for k, v in self.env.unwrapped.seen_npcs.items()
                 if v > 0
             )
-            self.env.unwrapped.cut_coords.update(
-                (k, self.fixed_value["cut"])
+            self.env.unwrapped.invalid_cut_coords.update(
+                (k, self.fixed_value["invalid_cut"])
                 for k, v in self.env.unwrapped.seen_npcs.items()
                 if v > 0
             )
@@ -170,7 +170,7 @@ class OnResetLowerToFixedValueWrapper(gym.Wrapper):
                 "explore"
             ]
             self.env.unwrapped.cut_explore_map[self.env.unwrapped.cut_explore_map > 0] = (
-                self.fixed_value["cut"]
+                self.fixed_value["invalid_cut"]
             )
             self.env.unwrapped.seen_warps.update(
                 (k, self.fixed_value["coords"])
