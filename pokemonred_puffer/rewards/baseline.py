@@ -381,7 +381,6 @@ class ObjectRewardRequiredEventsMapIds(BaselineRewardEnv):
                 * len(self.valid_cut_coords.values()),
                 "invalid_cut_coords": self.reward_config["invalid_cut_coords"]
                 * len(self.invalid_cut_coords.values()),
-                "cut_tiles": self.reward_config["cut_tiles"] * sum(self.cut_tiles.values()),
                 "start_menu": self.reward_config["start_menu"] * self.seen_start_menu,
                 "pokemon_menu": self.reward_config["pokemon_menu"] * self.seen_pokemon_menu,
                 "stats_menu": self.reward_config["stats_menu"] * self.seen_stats_menu,

@@ -321,7 +321,6 @@ rewards:
       bag_menu: 0.0
       caught_pokemon: 2.5
       valid_cut_coords: 1.5
-      cut_tiles: 0.0
       event: .75
       exploration: 0.018999755680454297
       explore_hidden_objs: 0.00009999136567868017
