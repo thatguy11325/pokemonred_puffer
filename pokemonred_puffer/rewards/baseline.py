@@ -378,9 +378,9 @@ class ObjectRewardRequiredEventsMapIds(BaselineRewardEnv):
                 "level": self.reward_config["level"] * self.get_levels_reward(),
                 "badges": self.reward_config["badges"] * self.get_badges(),
                 "valid_cut_coords": self.reward_config["valid_cut_coords"]
-                * len(self.cut_coords.values()),
+                * len(self.valid_cut_coords.values()),
                 "invalid_cut_coords": self.reward_config["invalid_cut_coords"]
-                * len(self.cut_coords.values()),
+                * len(self.invalid_cut_coords.values()),
                 "cut_tiles": self.reward_config["cut_tiles"] * sum(self.cut_tiles.values()),
                 "start_menu": self.reward_config["start_menu"] * self.seen_start_menu,
                 "pokemon_menu": self.reward_config["pokemon_menu"] * self.seen_pokemon_menu,
