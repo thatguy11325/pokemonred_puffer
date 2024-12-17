@@ -67,6 +67,11 @@ rewards:
           min: 1.0e-3
           max: 10.0
           scale: 1.0
+      invalid_cut_coords: 
+        carbs.utils.LinearSpace:
+          min: 1.0e-5
+          max: 1.0e-3
+          scale: 5e-5 
       moves_obtained: 
         carbs.utils.LinearSpace:
           min: 1.0e-3

@@ -328,6 +328,7 @@ rewards:
       explore_signs: 0.015025767686371013
       explore_warps: 0.010135211705238394
       hm_count: 7.5
+      invalid_cut_coords: 0.0001
       level: 1.05
       moves_obtained: 4.0
       pokecenter_heal: 0.47
