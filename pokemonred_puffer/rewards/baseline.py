@@ -361,7 +361,7 @@ class ObjectRewardRequiredEventsEnvTilesetExploration(BaselineRewardEnv):
 
 
 class ObjectRewardRequiredEventsMapIds(BaselineRewardEnv):
-    def get_game_state_reward(self):
+    def get_game_state_reward(self) -> dict[str, float]:
         _, wBagItems = self.pyboy.symbol_lookup("wBagItems")
         numBagItems = self.read_m("wNumBagItems")
         bag_item_ids = set(self.pyboy.memory[wBagItems : wBagItems + 2 * numBagItems : 2])
@@ -430,3 +430,15 @@ class ObjectRewardRequiredEventsMapIds(BaselineRewardEnv):
             return self.max_level_sum
         else:
             return 15 + (self.max_level_sum - 15) / 4
+
+
+class ObjectRewardRequiredEventsMapIdsFieldMoves(ObjectRewardRequiredEventsMapIds):
+    def get_game_state_reward(self) -> dict[str, float]:
+        return super().get_game_state_reward() | {
+            "pokeflute_coords": self.reward_config["pokeflute_coords"]
+            * len(self.pokeflute_coords.values()),
+            "valid_surf_coords": self.reward_config["valid_surf_coords"]
+            * len(self.valid_surf_coords.values()),
+            "invalid_surf_coords": self.reward_config["invalid_surf_coords"]
+            * len(self.invalid_cut_coords.values()),
+        }
