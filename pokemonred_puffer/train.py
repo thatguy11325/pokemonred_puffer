@@ -302,7 +302,7 @@ def train(
             "-r",
             help="Reward module to use in rewards",
         ),
-    ] = "baseline.ObjectRewardRequiredEventsMapIds",
+    ] = "baseline.ObjectRewardRequiredEventsMapIdsFieldMoves",
     wrappers_name: Annotated[
         str,
         typer.Option(
