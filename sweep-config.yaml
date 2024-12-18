@@ -45,7 +45,7 @@ train:
       scale: .05
 
 rewards:
-  baseline.ObjectRewardRequiredEventsMapIds:
+  baseline.ObjectRewardRequiredEventsMapIdsFieldMoves:
     reward:
       event: 
         carbs.utils.LinearSpace:
