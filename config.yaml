@@ -361,7 +361,7 @@ rewards:
       level: 1.05
       moves_obtained: 4.0
       pokecenter_heal: 0.47
-      pokeflute_coords: 0.0001
+      pokeflute_coords: 0.45
       pokemon_menu: 0.0
       required_event: 7.0
       required_item: 3.0

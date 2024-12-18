@@ -76,7 +76,7 @@ rewards:
         carbs.utils.LinearSpace:
           min: 1.0e-3
           max: 10.0
-          scale: 0.5
+          scale: 0.25
       valid_surf_coords: 
         carbs.utils.LinearSpace:
           min: 1.0e-3
