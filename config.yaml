@@ -92,7 +92,7 @@ train:
   compile: True
   compile_mode: "reduce-overhead"
   float32_matmul_precision: "high"
-  total_timesteps: 500_000_000 # 1_000_000_000 # 100_000_000_000 for full games
+  total_timesteps: 1_000_000_000 # 100_000_000_000 for full games
   batch_size: 65536
   minibatch_size: 2048
   anneal_lr: False
