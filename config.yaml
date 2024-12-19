@@ -373,6 +373,7 @@ rewards:
       use_surf: 0.0
       useful_item: 0.825
       safari_zone: 3.4493650422686217
+      use_ball_count: -10.0
 
 policies:
   multi_convolutional.MultiConvolutionalPolicy:
