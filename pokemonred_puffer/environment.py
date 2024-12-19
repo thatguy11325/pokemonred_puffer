@@ -10,6 +10,7 @@ import uuid
 
 import mediapy as media
 import numpy as np
+import numpy.typing as npt
 from omegaconf import DictConfig, ListConfig
 from gymnasium import Env, spaces
 from pyboy import PyBoy
@@ -456,7 +457,10 @@ class RedGymEnv(Env):
         self.seen_action_bag_menu = 0
         self.pokecenter_heal = 0
 
-    def render(self):
+    def render(self) -> npt.NDArray[np.uint8]:
+        return self.screen.ndarray[:, :, 1]
+
+    def screen_obs(self):
         # (144, 160, 3)
         game_pixels_render = np.expand_dims(self.screen.ndarray[:, :, 1], axis=-1)
 
@@ -626,7 +630,7 @@ class RedGymEnv(Env):
         bag[2 * numBagItems :] = 0
 
         return (
-            self.render()
+            self.screen_obs()
             | {
                 "direction": np.array(
                     self.read_m("wSpritePlayerStateData1FacingDirection") // 4, dtype=np.uint8
@@ -779,6 +783,9 @@ class RedGymEnv(Env):
             reset = True
             self.first = True
             new_reward = -self.total_reward * 0.5
+
+        if self.save_video:
+            self.add_video_frame()
 
         return obs, new_reward, reset, False, info
 
@@ -1530,37 +1537,38 @@ class RedGymEnv(Env):
     def start_video(self):
         if self.full_frame_writer is not None:
             self.full_frame_writer.close()
-        if self.model_frame_writer is not None:
-            self.model_frame_writer.close()
+        # if self.model_frame_writer is not None:
+        #     self.model_frame_writer.close()
         if self.map_frame_writer is not None:
             self.map_frame_writer.close()
 
-        base_dir = self.s_path / Path("rollouts")
+        base_dir = self.video_dir / Path("rollouts")
         base_dir.mkdir(exist_ok=True)
         full_name = Path(f"full_reset_{self.reset_count}_id{self.instance_id}").with_suffix(".mp4")
-        model_name = Path(f"model_reset_{self.reset_count}_id{self.instance_id}").with_suffix(
-            ".mp4"
-        )
         self.full_frame_writer = media.VideoWriter(
             base_dir / full_name, (144, 160), fps=60, input_format="gray"
         )
         self.full_frame_writer.__enter__()
-        self.model_frame_writer = media.VideoWriter(
-            base_dir / model_name, self.screen_output_shape[:2], fps=60, input_format="gray"
-        )
-        self.model_frame_writer.__enter__()
+        # model_name = Path(f"model_reset_{self.reset_count}_id{self.instance_id}").with_suffix(
+        #     ".mp4"
+        # )
+        # self.model_frame_writer = media.VideoWriter(
+        #     base_dir / model_name, self.screen_output_shape[:2], fps=60, input_format="gray"
+        # )
+        # self.model_frame_writer.__enter__()
         map_name = Path(f"map_reset_{self.reset_count}_id{self.instance_id}").with_suffix(".mp4")
         self.map_frame_writer = media.VideoWriter(
             base_dir / map_name,
-            (self.coords_pad * 4, self.coords_pad * 4),
+            self.explore_map.shape,
             fps=60,
             input_format="gray",
         )
         self.map_frame_writer.__enter__()
 
     def add_video_frame(self):
-        self.full_frame_writer.add_image(self.render()[:, :, 0])
-        self.model_frame_writer.add_image(self.render()[:, :, 0])
+        self.full_frame_writer.add_image(self.render()[:, :])
+        # self.model_frame_writer.add_image(self.render()[:, :])
+        self.map_frame_writer.add_image(self.explore_map)
 
     def get_game_coords(self):
         return (self.read_m(0xD362), self.read_m(0xD361), self.read_m(0xD35E))
@@ -1881,3 +1889,9 @@ class RedGymEnv(Env):
             print(
                 f"WARNING: env id {int(self.env_id)} contains a full bag with items: {[Items(item) for item in bag[::2]]}"
             )
+
+    def close(self):
+        if self.save_video:
+            self.full_frame_writer.close()
+            self.model_frame_writer.close()
+            self.map_frame_writer.close()
