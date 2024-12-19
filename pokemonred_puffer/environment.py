@@ -169,7 +169,6 @@ class RedGymEnv(Env):
             self.instance_id = str(uuid.uuid4())[:8]
             self.video_dir.mkdir(exist_ok=True)
             self.full_frame_writer = None
-            self.model_frame_writer = None
             self.map_frame_writer = None
         self.reset_count = 0
         self.all_runs = []
@@ -1537,8 +1536,6 @@ class RedGymEnv(Env):
     def start_video(self):
         if self.full_frame_writer is not None:
             self.full_frame_writer.close()
-        # if self.model_frame_writer is not None:
-        #     self.model_frame_writer.close()
         if self.map_frame_writer is not None:
             self.map_frame_writer.close()
 
@@ -1549,13 +1546,6 @@ class RedGymEnv(Env):
             base_dir / full_name, (144, 160), fps=60, input_format="gray"
         )
         self.full_frame_writer.__enter__()
-        # model_name = Path(f"model_reset_{self.reset_count}_id{self.instance_id}").with_suffix(
-        #     ".mp4"
-        # )
-        # self.model_frame_writer = media.VideoWriter(
-        #     base_dir / model_name, self.screen_output_shape[:2], fps=60, input_format="gray"
-        # )
-        # self.model_frame_writer.__enter__()
         map_name = Path(f"map_reset_{self.reset_count}_id{self.instance_id}").with_suffix(".mp4")
         self.map_frame_writer = media.VideoWriter(
             base_dir / map_name,
@@ -1567,7 +1557,6 @@ class RedGymEnv(Env):
 
     def add_video_frame(self):
         self.full_frame_writer.add_image(self.render()[:, :])
-        # self.model_frame_writer.add_image(self.render()[:, :])
         self.map_frame_writer.add_image(self.explore_map)
 
     def get_game_coords(self):
@@ -1893,5 +1882,4 @@ class RedGymEnv(Env):
     def close(self):
         if self.save_video:
             self.full_frame_writer.close()
-            self.model_frame_writer.close()
             self.map_frame_writer.close()
