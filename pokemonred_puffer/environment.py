@@ -294,6 +294,7 @@ class RedGymEnv(Env):
             self.sign_hook,
             None,
         )
+        self.pyboy.hook_register(None, "ItemUseBall.loop", self.use_ball_hook, None)
         self.reset_count = 0
 
     def setup_disable_wild_encounters(self):
@@ -447,6 +448,7 @@ class RedGymEnv(Env):
         self.seen_bag_menu = 0
         self.seen_action_bag_menu = 0
         self.pokecenter_heal = 0
+        self.use_ball_count = 0
 
     def reset_mem(self):
         self.seen_start_menu = 0
@@ -455,6 +457,7 @@ class RedGymEnv(Env):
         self.seen_bag_menu = 0
         self.seen_action_bag_menu = 0
         self.pokecenter_heal = 0
+        self.use_ball_count = 0
 
     def render(self) -> npt.NDArray[np.uint8]:
         return self.screen.ndarray[:, :, 1]
@@ -1429,6 +1432,9 @@ class RedGymEnv(Env):
         else:
             self.invalid_surf_coords[coords] = 1
 
+    def use_ball_hook(self, *args, **kwargs):
+        self.use_ball_count += 1
+
     def disable_wild_encounter_hook(self, *args, **kwargs):
         if (
             self.disable_wild_encounters
@@ -1505,6 +1511,7 @@ class RedGymEnv(Env):
                 # redundant but this is so we don't interfere with the swarm logic
                 "required_count": len(self.required_events) + len(self.required_items),
                 "safari_zone": {k.name: v for k, v in self.safari_zone_steps.items()},
+                "use_ball_count": self.use_ball_count,
             }
             | {
                 "exploration": {

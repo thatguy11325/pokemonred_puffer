@@ -407,6 +407,7 @@ class ObjectRewardRequiredEventsMapIds(BaselineRewardEnv):
                     self.reward_config["safari_zone"] * v for k, v in self.safari_zone_steps.items()
                 )
                 / 502.0,
+                "use_ball_count": self.reward_config["use_ball_count"] * self.use_ball_count,
             }
             | {
                 event: self.reward_config["required_event"] * float(self.events.get_event(event))
