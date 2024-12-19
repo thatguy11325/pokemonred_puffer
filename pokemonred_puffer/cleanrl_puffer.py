@@ -635,7 +635,7 @@ class CleanPuffeRL:
                     )
 
             if self.epoch % self.config.checkpoint_interval == 0 or done_training:
-                # self.save_checkpoint()
+                self.save_checkpoint()
                 self.msg = f"Checkpoint saved at update {self.epoch}"
 
     def close(self):
@@ -643,13 +643,12 @@ class CleanPuffeRL:
         if self.config.verbose:
             self.utilization.stop()
 
-        # if self.wandb_client is not None:
-        # artifact_name = f"{self.exp_name}_model"
-        # artifact = wandb.Artifact(artifact_name, type="model")
-        # model_path = self.save_checkpoint()
-        # artifact.add_file(model_path)
-        # self.wandb_client.log_artifact(artifact)
-        # self.wandb_client.finish()
+        if self.wandb_client is not None:
+            artifact_name = f"{self.exp_name}_model"
+            artifact = wandb.Artifact(artifact_name, type="model")
+            model_path = self.save_checkpoint()
+            artifact.add_file(model_path)
+            self.wandb_client.log_artifact(artifact)
 
     def save_checkpoint(self):
         config = self.config
@@ -703,7 +702,7 @@ class CleanPuffeRL:
 
     def __exit__(self, *args):
         print("Done training.")
-        # self.save_checkpoint()
+        self.save_checkpoint()
         self.close()
         print("Run complete")
 
