@@ -388,7 +388,7 @@ def train(
             policy = make_policy(vecenv.driver_env, policy_name, config)
 
             config.train.env = "Pokemon Red"
-            trainer = CleanPuffeRL(
+            with CleanPuffeRL(
                 exp_name=exp_name,
                 config=config.train,
                 vecenv=vecenv,
@@ -397,12 +397,11 @@ def train(
                 env_send_queues=env_send_queues,
                 sqlite_db=db_filename,
                 wandb_client=wandb_client,
-            )
-            while not trainer.done_training():
-                trainer.evaluate()
-                trainer.train()
+            ) as trainer:
+                while not trainer.done_training():
+                    trainer.evaluate()
+                    trainer.train()
 
-            trainer.close()
             print("Done training")
 
 
