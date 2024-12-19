@@ -18,6 +18,7 @@ debug:
     save_state: False
     auto_next_elevator_floor: True
     auto_solve_strength_puzzles: True
+    save_video: True
   train:
     device: cpu
     compile: False
