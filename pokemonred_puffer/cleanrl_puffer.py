@@ -643,10 +643,10 @@ class CleanPuffeRL:
         if self.config.verbose:
             self.utilization.stop()
 
+        model_path = self.save_checkpoint()
         if self.wandb_client is not None:
             artifact_name = f"{self.exp_name}_model"
             artifact = wandb.Artifact(artifact_name, type="model")
-            model_path = self.save_checkpoint()
             artifact.add_file(model_path)
             self.wandb_client.log_artifact(artifact)
 
