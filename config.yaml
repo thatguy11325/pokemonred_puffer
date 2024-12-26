@@ -41,7 +41,7 @@ debug:
     env_pool: False
     load_optimizer_state: False
     async_wrapper: False
-    sqlite_wrapper: True
+    sqlite_wrapper: False
     archive_states: False
 
 env:
@@ -61,18 +61,17 @@ env:
   two_bit: True
   log_frequency: 2000
   auto_flash: True
-  disable_wild_encounters:
-    - INDIGO_PLATEAU
+  disable_wild_encounters: False
   disable_ai_actions: False
-  auto_teach_cut: False
-  auto_use_cut: False
+  auto_teach_cut: True
+  auto_use_cut: True
   auto_use_strength: True
-  auto_use_surf: False
-  auto_teach_surf: False
+  auto_use_surf: True
+  auto_teach_surf: True
   auto_teach_strength: True
   auto_solve_strength_puzzles: True
   auto_remove_all_nonuseful_items: True
-  auto_pokeflute: False
+  auto_pokeflute: True
   auto_next_elevator_floor: True
   skip_safari_zone: False
   infinite_safari_steps: False
@@ -142,10 +141,10 @@ train:
     EVENT_GOT_HM01: 180
     EVENT_BEAT_ROUTE_9_TRAINER_0: 300
   one_epoch:
-    # - "EVENT_BEAT_CHAMPION_RIVAL"
+    - "EVENT_BEAT_CHAMPION_RIVAL"
     # - HM_03
     # - HM_04
-    - "EVENT_BEAT_ERIKA"
+    # - "EVENT_BEAT_ERIKA"
 
 wrappers:
   empty:
