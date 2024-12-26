@@ -749,13 +749,6 @@ class RedGymEnv(Env):
             self.use_surf = 1
         info = {}
 
-        # self.memory[0xd16c] = 0xFF
-        self.pyboy.memory[0xD16D] = 0xFF
-        self.pyboy.memory[0xD188] = 0xFF
-        self.pyboy.memory[0xD189] = 0xFF
-        self.pyboy.memory[0xD18A] = 0xFF
-        self.pyboy.memory[0xD18B] = 0xFF
-
         required_events = self.get_required_events()
         required_items = self.get_required_items()
         new_required_events = required_events - self.required_events
