@@ -7,7 +7,7 @@ debug:
   env:
     headless: False
     stream_wrapper: False
-    init_state: "victory_road_5"
+    init_state: "Bulbasaur"
     state_dir: pyboy_states
     max_steps: 21000
     log_frequency: 1
@@ -16,9 +16,23 @@ debug:
     reduce_res: True
     animate_scripts: True
     save_state: False
-    auto_next_elevator_floor: True
-    auto_solve_strength_puzzles: True
     save_video: True
+    auto_flash: True
+    disable_wild_encounters: False
+    auto_teach_cut: False
+    auto_use_cut: False
+    auto_use_strength: False
+    auto_use_surf: False
+    auto_teach_surf: False
+    auto_teach_strength: False
+    auto_solve_strength_puzzles: False
+    auto_remove_all_nonuseful_items: False
+    auto_pokeflute: False
+    auto_next_elevator_floor: False
+    skip_safari_zone: False
+    infinite_safari_steps: False
+    insert_saffron_guard_drinks: False
+    perfect_ivs: False
   train:
     device: cpu
     compile: False

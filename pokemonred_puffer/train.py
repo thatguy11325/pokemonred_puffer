@@ -313,7 +313,7 @@ def debug(
             "-w",
             help="Wrappers to use _in order of instantion_",
         ),
-    ] = "stream_only",
+    ] = "empty",
     rom_path: Path = "red.gb",
 ):
     config = load_from_config(config, True)
@@ -330,6 +330,7 @@ def debug(
     env = env_creator(
         config.env, config.wrappers[wrappers_name], config.rewards[reward_name]["reward"]
     )
+    env.reset()
     while True:
         env.step(5)
     env.close()
