@@ -151,9 +151,9 @@ train:
     # we early stop
     # The defaults have a margin of error
     EVENT_BEAT_BROCK: 30
-    EVENT_BEAT_MISTY: 90
-    EVENT_GOT_HM01: 180
-    EVENT_BEAT_ROUTE_9_TRAINER_0: 300
+    EVENT_BEAT_MISTY: 300
+    EVENT_GOT_HM01: 600
+    EVENT_BEAT_ROUTE_9_TRAINER_0: 1200
   one_epoch:
     - "EVENT_BEAT_CHAMPION_RIVAL"
     # - HM_03
