@@ -113,16 +113,16 @@ train:
   num_minibatches: 4
   update_epochs: 3
   norm_adv: True
-  ent_coef: 0.010005
-  gae_lambda: 0.9501
-  gamma: 0.9980002
+  ent_coef: 0.010002
+  gae_lambda: 0.95
+  gamma: 0.998
   clip_coef: 0.1
   clip_vloss: True
   learning_rate: 2.0e-4
   max_grad_norm: 0.5
   target_kl: ~
   vf_clip_coef: 0.1
-  vf_coef: 0.5
+  vf_coef: 0.527
   batch_rows: 128
   bptt_horizon: 16
 
@@ -359,34 +359,34 @@ rewards:
   baseline.ObjectRewardRequiredEventsMapIdsFieldMoves:
     reward:
       a_press: 0.0 # 0.00001
-      badges: 3.0
+      badges: 2.5 
       bag_menu: 0.0
-      caught_pokemon: 2.5
-      valid_cut_coords: 0.75
-      valid_surf_coords: .75
+      caught_pokemon: 2.88
       event: .75
-      exploration: 0.018999755680454297
-      explore_hidden_objs: 0.00009999136567868017
-      explore_signs: 0.015025767686371013
-      explore_warps: 0.010135211705238394
-      hm_count: 7.5
+      exploration: 0.02
+      explore_hidden_objs: 0.00008888
+      explore_signs: 0.015
+      explore_warps: 0.012
+      hm_count: 7.95
       invalid_cut_coords: 0.0001
       invalid_surf_coords: 0.0001
-      level: 1.05
-      moves_obtained: 4.0
-      pokecenter_heal: 0.47
-      pokeflute_coords: 0.45
+      level: 1.1
+      moves_obtained: 4.2
+      pokecenter_heal: 0.5
+      pokeflute_coords: 0.5
       pokemon_menu: 0.0
-      required_event: 7.0
-      required_item: 3.0
+      required_event: 6.75
+      required_item: 3.3
+      safari_zone: 3.4
       seen_action_bag_menu: 0.0
-      seen_pokemon: 2.5
+      seen_pokemon: 2.75
       start_menu: 0.0
       stats_menu: 0.0
       use_surf: 0.0
-      useful_item: 0.825
-      safari_zone: 3.4493650422686217
+      useful_item: 0.45
       use_ball_count: -10.0
+      valid_cut_coords: 0.75
+      valid_surf_coords: .75
 
 policies:
   multi_convolutional.MultiConvolutionalPolicy:
