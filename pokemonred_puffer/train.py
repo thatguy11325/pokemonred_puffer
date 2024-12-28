@@ -3,6 +3,7 @@ import importlib
 import os
 import sqlite3
 from tempfile import NamedTemporaryFile
+import time
 import uuid
 from contextlib import contextmanager, nullcontext
 from enum import Enum
@@ -333,6 +334,7 @@ def debug(
     env.reset()
     while True:
         env.step(5)
+        time.sleep(0.2)
     env.close()
 
 
