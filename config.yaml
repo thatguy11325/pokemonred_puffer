@@ -97,7 +97,7 @@ env:
   exploration_inc: 1.0
   exploration_max: 1.0
   max_steps_scaling: 0 # 0.2 # every 10 events or items gained, multiply max_steps by 2
-  map_id_scalefactor: 5.0 # multiply map ids whose events have not been completed by 5
+  map_id_scalefactor: 10.0 # multiply map ids whose events have not been completed by 10
 
 train:
   seed: 1
