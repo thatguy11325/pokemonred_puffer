@@ -7,8 +7,8 @@ env:
       scale: 2500
   map_id_scalefactor:
     carbs.utils.LinearSpace:
-      min: 1.0
-      max: 10.0
+      min: 5.0
+      max: 20.0
       scale: 1.0
 
 train:
