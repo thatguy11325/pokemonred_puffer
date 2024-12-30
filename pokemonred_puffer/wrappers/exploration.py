@@ -65,6 +65,10 @@ class DecayWrapper(gym.Wrapper):
         self.env.unwrapped.explore_map[self.env.unwrapped.explore_map > 0] = np.clip(
             self.env.unwrapped.explore_map[self.env.unwrapped.explore_map > 0], 0.15, 1
         )
+        self.env.unwrapped.reward_explore_map *= self.step_forgetting_factor["explore"]
+        self.env.unwrapped.reward_explore_map[self.env.unwrapped.explore_map > 0] = np.clip(
+            self.env.unwrapped.reward_explore_map[self.env.unwrapped.explore_map > 0], 0.15, 1
+        )
         self.env.unwrapped.seen_hidden_objs.update(
             (k, max(0.15, v * (self.step_forgetting_factor["hidden_objs"])))
             for k, v in self.env.unwrapped.seen_coords.items()
@@ -105,6 +109,7 @@ class MaxLengthWrapper(gym.Wrapper):
             x, y, n = coord
             del self.env.unwrapped.seen_coords[(x, y, n)]
             self.env.unwrapped.explore_map[local_to_global(y, x, n)] = 0
+            self.env.unwrapped.reward_explore_map[local_to_global(y, x, n)] = 0
         return step
 
 
@@ -120,6 +125,7 @@ class OnResetExplorationWrapper(gym.Wrapper):
             if (self.counter + random.randint(0, self.jitter)) >= self.full_reset_frequency:
                 self.counter = 0
                 self.env.unwrapped.explore_map *= 0
+                self.env.unwrapped.reward_explore_map *= 0
                 self.env.unwrapped.cut_explore_map *= 0
                 self.env.unwrapped.seen_coords.clear()
                 self.env.unwrapped.seen_map_ids *= 0
@@ -187,6 +193,9 @@ class OnResetLowerToFixedValueWrapper(gym.Wrapper):
             self.env.unwrapped.explore_map[self.env.unwrapped.explore_map > 0] = self.fixed_value[
                 "explore"
             ]
+            self.env.unwrapped.reward_explore_map[self.env.unwrapped.reward_explore_map > 0] = (
+                self.fixed_value["explore"]
+            )
             self.env.unwrapped.cut_explore_map[self.env.unwrapped.cut_explore_map > 0] = (
                 self.fixed_value["invalid_cut"]
             )
