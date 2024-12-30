@@ -1776,6 +1776,8 @@ class RedGymEnv(Env):
             self.safari_zone_steps[curMapId] = max(
                 self.safari_zone_steps[curMapId], self.read_short("wSafariSteps")
             )
+        elif curMapId != MapIds.SAFARI_ZONE_WEST_REST_HOUSE:
+            self.safari_zone_steps.clear()
 
     def read_hp_fraction(self):
         party_size = self.read_m("wPartyCount")
