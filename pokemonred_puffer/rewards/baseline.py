@@ -436,8 +436,10 @@ class ObjectRewardRequiredEventsMapIds(BaselineRewardEnv):
 class ObjectRewardRequiredEventsMapIdsFieldMoves(ObjectRewardRequiredEventsMapIds):
     def get_game_state_reward(self) -> dict[str, float]:
         return super().get_game_state_reward() | {
-            "pokeflute_coords": self.reward_config["pokeflute_coords"]
-            * len(self.pokeflute_coords.values()),
+            "valid_pokeflute_coords": self.reward_config["valid_pokeflute_coords"]
+            * len(self.valid_pokeflute_coords.values()),
+            "invalid_pokeflute_coords": self.reward_config["invalid_pokeflute_coords"]
+            * len(self.invalid_pokeflute_coords.values()),
             "valid_surf_coords": self.reward_config["valid_surf_coords"]
             * len(self.valid_surf_coords.values()),
             "invalid_surf_coords": self.reward_config["invalid_surf_coords"]

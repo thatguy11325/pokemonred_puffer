@@ -9,7 +9,7 @@ debug:
     stream_wrapper: False
     init_state: "Bulbasaur"
     state_dir: pyboy_states
-    max_steps: 21000
+    max_steps: 19000
     log_frequency: 1
     disable_ai_actions: True
     use_global_map: False
@@ -70,26 +70,26 @@ env:
   save_video: False
   fast_video: False
   frame_stacks: 1
-  perfect_ivs: True
+  perfect_ivs: False
   reduce_res: True
   two_bit: True
   log_frequency: 2000
   auto_flash: True
   disable_wild_encounters: False
   disable_ai_actions: False
-  auto_teach_cut: True
-  auto_use_cut: True
+  auto_teach_cut: False
+  auto_use_cut: False
   auto_use_strength: True
-  auto_use_surf: True
-  auto_teach_surf: True
+  auto_use_surf: False
+  auto_teach_surf: False
   auto_teach_strength: True
   auto_solve_strength_puzzles: True
   auto_remove_all_nonuseful_items: True
-  auto_pokeflute: True
-  auto_next_elevator_floor: True
+  auto_pokeflute: False
+  auto_next_elevator_floor: False
   skip_safari_zone: False
   infinite_safari_steps: False
-  insert_saffron_guard_drinks: True
+  insert_saffron_guard_drinks: False
   infinite_money: True
   use_global_map: False
   save_state: True
@@ -97,7 +97,7 @@ env:
   exploration_inc: 1.0
   exploration_max: 1.0
   max_steps_scaling: 0 # 0.2 # every 10 events or items gained, multiply max_steps by 2
-  map_id_scalefactor: 10.0 # multiply map ids whose events have not been completed by 10
+  map_id_scalefactor: 9.75 # multiply map ids whose events have not been completed by 10
 
 train:
   seed: 1
@@ -115,14 +115,14 @@ train:
   norm_adv: True
   ent_coef: 0.010002
   gae_lambda: 0.95
-  gamma: 0.998
+  gamma: 0.99799
   clip_coef: 0.1
   clip_vloss: True
-  learning_rate: 2.0e-4
+  learning_rate: 0.00019999014429722615
   max_grad_norm: 0.5
   target_kl: ~
   vf_clip_coef: 0.1
-  vf_coef: 0.527
+  vf_coef: 0.530766
   batch_rows: 128
   bptt_horizon: 16
 
@@ -359,34 +359,35 @@ rewards:
   baseline.ObjectRewardRequiredEventsMapIdsFieldMoves:
     reward:
       a_press: 0.0 # 0.00001
-      badges: 2.5 
+      badges: 1.938
       bag_menu: 0.0
-      caught_pokemon: 2.88
-      event: .75
-      exploration: 0.02
-      explore_hidden_objs: 0.00008888
-      explore_signs: 0.015
-      explore_warps: 0.012
-      hm_count: 7.95
+      caught_pokemon: 3.075
+      event: .69
+      exploration: 0.02653
+      explore_hidden_objs: 0.00008065
+      explore_signs: 0.014622
+      explore_warps: 0.0109
+      hm_count: 7.87
       invalid_cut_coords: 0.0001
+      invalid_pokeflute_coords: 0.0001
       invalid_surf_coords: 0.0001
-      level: 1.1
-      moves_obtained: 4.2
-      pokecenter_heal: 0.5
-      pokeflute_coords: 0.5
+      level: 1.1285
+      moves_obtained: 4.038
+      pokecenter_heal: 0.513
       pokemon_menu: 0.0
-      required_event: 6.75
-      required_item: 3.3
-      safari_zone: 10.0
+      required_event: 6.85
+      required_item: 3.37
+      safari_zone: 10.08
       seen_action_bag_menu: 0.0
-      seen_pokemon: 2.75
+      seen_pokemon: 2.528
       start_menu: 0.0
       stats_menu: 0.0
       use_surf: 0.0
-      useful_item: 0.45
+      useful_item: 1.19
       use_ball_count: -10.0
       valid_cut_coords: 0.75
-      valid_surf_coords: .75
+      valid_pokeflute_coords: 0.75
+      valid_surf_coords: 0.75
 
 policies:
   multi_convolutional.MultiConvolutionalPolicy:

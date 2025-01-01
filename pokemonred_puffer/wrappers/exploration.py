@@ -132,7 +132,8 @@ class OnResetExplorationWrapper(gym.Wrapper):
                 self.env.unwrapped.seen_npcs.clear()
                 self.env.unwrapped.valid_cut_coords.clear()
                 self.env.unwrapped.invalid_cut_coords.clear()
-                self.env.unwrapped.pokeflute_coords.clear()
+                self.env.unwrapped.valid_pokelute_coords.clear()
+                self.env.unwrapped.invalid_pokeflute_coords.clear()
                 self.env.unwrapped.valid_surf_coords.clear()
                 self.env.unwrapped.invalid_surf_coords.clear()
                 self.env.unwrapped.seen_warps.clear()
@@ -175,8 +176,13 @@ class OnResetLowerToFixedValueWrapper(gym.Wrapper):
                 for k, v in self.env.unwrapped.seen_npcs.items()
                 if v > 0
             )
-            self.env.unwrapped.pokeflute_coords.update(
-                (k, self.fixed_value["pokeflute"])
+            self.env.unwrapped.valid_pokeflute_coords.update(
+                (k, self.fixed_value["valid_pokeflute"])
+                for k, v in self.env.unwrapped.seen_npcs.items()
+                if v > 0
+            )
+            self.env.unwrapped.invalid_pokeflute_coords.update(
+                (k, self.fixed_value["invalid_pokeflute"])
                 for k, v in self.env.unwrapped.seen_npcs.items()
                 if v > 0
             )
