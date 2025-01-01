@@ -276,7 +276,10 @@ class RedGymEnv(Env):
         # there is already an event for waking up the snorlax. No need to make a hookd for it
         if not self.auto_pokeflute:
             self.pyboy.hook_register(
-                None, "ItemUsePokeFlute.noSnorlaxToWakeUp", self.pokeflute_hook, None
+                None, "ItemUsePokeFlute.noSnorlaxToWakeUp", self.pokeflute_hook, context=False
+            )
+            self.pyboy.hook_register(
+                None, "PlayedFluteHadEffectText", self.pokeflute_hook, context=True
             )
         if not self.auto_use_surf:
             self.pyboy.hook_register(None, "SurfingAttemptFailed", self.surf_hook, context=False)
@@ -434,7 +437,8 @@ class RedGymEnv(Env):
         self.valid_cut_coords = {}
         self.invalid_cut_coords = {}
 
-        self.pokeflute_coords = {}
+        self.valid_pokeflute_coords = {}
+        self.invalid_pokeflute_coords = {}
 
         self.valid_surf_coords = {}
         self.invalid_surf_coords = {}
@@ -1392,7 +1396,7 @@ class RedGymEnv(Env):
 
         self.cut_explore_map[local_to_global(y, x, map_id)] = 1
 
-    def pokeflute_hook(self, *args, **kwargs):
+    def pokeflute_hook(self, context: bool):
         player_direction = self.pyboy.memory[
             self.pyboy.symbol_lookup("wSpritePlayerStateData1FacingDirection")[1]
         ]
@@ -1405,7 +1409,10 @@ class RedGymEnv(Env):
             coords = (x - 1, y, map_id)
         if player_direction == 0xC:
             coords = (x + 1, y, map_id)
-        self.pokeflute_coords[coords] = 1
+        if context:
+            self.valid_pokeflute_coords[coords] = 1
+        else:
+            self.invalid_pokeflute_coords[coords] = 1
 
     def surf_hook(self, context: bool, *args, **kwargs):
         player_direction = self.pyboy.memory[
@@ -1482,7 +1489,8 @@ class RedGymEnv(Env):
                 "taught_strength": int(self.check_if_party_has_hm(TmHmMoves.STRENGTH.value)),
                 "valid_cut_coords": len(self.valid_cut_coords),
                 "invalid_cut_coords": len(self.invalid_cut_coords),
-                "pokeflute_coords": len(self.pokeflute_coords),
+                "valid_pokeflute_coords": len(self.valid_pokeflute_coords),
+                "invalid_pokeflute_coords": len(self.invalid_pokeflute_coords),
                 "valid_surf_coords": len(self.valid_surf_coords),
                 "invalid_surf_coords": len(self.invalid_surf_coords),
                 "menu": {
