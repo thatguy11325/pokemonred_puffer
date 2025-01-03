@@ -95,18 +95,18 @@ rewards:
       invalid_cut_coords:
         carbs.utils.LinearSpace:
           min: 1.0e-5
-          max: 1.0e-3
-          scale: 5e-5
+          max: 1.0e-1
+          scale: 5e-3
       invalid_pokeflute_coords:
         carbs.utils.LinearSpace:
           min: 1.0e-5
-          max: 1.0e-3
-          scale: 5e-5
+          max: 1.0e-1
+          scale: 5e-3
       invalid_surf_coords:
         carbs.utils.LinearSpace:
           min: 1.0e-5
-          max: 1.0e-3
-          scale: 5e-5
+          max: 1.0e-1
+          scale: 5e-3
       level:
         carbs.utils.LinearSpace:
           min: 1.0e-5
@@ -161,17 +161,17 @@ rewards:
         carbs.utils.LinearSpace:
           min: 1.0e-3
           max: 10.0
-          scale: 0.5
+          scale: 1
       valid_pokeflute_coords:
         carbs.utils.LinearSpace:
           min: 1.0e-3
           max: 10.0
-          scale: 0.5
+          scale: 1
       valid_surf_coords:
         carbs.utils.LinearSpace:
           min: 1.0e-3
           max: 10.0
-          scale: 0.5
+          scale: 1
       useful_item:
         carbs.utils.LinearSpace:
           min: 1.0e-3
