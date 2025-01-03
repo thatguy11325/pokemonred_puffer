@@ -443,5 +443,5 @@ class ObjectRewardRequiredEventsMapIdsFieldMoves(ObjectRewardRequiredEventsMapId
             "valid_surf_coords": self.reward_config["valid_surf_coords"]
             * len(self.valid_surf_coords.values()),
             "invalid_surf_coords": self.reward_config["invalid_surf_coords"]
-            * len(self.invalid_cut_coords.values()),
+            * len(self.invalid_surf_coords.values()),
         }
