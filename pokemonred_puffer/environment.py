@@ -271,8 +271,8 @@ class RedGymEnv(Env):
         self.pyboy.hook_register(None, "HandleBlackOut", self.blackout_hook, None)
         self.pyboy.hook_register(None, "SetLastBlackoutMap.done", self.blackout_update_hook, None)
         if not self.auto_use_cut:
-            self.pyboy.hook_register(None, "UsedCut.nothingToCut", self.cut_hook, context=True)
-            self.pyboy.hook_register(None, "UsedCut.canCut", self.cut_hook, context=False)
+            self.pyboy.hook_register(None, "UsedCut.nothingToCut", self.cut_hook, context=False)
+            self.pyboy.hook_register(None, "UsedCut.canCut", self.cut_hook, context=True)
         # there is already an event for waking up the snorlax. No need to make a hookd for it
         if not self.auto_pokeflute:
             self.pyboy.hook_register(
