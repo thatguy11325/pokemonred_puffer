@@ -140,7 +140,7 @@ rewards:
       safari_zone:
         carbs.utils.LinearSpace:
           min: 1.0e-3
-          max: 5.0
+          max: 15.0
           scale: 0.5
       seen_pokemon:
         carbs.utils.LinearSpace:
