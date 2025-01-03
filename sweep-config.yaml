@@ -155,8 +155,8 @@ rewards:
       stats_menu:
         carbs.utils.LinearSpace:
           min: 1.0e-5
-          max: 0.1
-          scale: 1e-3
+          max: 0.5
+          scale: 1e-2
       valid_cut_coords:
         carbs.utils.LinearSpace:
           min: 1.0e-3
