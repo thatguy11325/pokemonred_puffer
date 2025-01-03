@@ -368,9 +368,9 @@ rewards:
       explore_signs: 0.014622
       explore_warps: 0.0109
       hm_count: 7.87
-      invalid_cut_coords: 0.005
-      invalid_pokeflute_coords: 0.005
-      invalid_surf_coords: 0.005
+      invalid_cut_coords: 0.05
+      invalid_pokeflute_coords: 0.05
+      invalid_surf_coords: 0.05
       level: 1.1285
       moves_obtained: 4.038
       pokecenter_heal: 0.513
