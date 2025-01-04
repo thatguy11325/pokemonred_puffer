@@ -1489,6 +1489,7 @@ class RedGymEnv(Env):
                 "taught_cut": int(self.check_if_party_has_hm(TmHmMoves.CUT.value)),
                 "taught_surf": int(self.check_if_party_has_hm(TmHmMoves.SURF.value)),
                 "taught_strength": int(self.check_if_party_has_hm(TmHmMoves.STRENGTH.value)),
+                "cut_tiles": len(self.cut_tiles),
                 "valid_cut_coords": len(self.valid_cut_coords),
                 "invalid_cut_coords": len(self.invalid_cut_coords),
                 "valid_pokeflute_coords": len(self.valid_pokeflute_coords),
