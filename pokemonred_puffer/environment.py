@@ -436,6 +436,7 @@ class RedGymEnv(Env):
 
         self.valid_cut_coords = {}
         self.invalid_cut_coords = {}
+        self.cut_tiles = {}
 
         self.valid_pokeflute_coords = {}
         self.invalid_pokeflute_coords = {}
@@ -1394,6 +1395,7 @@ class RedGymEnv(Env):
         else:
             self.invalid_cut_coords[coords] = 1
 
+        self.cut_tiles[wTileInFrontOfPlayer] = 1
         self.cut_explore_map[local_to_global(y, x, map_id)] = 1
 
     def pokeflute_hook(self, context: bool):
