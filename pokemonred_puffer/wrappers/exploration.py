@@ -127,6 +127,7 @@ class OnResetExplorationWrapper(gym.Wrapper):
                 self.env.unwrapped.explore_map *= 0
                 self.env.unwrapped.reward_explore_map *= 0
                 self.env.unwrapped.cut_explore_map *= 0
+                self.env.unwrapped.cut_tiles.clear()
                 self.env.unwrapped.seen_coords.clear()
                 self.env.unwrapped.seen_map_ids *= 0
                 self.env.unwrapped.seen_npcs.clear()

@@ -62,6 +62,11 @@ rewards:
           min: 1.0e-5
           max: 0.5
           scale: 1e-2
+      cut_tiles:
+        carbs.utils.LinearSpace:
+          min: 1.0e-5
+          max: 5
+          scale: .25
       event:
         carbs.utils.LinearSpace:
           min: 1.0e-3
@@ -96,17 +101,17 @@ rewards:
         carbs.utils.LinearSpace:
           min: 1.0e-5
           max: 1.0e-1
-          scale: 5e-3
+          scale: 5e-4
       invalid_pokeflute_coords:
         carbs.utils.LinearSpace:
           min: 1.0e-5
           max: 1.0e-1
-          scale: 5e-3
+          scale: 5e-4
       invalid_surf_coords:
         carbs.utils.LinearSpace:
           min: 1.0e-5
           max: 1.0e-1
-          scale: 5e-3
+          scale: 5e-4
       level:
         carbs.utils.LinearSpace:
           min: 1.0e-5

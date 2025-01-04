@@ -368,6 +368,7 @@ class ObjectRewardRequiredEventsMapIds(BaselineRewardEnv):
 
         return (
             {
+                "cut_tiles": self.reward_config["cut_tiles"] * sum(self.cut_tiles.values()),
                 "event": self.reward_config["event"] * self.update_max_event_rew(),
                 "seen_pokemon": self.reward_config["seen_pokemon"] * np.sum(self.seen_pokemon),
                 "caught_pokemon": self.reward_config["caught_pokemon"]
