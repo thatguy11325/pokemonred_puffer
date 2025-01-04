@@ -65,7 +65,7 @@ rewards:
       cut_tiles:
         carbs.utils.LinearSpace:
           min: 1.0e-5
-          max: 5
+          max: 5.0
           scale: .25
       event:
         carbs.utils.LinearSpace:
