@@ -81,7 +81,7 @@ rewards:
         carbs.utils.LinearSpace:
           min: 1.0e-7
           max: 1.0
-          scale: 5e-5
+          scale: 2e-7
       explore_signs:
         carbs.utils.LinearSpace:
           min: 1.0e-4

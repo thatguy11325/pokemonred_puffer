@@ -365,7 +365,7 @@ rewards:
       cut_tiles: 1.0
       event: .69
       exploration: 0.02653
-      explore_hidden_objs: 0.00008065
+      explore_hidden_objs: 0.000001
       explore_signs: 0.014622
       explore_warps: 0.0109
       hm_count: 7.87
