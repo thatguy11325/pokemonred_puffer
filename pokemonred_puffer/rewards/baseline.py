@@ -26,7 +26,7 @@ class BaselineRewardEnv(RedGymEnv):
             "explore_npcs": sum(self.seen_npcs.values()) * 0.02,
             # "seen_pokemon": sum(self.seen_pokemon) * 0.0000010,
             # "caught_pokemon": sum(self.caught_pokemon) * 0.0000010,
-            "moves_obtained": sum(self.moves_obtained) * 0.00010,
+            "obtained_move_ids": sum(self.obtained_move_ids) * 0.00010,
             "explore_hidden_objs": sum(self.seen_hidden_objs.values()) * 0.02,
             # "level": self.get_levels_reward(),
             # "opponent_level": self.max_opponent_level,
@@ -102,7 +102,8 @@ class TeachCutReplicationEnv(BaselineRewardEnv):
             * int(self.events.get_event("EVENT_LEFT_BILLS_HOUSE_AFTER_HELPING")),
             "seen_pokemon": self.reward_config["seen_pokemon"] * sum(self.seen_pokemon),
             "caught_pokemon": self.reward_config["caught_pokemon"] * sum(self.caught_pokemon),
-            "moves_obtained": self.reward_config["moves_obtained"] * sum(self.moves_obtained),
+            "obtained_move_ids": self.reward_config["obtained_move_ids"]
+            * sum(self.obtained_move_ids),
             "hm_count": self.reward_config["hm_count"] * self.get_hm_count(),
             "level": self.reward_config["level"] * self.get_levels_reward(),
             "badges": self.reward_config["badges"] * self.get_badges(),
@@ -140,7 +141,8 @@ class TeachCutReplicationEnvFork(BaselineRewardEnv):
                 self.reward_config["bill_saved"]
                 * int(self.events.get_event("EVENT_LEFT_BILLS_HOUSE_AFTER_HELPING"))
             ),
-            "moves_obtained": self.reward_config["moves_obtained"] * sum(self.moves_obtained),
+            "obtained_move_ids": self.reward_config["obtained_move_ids"]
+            * sum(self.obtained_move_ids),
             "hm_count": self.reward_config["hm_count"] * self.get_hm_count(),
             "badges": self.reward_config["badges"] * self.get_badges(),
             "exploration": self.reward_config["exploration"]
@@ -195,7 +197,8 @@ class CutWithObjectRewardsEnv(BaselineRewardEnv):
             * int(self.events.get_event("EVENT_LEFT_BILLS_HOUSE_AFTER_HELPING")),
             "seen_pokemon": self.reward_config["seen_pokemon"] * sum(self.seen_pokemon),
             "caught_pokemon": self.reward_config["caught_pokemon"] * sum(self.caught_pokemon),
-            "moves_obtained": self.reward_config["moves_obtained"] * sum(self.moves_obtained),
+            "obtained_move_ids": self.reward_config["obtained_move_ids"]
+            * sum(self.obtained_move_ids),
             "hm_count": self.reward_config["hm_count"] * self.get_hm_count(),
             "level": self.reward_config["level"] * self.get_levels_reward(),
             "badges": self.reward_config["badges"] * self.get_badges(),
@@ -240,7 +243,8 @@ class CutWithObjectRewardRequiredEventsEnv(BaselineRewardEnv):
                 "event": self.reward_config["event"] * self.update_max_event_rew(),
                 "seen_pokemon": self.reward_config["seen_pokemon"] * sum(self.seen_pokemon),
                 "caught_pokemon": self.reward_config["caught_pokemon"] * sum(self.caught_pokemon),
-                "moves_obtained": self.reward_config["moves_obtained"] * sum(self.moves_obtained),
+                "obtained_move_ids": self.reward_config["obtained_move_ids"]
+                * sum(self.obtained_move_ids),
                 "hm_count": self.reward_config["hm_count"] * self.get_hm_count(),
                 "level": self.reward_config["level"] * self.get_levels_reward(),
                 "badges": self.reward_config["badges"] * self.get_badges(),
@@ -301,7 +305,8 @@ class ObjectRewardRequiredEventsEnvTilesetExploration(BaselineRewardEnv):
                 "event": self.reward_config["event"] * self.update_max_event_rew(),
                 "seen_pokemon": self.reward_config["seen_pokemon"] * sum(self.seen_pokemon),
                 "caught_pokemon": self.reward_config["caught_pokemon"] * sum(self.caught_pokemon),
-                "moves_obtained": self.reward_config["moves_obtained"] * sum(self.moves_obtained),
+                "obtained_move_ids": self.reward_config["obtained_move_ids"]
+                * sum(self.obtained_move_ids),
                 "hm_count": self.reward_config["hm_count"] * self.get_hm_count(),
                 "level": self.reward_config["level"] * self.get_levels_reward(),
                 "badges": self.reward_config["badges"] * self.get_badges(),
@@ -373,13 +378,13 @@ class ObjectRewardRequiredEventsMapIds(BaselineRewardEnv):
                 "seen_pokemon": self.reward_config["seen_pokemon"] * np.sum(self.seen_pokemon),
                 "caught_pokemon": self.reward_config["caught_pokemon"]
                 * np.sum(self.caught_pokemon),
-                "moves_obtained": self.reward_config["moves_obtained"]
-                * np.sum(self.moves_obtained),
+                "obtained_move_ids": self.reward_config["obtained_move_ids"]
+                * np.sum(self.obtained_move_ids),
                 "hm_count": self.reward_config["hm_count"] * self.get_hm_count(),
                 "level": self.reward_config["level"] * self.get_levels_reward(),
                 "badges": self.reward_config["badges"] * self.get_badges(),
                 "valid_cut_coords": self.reward_config["valid_cut_coords"]
-                * len(self.valid_cut_coords.values()),
+                * (len(self.valid_cut_coords.values()) > 0),
                 "invalid_cut_coords": self.reward_config["invalid_cut_coords"]
                 * len(self.invalid_cut_coords.values()),
                 "start_menu": self.reward_config["start_menu"] * self.seen_start_menu,
@@ -442,7 +447,7 @@ class ObjectRewardRequiredEventsMapIdsFieldMoves(ObjectRewardRequiredEventsMapId
             "invalid_pokeflute_coords": self.reward_config["invalid_pokeflute_coords"]
             * len(self.invalid_pokeflute_coords.values()),
             "valid_surf_coords": self.reward_config["valid_surf_coords"]
-            * len(self.valid_surf_coords.values()),
+            * (len(self.valid_surf_coords.values()) > 0),
             "invalid_surf_coords": self.reward_config["invalid_surf_coords"]
             * len(self.invalid_surf_coords.values()),
         }
