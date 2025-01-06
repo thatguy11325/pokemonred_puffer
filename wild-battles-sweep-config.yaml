@@ -16,7 +16,7 @@ rewards:
           min: 1.0e-3
           max: 10.0
           scale: 1.0
-      moves_obtained: 
+      obtained_move_ids: 
         carbs.utils.LogSpace:
           min: 1.0e-3
           max: 10.0

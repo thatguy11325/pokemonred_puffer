@@ -51,7 +51,7 @@ debug:
     checkpoint_interval: 4
     save_overlay: True
     overlay_interval: 1
-    verbose: False
+    verbose: True
     env_pool: False
     load_optimizer_state: False
     async_wrapper: False
@@ -223,7 +223,7 @@ rewards:
       bill_saved: 5.0
       seen_pokemon: 4.0
       caught_pokemon: 4.0
-      moves_obtained: 4.0
+      obtained_move_ids: 4.0
       hm_count: 10.0
       level: 1.0
       badges: 10.0
@@ -239,7 +239,7 @@ rewards:
     reward:
       event: 1.0
       bill_saved: 5.0
-      moves_obtained: 4.0
+      obtained_move_ids: 4.0
       hm_count: 10.0
       badges: 10.0
       exploration: 0.02
@@ -259,7 +259,7 @@ rewards:
       bill_saved: 5.0
       seen_pokemon: 4.0
       caught_pokemon: 4.0
-      moves_obtained: 4.0
+      obtained_move_ids: 4.0
       hm_count: 10.0
       level: 1.0
       badges: 10.0
@@ -279,7 +279,7 @@ rewards:
       event: 1.0
       seen_pokemon: 4.0
       caught_pokemon: 4.0
-      moves_obtained: 4.0
+      obtained_move_ids: 4.0
       hm_count: 10.0
       level: 1.0
       badges: 5.0
@@ -302,7 +302,7 @@ rewards:
       event: 1.0
       seen_pokemon: 4.0
       caught_pokemon: 4.0
-      moves_obtained: 4.0
+      obtained_move_ids: 4.0
       hm_count: 10.0
       level: 1.0
       badges: 5.0
@@ -343,7 +343,7 @@ rewards:
       hm_count: 7.5
       invalid_cut_coords: 0.0001
       level: 1.05
-      moves_obtained: 4.0
+      obtained_move_ids: 4.0
       pokecenter_heal: 0.47
       pokemon_menu: 0.0
       required_event: 7.0
@@ -373,7 +373,7 @@ rewards:
       invalid_pokeflute_coords: 0.001
       invalid_surf_coords: 0.001
       level: 1.1285
-      moves_obtained: 4.038
+      obtained_move_ids: 4.038
       pokecenter_heal: 0.513
       pokemon_menu: 0.1
       required_event: 6.85

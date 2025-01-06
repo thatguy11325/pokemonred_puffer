@@ -117,7 +117,7 @@ rewards:
           min: 1.0e-5
           max: 10.0
           scale: 0.1
-      moves_obtained:
+      obtained_move_ids:
         carbs.utils.LinearSpace:
           min: 1.0e-3
           max: 10.0

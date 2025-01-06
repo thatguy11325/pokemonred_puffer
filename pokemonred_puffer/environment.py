@@ -367,7 +367,7 @@ class RedGymEnv(Env):
         self.required_items = self.get_required_items()
         self.seen_pokemon = np.zeros(152, dtype=np.uint8)
         self.caught_pokemon = np.zeros(152, dtype=np.uint8)
-        self.moves_obtained = np.zeros(0xA5, dtype=np.uint8)
+        self.obtained_move_ids = np.zeros(0xA5, dtype=np.uint8)
         self.pokecenters = np.zeros(252, dtype=np.uint8)
 
         self.recent_screens = deque()
@@ -379,7 +379,7 @@ class RedGymEnv(Env):
         self.reset_mem()
 
         self.update_pokedex()
-        self.update_tm_hm_moves_obtained()
+        self.update_tm_hm_obtained_move_ids()
         self.party_size = self.read_m("wPartyCount")
         self.taught_cut = self.check_if_party_has_hm(TmHmMoves.CUT.value)
         self.taught_surf = self.check_if_party_has_hm(TmHmMoves.SURF.value)
@@ -738,7 +738,7 @@ class RedGymEnv(Env):
         self.party = PartyMons(self.pyboy)
         self.update_health()
         self.update_pokedex()
-        self.update_tm_hm_moves_obtained()
+        self.update_tm_hm_obtained_move_ids()
         self.party_size = self.read_m("wPartyCount")
         self.update_max_op_level()
         new_reward = self.update_reward()
@@ -1484,7 +1484,7 @@ class RedGymEnv(Env):
                 "action_hist": self.action_hist,
                 "caught_pokemon": int(sum(self.caught_pokemon)),
                 "seen_pokemon": int(sum(self.seen_pokemon)),
-                "moves_obtained": int(sum(self.moves_obtained)),
+                "obtained_move_ids": int(sum(self.obtained_move_ids)),
                 "opponent_level": self.max_opponent_level,
                 "taught_cut": int(self.check_if_party_has_hm(TmHmMoves.CUT.value)),
                 "taught_surf": int(self.check_if_party_has_hm(TmHmMoves.SURF.value)),
@@ -1706,14 +1706,14 @@ class RedGymEnv(Env):
         self.caught_pokemon = np.unpackbits(np.array(caught_mem, dtype=np.uint8))
         self.seen_pokemon = np.unpackbits(np.array(seen_mem, dtype=np.uint8))
 
-    def update_tm_hm_moves_obtained(self):
+    def update_tm_hm_obtained_move_ids(self):
         # TODO: Make a hook
         # Scan party
         for i in range(self.read_m("wPartyCount")):
             _, addr = self.pyboy.symbol_lookup(f"wPartyMon{i+1}Moves")
             for move_id in self.pyboy.memory[addr : addr + 4]:
                 # if move_id in TM_HM_MOVES:
-                self.moves_obtained[move_id] = 1
+                self.obtained_move_ids[move_id] = 1
         """
         # Scan current box (since the box doesn't auto increment in pokemon red)
         num_moves = 4
@@ -1724,7 +1724,7 @@ class RedGymEnv(Env):
                 for j in range(4):
                     move_id = self.pyboy.memory[offset + j + 8)
                     if move_id != 0:
-                        self.moves_obtained[move_id] = 1
+                        self.obtained_move_ids[move_id] = 1
         """
 
     def remove_all_nonuseful_items(self):
