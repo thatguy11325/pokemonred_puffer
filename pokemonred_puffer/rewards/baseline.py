@@ -414,6 +414,9 @@ class ObjectRewardRequiredEventsMapIds(BaselineRewardEnv):
                 )
                 / 502.0,
                 "use_ball_count": self.reward_config["use_ball_count"] * self.use_ball_count,
+                "pokeflute_tiles": self.reward_config["pokeflute_tiles"]
+                * sum(self.pokeflute_tiles.values()),
+                "surf_tiles": self.reward_config["surf_tiles"] * sum(self.surf_tiles.values()),
             }
             | {
                 event: self.reward_config["required_event"] * float(self.events.get_event(event))
