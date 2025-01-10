@@ -376,6 +376,7 @@ rewards:
       obtained_move_ids: 4.091134548187256
       pokecenter_heal: 0.5932707786560059
       pokemon_menu: 0.09460494995117188
+      pokeflute_tiles: 0.9939162135124208
       required_event: 7.134671688079834
       required_item: 3.3519155979156494
       safari_zone: 10.2822847366333
@@ -383,6 +384,7 @@ rewards:
       seen_pokemon: 2.1898984909057617
       start_menu: 0.010755150794982913
       stats_menu: 0.09938607215881348
+      surf_tiles: 0.9939162135124208
       use_surf: 0.0
       useful_item: 1.19
       use_ball_count: -10.0

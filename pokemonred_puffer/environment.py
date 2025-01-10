@@ -440,9 +440,11 @@ class RedGymEnv(Env):
 
         self.valid_pokeflute_coords = {}
         self.invalid_pokeflute_coords = {}
+        self.pokeflute_tiles = {}
 
         self.valid_surf_coords = {}
         self.invalid_surf_coords = {}
+        self.surf_tiles = {}
 
         self.seen_hidden_objs = {}
         self.seen_signs = {}
@@ -1415,6 +1417,10 @@ class RedGymEnv(Env):
             self.valid_pokeflute_coords[coords] = 1
         else:
             self.invalid_pokeflute_coords[coords] = 1
+        wTileInFrontOfPlayer = self.pyboy.memory[
+            self.pyboy.symbol_lookup("wTileInFrontOfPlayer")[1]
+        ]
+        self.pokeflute_tiles[wTileInFrontOfPlayer] = 1
 
     def surf_hook(self, context: bool, *args, **kwargs):
         player_direction = self.pyboy.memory[
@@ -1433,6 +1439,10 @@ class RedGymEnv(Env):
             self.valid_surf_coords[coords] = 1
         else:
             self.invalid_surf_coords[coords] = 1
+        wTileInFrontOfPlayer = self.pyboy.memory[
+            self.pyboy.symbol_lookup("wTileInFrontOfPlayer")[1]
+        ]
+        self.surf_tiles[wTileInFrontOfPlayer] = 1
 
     def use_ball_hook(self, *args, **kwargs):
         self.use_ball_count += 1
