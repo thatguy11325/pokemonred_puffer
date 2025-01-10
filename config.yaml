@@ -97,7 +97,7 @@ env:
   exploration_inc: 1.0
   exploration_max: 1.0
   max_steps_scaling: 0 # 0.2 # every 10 events or items gained, multiply max_steps by 2
-  map_id_scalefactor: 9.0 # multiply map ids whose events have not been completed by 10
+  map_id_scalefactor: 9.539340019226074 # multiply map ids whose events have not been completed by 10
 
 train:
   seed: 1
@@ -113,9 +113,9 @@ train:
   num_minibatches: 4
   update_epochs: 3
   norm_adv: True
-  ent_coef: 0.010001337
-  gae_lambda: 0.9499
-  gamma: 0.99799
+  ent_coef: 0.01001337416019442
+  gae_lambda: 0.949936199629264
+  gamma: 0.9979900678597386
   clip_coef: 0.1
   clip_vloss: True
   learning_rate: 0.00019999482124740103
@@ -386,7 +386,7 @@ rewards:
       stats_menu: 0.09938607215881348
       surf_tiles: 0.9939162135124208
       use_surf: 0.0
-      useful_item: 1.19
+      useful_item: 1.3436599969863892
       use_ball_count: -10.0
       valid_cut_coords: 4.822387218475342
       valid_pokeflute_coords: 4.840555191040039
