@@ -384,7 +384,7 @@ class ObjectRewardRequiredEventsMapIds(BaselineRewardEnv):
                 "level": self.reward_config["level"] * self.get_levels_reward(),
                 "badges": self.reward_config["badges"] * self.get_badges(),
                 "valid_cut_coords": self.reward_config["valid_cut_coords"]
-                * (len(self.valid_cut_coords.values()) > 0),
+                * len(self.valid_cut_coords.values()),
                 "invalid_cut_coords": self.reward_config["invalid_cut_coords"]
                 * len(self.invalid_cut_coords.values()),
                 "start_menu": self.reward_config["start_menu"] * self.seen_start_menu,
@@ -450,7 +450,7 @@ class ObjectRewardRequiredEventsMapIdsFieldMoves(ObjectRewardRequiredEventsMapId
             "invalid_pokeflute_coords": self.reward_config["invalid_pokeflute_coords"]
             * len(self.invalid_pokeflute_coords.values()),
             "valid_surf_coords": self.reward_config["valid_surf_coords"]
-            * (len(self.valid_surf_coords.values()) > 0),
+            * len(self.valid_surf_coords.values()),
             "invalid_surf_coords": self.reward_config["invalid_surf_coords"]
             * len(self.invalid_surf_coords.values()),
         }
