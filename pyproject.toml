@@ -19,7 +19,7 @@ dependencies = [
     "numba",
     "numpy",
     "omegaconf",
-    "opencv-python",
+    "opencv-python==3.4.17.63",
     "psutil",
     "pyboy>=2",
     "pynvml",
