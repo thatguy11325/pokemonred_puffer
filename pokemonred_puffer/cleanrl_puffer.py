@@ -274,7 +274,7 @@ class CleanPuffeRL:
                             for count, eid in zip(
                                 self.infos["required_count"], self.infos["env_id"]
                             ):
-                                self.event_tracker[eid] = count
+                                self.event_tracker[eid] = max(self.event_tracker.get(eid, 0), count)
                             self.infos[k].append(v)
                         else:
                             self.infos[k].append(v)
@@ -313,6 +313,37 @@ class CleanPuffeRL:
                         f"Event found n {self.profile.uptime // 60} minutes"
                     )
                     del self.config.early_stop[event]
+
+            # Update the required completion rate in the sqlite db. Also a bit tricky
+            # but doesn't require the manual async reset so that's good
+            if (
+                (self.config.async_wrapper or self.config.sqlite_wrapper)
+                and hasattr(self.config, "required_rate")
+                and self.config.required_rate
+                and "required_count" in self.infos
+            ):
+                # calculate the average required_count
+                required_rate = np.mean(self.event_tracker.values())
+                # now update via the async wrapper or sqlite wrapper
+                if self.sqlite_db:
+                    with SqliteStateResetWrapper.DB_LOCK:
+                        with sqlite3.connect(self.sqlite_db) as conn:
+                            cur = conn.cursor()
+                            cur.execute(
+                                """
+                                UPDATE states
+                                SET required_rate=:required_rate,
+                                """,
+                                {"required_rate": required_rate},
+                            )
+                if self.config.async_wrapper:
+                    for key in self.event_tracker.keys():
+                        self.env_recv_queues[key].put(f"REQUIRED_RATE{required_rate}".encode())
+                    for key in self.event_tracker.keys():
+                        # print(f"\tWaiting for message from env-id {key}")
+                        self.env_send_queues[key].get()
+
+                print("Required rate update - completed")
 
             # now for a tricky bit:
             # if we have swarm_frequency, we will migrate the bottom
