@@ -98,6 +98,8 @@ env:
   exploration_max: 1.0
   max_steps_scaling: 0 # 0.2 # every 10 events or items gained, multiply max_steps by 2
   map_id_scalefactor: 9.539340019226074 # multiply map ids whose events have not been completed by 10
+  required_tolerance: null
+  # required_tolerance: 0.02
 
 train:
   seed: 1
@@ -159,6 +161,7 @@ train:
     # - HM_03
     # - HM_04
     # - "EVENT_BEAT_ERIKA"
+  required_rate: False
 
 wrappers:
   empty:

@@ -1,18 +1,18 @@
-from abc import abstractmethod
 import io
-from multiprocessing import Lock, shared_memory
 import os
 import random
+import uuid
+from abc import abstractmethod
 from collections import deque
+from multiprocessing import Lock, shared_memory
 from pathlib import Path
 from typing import Any, Iterable, Optional
-import uuid
 
 import mediapy as media
 import numpy as np
 import numpy.typing as npt
-from omegaconf import DictConfig, ListConfig
 from gymnasium import Env, spaces
+from omegaconf import DictConfig, ListConfig
 from pyboy import PyBoy
 from pyboy.utils import WindowEvent
 
@@ -25,6 +25,7 @@ from pokemonred_puffer.data.events import (
     EventFlags,
 )
 from pokemonred_puffer.data.field_moves import FieldMoves
+from pokemonred_puffer.data.flags import Flags
 from pokemonred_puffer.data.items import (
     HM_ITEMS,
     KEY_ITEMS,
@@ -47,7 +48,6 @@ from pokemonred_puffer.data.tm_hm import (
     SURF_SPECIES_IDS,
     TmHmMoves,
 )
-from pokemonred_puffer.data.flags import Flags
 from pokemonred_puffer.global_map import GLOBAL_MAP_SHAPE, local_to_global
 
 PIXEL_VALUES = np.array([0, 85, 153, 255], dtype=np.uint8)
@@ -113,6 +113,10 @@ class RedGymEnv(Env):
         self.log_frequency = env_config.log_frequency
         self.two_bit = env_config.two_bit
         self.auto_flash = env_config.auto_flash
+        # A mapping of event to completion rate across
+        # all environments in a run
+        self.required_rate = 1.0
+        self.required_tolerance = env_config.required_tolerance
         if isinstance(env_config.disable_wild_encounters, bool):
             self.disable_wild_encounters = env_config.disable_wild_encounters
             self.setup_disable_wild_encounters_maps = set([])
@@ -785,6 +789,18 @@ class RedGymEnv(Env):
             reset = True
             self.first = True
             new_reward = -self.total_reward * 0.5
+
+        # only check periodically since this is expensive
+        # we have a tolerance cause some events may be really hard to get
+        if new_required_events or new_required_items and self.required_tolerance is not None:
+            # calculate the current required completion percentage
+            # add 4 for rival3, game corner rocket, saffron guard and lapras
+            required_completion = (len(required_events) + len(required_items)) / (
+                len(REQUIRED_EVENTS) + len(REQUIRED_ITEMS) + 4
+            )
+            reset = (required_completion - self.required_tolerance) > (
+                self.required_rate / (len(REQUIRED_EVENTS) + len(REQUIRED_ITEMS) + 4)
+            )
 
         if self.save_video:
             self.add_video_frame()

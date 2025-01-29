@@ -420,7 +420,7 @@ def train(
                 with sqlite3.connect(db_filename) as conn:
                     cur = conn.cursor()
                     cur.execute(
-                        "CREATE TABLE states(env_id INT PRIMARY_KEY, pyboy_state BLOB, reset BOOLEAN, pid INT);"
+                        "CREATE TABLE states(env_id INT PRIMARY_KEY, pyboy_state BLOB, reset BOOLEAN, required_rate REAL, pid INT);"
                     )
 
             vecenv = pufferlib.vector.make(

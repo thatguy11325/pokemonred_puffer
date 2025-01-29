@@ -1,5 +1,6 @@
 import threading
 from multiprocessing import Queue
+
 import gymnasium as gym
 
 from pokemonred_puffer.environment import RedGymEnv
@@ -20,7 +21,11 @@ class AsyncWrapper(gym.Wrapper):
 
     def update(self):
         while True:
-            new_state = self.recv_queue.get()
+            new_state: bytes = self.recv_queue.get()
+            if new_state.startswith(b"REQUIRED_RATE"):
+                self.env.unwrapped.required_rate = float(
+                    new_state.removeprefix(b"REQUIRED_RATE").decode()
+                )
             if new_state == b"":
                 print(f"invalid state for {self.env.unwrapped.env_id} skipping...")
             else:
