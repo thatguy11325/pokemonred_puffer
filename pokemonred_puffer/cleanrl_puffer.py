@@ -323,7 +323,7 @@ class CleanPuffeRL:
                 and "required_count" in self.infos
             ):
                 # calculate the average required_count
-                required_rate = np.mean(self.event_tracker.values())
+                required_rate = np.mean(list(self.event_tracker.values()))
                 # now update via the async wrapper or sqlite wrapper
                 if self.sqlite_db:
                     with SqliteStateResetWrapper.DB_LOCK:
