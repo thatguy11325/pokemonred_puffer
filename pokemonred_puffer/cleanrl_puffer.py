@@ -332,7 +332,7 @@ class CleanPuffeRL:
                             cur.execute(
                                 """
                                 UPDATE states
-                                SET required_rate=:required_rate,
+                                SET required_rate=:required_rate
                                 """,
                                 {"required_rate": required_rate},
                             )
