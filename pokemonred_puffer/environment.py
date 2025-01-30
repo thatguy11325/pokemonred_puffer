@@ -795,12 +795,8 @@ class RedGymEnv(Env):
         if new_required_events or new_required_items and self.required_tolerance is not None:
             # calculate the current required completion percentage
             # add 4 for rival3, game corner rocket, saffron guard and lapras
-            required_completion = (len(required_events) + len(required_items)) / (
-                len(REQUIRED_EVENTS) + len(REQUIRED_ITEMS) + 4
-            )
-            reset = (required_completion - self.required_tolerance) > (
-                self.required_rate / (len(REQUIRED_EVENTS) + len(REQUIRED_ITEMS) + 4)
-            )
+            required_completion = len(required_events) + len(required_items)
+            reset = (required_completion - self.required_rate) > self.required_tolerance
 
         if self.save_video:
             self.add_video_frame()
