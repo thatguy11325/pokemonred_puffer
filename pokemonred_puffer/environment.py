@@ -792,7 +792,7 @@ class RedGymEnv(Env):
 
         # only check periodically since this is expensive
         # we have a tolerance cause some events may be really hard to get
-        if new_required_events or new_required_items and self.required_tolerance is not None:
+        if (new_required_events or new_required_items) and self.required_tolerance is not None:
             # calculate the current required completion percentage
             # add 4 for rival3, game corner rocket, saffron guard and lapras
             required_completion = len(required_events) + len(required_items)
