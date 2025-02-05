@@ -283,7 +283,7 @@ class RedGymEnv(Env):
                 None, "ItemUsePokeFlute.noSnorlaxToWakeUp", self.pokeflute_hook, context=False
             )
             self.pyboy.hook_register(
-                None, "PlayedFluteHadEffectText", self.pokeflute_hook, context=True
+                None, "PlayedFluteHadEffectText.done", self.pokeflute_hook, context=True
             )
         if not self.auto_use_surf:
             self.pyboy.hook_register(None, "SurfingAttemptFailed", self.surf_hook, context=False)
