@@ -238,6 +238,7 @@ class RedGymEnv(Env):
             window="null" if self.headless else "SDL2",
             log_level="CRITICAL",
             symbols=os.path.join(os.path.dirname(__file__), "pokered.sym"),
+            sound_emulated=False,
         )
         self.register_hooks()
         if not self.headless:
