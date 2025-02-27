@@ -5,6 +5,11 @@ env:
       max: 81920
       is_integer: True
       scale: 2500
+  map_id_scalefactor:
+    carbs.utils.LinearSpace:
+      min: 5.0
+      max: 20.0
+      scale: 1.0
 
 train:
   total_timesteps:
@@ -40,88 +45,153 @@ train:
       scale: .05
 
 rewards:
-  baseline.ObjectRewardRequiredEventsMapIds:
+  baseline.ObjectRewardRequiredEventsMapIdsFieldMoves:
     reward:
-      event: 
-        carbs.utils.LogSpace:
+      caught_pokemon:
+        carbs.utils.LinearSpace:
+          min: 1.0e-3
+          max: 10.0
+          scale: 1.0
+      badges:
+        carbs.utils.LinearSpace:
+          min: 1.0e-5
+          max: 10.0
+          scale: 1.5
+      bag_menu:
+        carbs.utils.LinearSpace:
+          min: 1.0e-5
+          max: 0.5
+          scale: 1e-2
+      cut_tiles:
+        carbs.utils.LinearSpace:
+          min: 1.0e-5
+          max: 5.0
+          scale: .25
+      event:
+        carbs.utils.LinearSpace:
           min: 1.0e-3
           max: 10.0
           scale: 0.5
-      seen_pokemon: 
-        carbs.utils.LogSpace:
-          min: 1.0e-3
-          max: 10.0
-          scale: 1.0
-      caught_pokemon: 
-        carbs.utils.LogSpace:
-          min: 1.0e-3
-          max: 10.0
-          scale: 1.0
-      moves_obtained: 
-        carbs.utils.LogSpace:
-          min: 1.0e-3
-          max: 10.0
-          scale: 1.0
-      hm_count: 
-        carbs.utils.LogSpace:
-          min: 1.0e-3
-          max: 15.0
-          scale: 1.0
-      level: 
-        carbs.utils.LogSpace:
-          min: 1.0e-5
-          max: 10.0
-          scale: 0.1
-      badges: 
-        carbs.utils.LogSpace:
-          min: 1.0e-5
-          max: 10.0
-          scale: 2.0
-      explore_hidden_objs: 
-        carbs.utils.LogSpace:
-          min: 1.0e-7
-          max: 1.0
-          scale: 5e-5
-      explore_signs: 
-        carbs.utils.LogSpace:
-          min: 1.0e-4
-          max: 1.0
-          scale: 1e-3
-      required_event: 
-        carbs.utils.LogSpace:
-          min: 1.0e-3
-          max: 10.0
-          scale: 1.0
-      required_item: 
-        carbs.utils.LogSpace:
-          min: 1.0e-3
-          max: 10.0
-          scale: 1.0
-      useful_item: 
-        carbs.utils.LogSpace:
-          min: 1.0e-3
-          max: 10.0
-          scale: 0.5
-      pokecenter_heal: 
-        carbs.utils.LogSpace:
-          min: 1.0e-4
-          max: 10.0
-          scale: 0.1
-      exploration: 
-        carbs.utils.LogSpace:
+      exploration:
+        carbs.utils.LinearSpace:
           min: 1.0e-3
           max: 1.0
           scale: 0.01
-      explore_warps: 
-        carbs.utils.LogSpace:
+      explore_hidden_objs:
+        carbs.utils.LinearSpace:
+          min: 1.0e-7
+          max: 1.0
+          scale: 2e-7
+      explore_signs:
+        carbs.utils.LinearSpace:
+          min: 1.0e-4
+          max: 1.0
+          scale: 1e-3
+      explore_warps:
+        carbs.utils.LinearSpace:
           min: 1.0e-3
           max: 10.0
           scale: 0.005
-      use_surf: 
-        carbs.utils.LogSpace:
+      hm_count:
+        carbs.utils.LinearSpace:
           min: 1.0e-3
-          max: 2.0
-          scale: 0.25
+          max: 15.0
+          scale: 1.0
+      invalid_cut_coords:
+        carbs.utils.LinearSpace:
+          min: 1.0e-5
+          max: 1.0e-1
+          scale: 5e-4
+      invalid_pokeflute_coords:
+        carbs.utils.LinearSpace:
+          min: 1.0e-5
+          max: 1.0e-1
+          scale: 5e-4
+      invalid_surf_coords:
+        carbs.utils.LinearSpace:
+          min: 1.0e-5
+          max: 1.0e-1
+          scale: 5e-4
+      level:
+        carbs.utils.LinearSpace:
+          min: 1.0e-5
+          max: 10.0
+          scale: 0.1
+      obtained_move_ids:
+        carbs.utils.LinearSpace:
+          min: 1.0e-3
+          max: 10.0
+          scale: 1.0
+      pokecenter_heal:
+        carbs.utils.LinearSpace:
+          min: 1.0e-4
+          max: 10.0
+          scale: 0.1
+      pokemon_menu:
+        carbs.utils.LinearSpace:
+          min: 1.0e-5
+          max: 0.5
+          scale: 1e-2
+      pokeflute_tiles:
+        carbs.utils.LinearSpace:
+          min: 1.0e-5
+          max: 5.0
+          scale: .25
+      required_event:
+        carbs.utils.LinearSpace:
+          min: 1.0e-3
+          max: 10.0
+          scale: 1.0
+      required_item:
+        carbs.utils.LinearSpace:
+          min: 1.0e-3
+          max: 10.0
+          scale: 1.0
+      safari_zone:
+        carbs.utils.LinearSpace:
+          min: 1.0e-3
+          max: 15.0
+          scale: 0.5
+      seen_pokemon:
+        carbs.utils.LinearSpace:
+          min: 1.0e-3
+          max: 10.0
+          scale: 1.0
+      start_menu:
+        carbs.utils.LinearSpace:
+          min: 1.0e-5
+          max: 0.1
+          scale: 1e-3
+      stats_menu:
+        carbs.utils.LinearSpace:
+          min: 1.0e-5
+          max: 0.5
+          scale: 1e-2
+      surf_tiles:
+        carbs.utils.LinearSpace:
+          min: 1.0e-5
+          max: 5.0
+          scale: .25
+      valid_cut_coords:
+        carbs.utils.LinearSpace:
+          min: 1.0e-3
+          max: 10.0
+          scale: 1
+      valid_pokeflute_coords:
+        carbs.utils.LinearSpace:
+          min: 1.0e-3
+          max: 10.0
+          scale: 1
+      valid_surf_coords:
+        carbs.utils.LinearSpace:
+          min: 1.0e-3
+          max: 10.0
+          scale: 1
+      useful_item:
+        carbs.utils.LinearSpace:
+          min: 1.0e-3
+          max: 10.0
+          scale: 0.5
 # policies:
 #   multi_convolutional.MultiConvolutionalPolicy:
 #     policy:

@@ -3,6 +3,7 @@ import importlib
 import os
 import sqlite3
 from tempfile import NamedTemporaryFile
+import time
 import uuid
 from contextlib import contextmanager, nullcontext
 from enum import Enum
@@ -11,6 +12,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Annotated, Any, Callable
 
+import gymnasium
 import pufferlib
 import pufferlib.emulation
 import pufferlib.vector
@@ -67,14 +69,15 @@ def make_env_creator(
     reward_class: RedGymEnv,
     async_wrapper: bool = False,
     sqlite_wrapper: bool = False,
-) -> Callable[[DictConfig, DictConfig], pufferlib.emulation.GymnasiumPufferEnv]:
+    puffer_wrapper: bool = True,
+) -> Callable[[DictConfig, DictConfig], pufferlib.emulation.GymnasiumPufferEnv | gymnasium.Env]:
     def env_creator(
         env_config: DictConfig,
         wrappers_config: list[dict[str, Any]],
         reward_config: DictConfig,
         async_config: dict[str, Queue] | None = None,
         sqlite_config: dict[str, str] | None = None,
-    ) -> pufferlib.emulation.GymnasiumPufferEnv:
+    ) -> pufferlib.emulation.GymnasiumPufferEnv | gymnasium.Env:
         env = reward_class(env_config, reward_config)
         for cfg, (_, wrapper_class) in zip(wrappers_config, wrapper_classes):
             env = wrapper_class(env, OmegaConf.create([x for x in cfg.values()][0]))
@@ -82,13 +85,19 @@ def make_env_creator(
             env = AsyncWrapper(env, async_config["send_queues"], async_config["recv_queues"])
         if sqlite_wrapper and sqlite_config:
             env = SqliteStateResetWrapper(env, sqlite_config["database"])
-        return pufferlib.emulation.GymnasiumPufferEnv(env=env)
+        if puffer_wrapper:
+            env = pufferlib.emulation.GymnasiumPufferEnv(env=env)
+        return env
 
     return env_creator
 
 
 def setup_agent(
-    wrappers: list[str], reward_name: str, async_wrapper: bool = False, sqlite_wrapper: bool = False
+    wrappers: list[str],
+    reward_name: str,
+    async_wrapper: bool = False,
+    sqlite_wrapper: bool = False,
+    puffer_wrapper: bool = True,
 ) -> Callable[[DictConfig, DictConfig], pufferlib.emulation.GymnasiumPufferEnv]:
     # TODO: Make this less dependent on the name of this repo and its file structure
     wrapper_classes = [
@@ -107,7 +116,9 @@ def setup_agent(
         importlib.import_module(f"pokemonred_puffer.rewards.{reward_module}"), reward_class_name
     )
     # NOTE: This assumes reward_module has RewardWrapper(RedGymEnv) class
-    env_creator = make_env_creator(wrapper_classes, reward_class, async_wrapper, sqlite_wrapper)
+    env_creator = make_env_creator(
+        wrapper_classes, reward_class, async_wrapper, sqlite_wrapper, puffer_wrapper
+    )
 
     return env_creator
 
@@ -158,6 +169,7 @@ def setup(
     reward_name: str,
     rom_path: Path,
     track: bool,
+    puffer_wrapper: bool = True,
 ) -> tuple[DictConfig, Callable[[DictConfig, DictConfig], pufferlib.emulation.GymnasiumPufferEnv]]:
     config.train.exp_id = f"pokemon-red-{str(uuid.uuid4())[:8]}"
     config.env.gb_path = rom_path
@@ -168,7 +180,7 @@ def setup(
     async_wrapper = config.train.get("async_wrapper", False)
     sqlite_wrapper = config.train.get("sqlite_wrapper", False)
     env_creator = setup_agent(
-        config.wrappers[wrappers_name], reward_name, async_wrapper, sqlite_wrapper
+        config.wrappers[wrappers_name], reward_name, async_wrapper, sqlite_wrapper, puffer_wrapper
     )
     return config, env_creator
 
@@ -283,6 +295,50 @@ def autotune(
 
 
 @app.command()
+def debug(
+    config: Annotated[
+        DictConfig, typer.Option(help="Base configuration", parser=OmegaConf.load)
+    ] = "config.yaml",
+    reward_name: Annotated[
+        str,
+        typer.Option(
+            "--reward-name",
+            "-r",
+            help="Reward module to use in rewards",
+        ),
+    ] = "baseline.ObjectRewardRequiredEventsMapIdsFieldMoves",
+    wrappers_name: Annotated[
+        str,
+        typer.Option(
+            "--wrappers-name",
+            "-w",
+            help="Wrappers to use _in order of instantion_",
+        ),
+    ] = "empty",
+    rom_path: Path = "red.gb",
+):
+    config = load_from_config(config, True)
+    config.env.gb_path = rom_path
+    config, env_creator = setup(
+        config=config,
+        debug=True,
+        wrappers_name=wrappers_name,
+        reward_name=reward_name,
+        rom_path=rom_path,
+        track=False,
+        puffer_wrapper=False,
+    )
+    env = env_creator(
+        config.env, config.wrappers[wrappers_name], config.rewards[reward_name]["reward"]
+    )
+    env.reset()
+    while True:
+        env.step(5)
+        time.sleep(0.2)
+    env.close()
+
+
+@app.command()
 def train(
     config: Annotated[
         DictConfig, typer.Option(help="Base configuration", parser=OmegaConf.load)
@@ -302,7 +358,7 @@ def train(
             "-r",
             help="Reward module to use in rewards",
         ),
-    ] = "baseline.ObjectRewardRequiredEventsMapIds",
+    ] = "baseline.ObjectRewardRequiredEventsMapIdsFieldMoves",
     wrappers_name: Annotated[
         str,
         typer.Option(
@@ -364,7 +420,7 @@ def train(
                 with sqlite3.connect(db_filename) as conn:
                     cur = conn.cursor()
                     cur.execute(
-                        "CREATE TABLE states(env_id INT PRIMARY_KEY, pyboy_state BLOB, reset BOOLEAN, pid INT);"
+                        "CREATE TABLE states(env_id INT PRIMARY_KEY, pyboy_state BLOB, reset BOOLEAN, required_rate REAL, pid INT);"
                     )
 
             vecenv = pufferlib.vector.make(
@@ -388,7 +444,7 @@ def train(
             policy = make_policy(vecenv.driver_env, policy_name, config)
 
             config.train.env = "Pokemon Red"
-            trainer = CleanPuffeRL(
+            with CleanPuffeRL(
                 exp_name=exp_name,
                 config=config.train,
                 vecenv=vecenv,
@@ -397,12 +453,11 @@ def train(
                 env_send_queues=env_send_queues,
                 sqlite_db=db_filename,
                 wandb_client=wandb_client,
-            )
-            while not trainer.done_training():
-                trainer.evaluate()
-                trainer.train()
+            ) as trainer:
+                while not trainer.done_training():
+                    trainer.evaluate()
+                    trainer.train()
 
-            trainer.close()
             print("Done training")
 
 
