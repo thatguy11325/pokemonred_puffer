@@ -3,166 +3,199 @@ wandb:
   project: pokemon
   group: ~
 
-debug:
-  env:
-    headless: False
-    stream_wrapper: False
-    init_state: "Bulbasaur"
-    state_dir: pyboy_states
-    max_steps: 19000
-    log_frequency: 1
-    disable_ai_actions: True
-    use_global_map: False
-    reduce_res: True
-    animate_scripts: True
-    save_state: False
-    save_video: True
-    auto_flash: True
-    disable_wild_encounters: False
-    auto_teach_cut: False
-    auto_use_cut: False
-    auto_use_strength: False
-    auto_use_surf: False
-    auto_teach_surf: False
-    auto_teach_strength: False
-    auto_solve_strength_puzzles: False
-    auto_remove_all_nonuseful_items: False
-    auto_pokeflute: False
-    auto_next_elevator_floor: False
-    skip_safari_zone: False
-    infinite_safari_steps: False
-    insert_saffron_guard_drinks: False
-    perfect_ivs: False
-  train:
-    device: cpu
-    compile: False
-    compile_mode: default
-    num_envs: 1
-    envs_per_worker: 1
-    num_workers: 1
-    env_batch_size: 128
-    zero_copy: False
-    batch_size: 1024
-    minibatch_size: 128
-    batch_rows: 4
-    bptt_horizon: 2
-    total_timesteps: 1_000_000
-    save_checkpoint: True
-    checkpoint_interval: 4
-    save_overlay: True
-    overlay_interval: 1
-    verbose: True
-    env_pool: False
-    load_optimizer_state: False
-    async_wrapper: False
-    sqlite_wrapper: False
-    archive_states: False
-
 env:
+  # If true, run without rendering every step.
   headless: True
-  save_final_state: True
-  print_rewards: True
+  # Directory to store video output.
   video_dir: video
+  # Directory with pyboy save states to load from.
   state_dir: pyboy_states
+  # File within state dir to load from.
   init_state: Bulbasaur
+  # How many ticks each environment step should take.
   action_freq: 24
+  # Maximum number of steps per mini-episode.
   max_steps: 19816
+  # If true, save videos.
   save_video: False
+  # If true, save sped up videos.
   fast_video: False
-  frame_stacks: 1
+  # If true, give all party members max base stats.
   perfect_ivs: False
+  # If true, downsample the screen observation by 2.
   reduce_res: True
+  # If true, losslessy compress the screen observation.
   two_bit: True
+  # How many steps until the environment returns an info.
   log_frequency: 2000
+  # If true, disable the need for Flash.
   auto_flash: True
+  # If true, disable wild encounters with repels.
   disable_wild_encounters: False
+  # If true, disable AI input. Useful for debugging.
   disable_ai_actions: False
+  # If true, teach cut if possible.
   auto_teach_cut: False
+  # If true, use cut when standing next to a tree.
   auto_use_cut: False
+  # If true, use strength when walking into a cave if possible.
   auto_use_strength: True
+  # If true, use surf when attempting to walk on water.
   auto_use_surf: False
+  # If true, teach surf if possible.
   auto_teach_surf: False
+  # If true, teach strength if possible.
   auto_teach_strength: True
+  # If true, solve a strength puzzle if next to a moveable boulder.
   auto_solve_strength_puzzles: True
+  # If true, toss all unneeded items when the bag is full.
   auto_remove_all_nonuseful_items: True
+  # If true, use Pokeflute when next to a Snorlax if possible.
   auto_pokeflute: False
+  # If true, go to the next floor module num floors when entering an elevator.
   auto_next_elevator_floor: False
+  # If true, automatically give the player the GOLD TEETH and HM03.
+  # The player will not be allowed in the Safari Zone.
   skip_safari_zone: False
+  # If true, the player will have no cap on the number of steps when in the
+  # Safari Zone
   infinite_safari_steps: False
+  # If true, place a Lemonade in the player's bag if there is no Lemonade when
+  # in the Celadon Mart.
   insert_saffron_guard_drinks: False
+  # If true, give the player infinite money.
   infinite_money: True
+  # If true, use the global map observation.
   use_global_map: False
+  # If true, provide the PyBoy save state as a part of infos.
   save_state: True
+  # If true, animate scripts. Script animations will not be a part of obs.
+  # This flag is good for debugging.
   animate_scripts: False
+  # The value on the exploration map for visiting a new coordinate.
   exploration_inc: 1.0
+  # The max possible value on the exploration map.
   exploration_max: 1.0
+  # The amount to scale max steps by. Will be multiplied by the number of required items and events.
   max_steps_scaling: 0 # 0.2 # every 10 events or items gained, multiply max_steps by 2
+  # The scaling for visiting important map IDs.
   map_id_scalefactor: 9.539340019226074 # multiply map ids whose events have not been completed by 10
+  # How many agents must reach a required event before all agents are allowed to continue.
+  # If an agent reaches a milestone and the required tolerance is not met, the episode will reset. 
   required_tolerance: null
   # required_tolerance: 0.02
 
 train:
+  # Random seed
   seed: 1
+  # Use deterministic Torch algorithms
   torch_deterministic: True
+  # Device to run training on.
   device: cuda
+  # If true, use torch.compile
   compile: True
+  # The mode for torch compilation
   compile_mode: "reduce-overhead"
+  # Mostly useless for Pokemon, enables tensor cores on NVIDIA GPUs.
   float32_matmul_precision: "high"
+  # The total time steps to run training for.
   total_timesteps: 10_000_000_000 # 100_000_000_000 for full games
+  # The number of examples for one epoch of training.
   batch_size: 65536
+  # The number of example to train for one batch of training.
   minibatch_size: 2048
+  # If true, turn on learning rate annealing.
   anneal_lr: False
+  # Unused
   num_minibatches: 4
+  # Number of epochs when training.
   update_epochs: 3
+  # If true, use normalized advantage.
   norm_adv: True
+  # Entropy coefficient. More means more random actions.
   ent_coef: 0.01001337416019442
+  # Generalized advantage estimate
   gae_lambda: 0.949936199629264
+  # Decay parameter for advantage estimation.
   gamma: 0.9979900678597386
+  # How strongly to clip gradients.
   clip_coef: 0.1
   clip_vloss: True
+  # Learning rate.
   learning_rate: 0.00019999482124740103
+  # Max norm of the gradients
   max_grad_norm: 0.5
   target_kl: ~
   vf_clip_coef: 0.1
   vf_coef: 0.5319333384064214
+  # unused
   batch_rows: 128
+  # backprop through time horizon.
   bptt_horizon: 16
 
+  # Number of environments for training.
   num_envs: 288
+  # Number of workers (processes) for training.
+  # Environments are divided evenly across workers.
   num_workers: 24
+  # Number of workers to report per step. 
   env_batch_size: 36
+  # Use PufferLib EnvPool
   env_pool: True
+  # Use PufferLib's zero copy EnvPool.
   zero_copy: False
 
+  # Verbose terminal reporting.
   verbose: False
+  # Directory to store checkpoints in.
   data_dir: runs
+  # If true, save checkpoints.
   save_checkpoint: False
+  # How often to save checkpoints.
   checkpoint_interval: 200
+
+  # Log global map overlay to wandb 
   save_overlay: True
+  # How often to log global map to wandb.
   overlay_interval: 100
+  # Use PufferLib's CPU data offloading.
   cpu_offload: False
-  pool_kernel: [0]
-  load_optimizer_state: False
+  # Use RNN network. False is not supported
   use_rnn: True
+  # Use multiprocessing to asynchronously reset the agents
+  # when required new events and items are observed.
   async_wrapper: False
+  # Use a shared SQLite DB to reset the agents
+  # when required new events and items are observed.
   sqlite_wrapper: True
+  # Save PyBoy states when new required events and items are observed.
   archive_states: True
+  # When a new required events and items are observed, move
+  # all environments to the save state for the environment that made 
+  # the observation
   swarm: True
+  # event name: minutes. If we dont satisfy each condition
+  # we early stop
+  # The defaults have a margin of error
   early_stop:
-    # event name: minutes. If we dont satisfy each condition
-    # we early stop
-    # The defaults have a margin of error
     EVENT_BEAT_BROCK: 30
     EVENT_BEAT_MISTY: 300
     EVENT_GOT_HM01: 600
     EVENT_BEAT_LT_SURGE: 1200
+  # If set, train until all events are accomplished.
   one_epoch:
     - "EVENT_BEAT_CHAMPION_RIVAL"
     # - HM_03
     # - HM_04
     # - "EVENT_BEAT_ERIKA"
+  # If true, provide the percentage completion rate for required
+  # items to the environments.
   required_rate: False
 
+# Wrappers to use for training.
+# Each wrapper is keyed by a name for the commandline.
+# The value for each key is the list of wrappers to support.
+# Wrappers can be found in the wrappers directory.
 wrappers:
   empty:
     - episode_stats.EpisodeStatsWrapper: {}
@@ -217,6 +250,10 @@ wrappers:
         jitter: 0
     - episode_stats.EpisodeStatsWrapper: {}
 
+# Rewards to use for training.
+# Each reward is keyed by a name for the commandline.
+# The value for each key is the list of rewards to support.
+# Rewards can be found in the rewards directory.
 rewards:
   baseline.BaselineRewardEnv:
     reward:
@@ -395,6 +432,10 @@ rewards:
       valid_pokeflute_coords: 4.840555191040039
       valid_surf_coords: 4.8967742919921875
 
+# Policies to use for training.
+# Each policy is keyed by a name for the commandline.
+# The value for each key is the list of policies to support.
+# Policies can be found in the policies directory.
 policies:
   multi_convolutional.MultiConvolutionalPolicy:
     policy:
@@ -407,3 +448,59 @@ policies:
         input_size: 512
         hidden_size: 512
         num_layers: 1
+
+# Debug overrides.
+debug:
+  env:
+    headless: False
+    stream_wrapper: False
+    init_state: "Bulbasaur"
+    state_dir: pyboy_states
+    max_steps: 19000
+    log_frequency: 1
+    disable_ai_actions: True
+    use_global_map: False
+    reduce_res: True
+    animate_scripts: True
+    save_state: False
+    save_video: True
+    auto_flash: True
+    disable_wild_encounters: False
+    auto_teach_cut: False
+    auto_use_cut: False
+    auto_use_strength: False
+    auto_use_surf: False
+    auto_teach_surf: False
+    auto_teach_strength: False
+    auto_solve_strength_puzzles: False
+    auto_remove_all_nonuseful_items: False
+    auto_pokeflute: False
+    auto_next_elevator_floor: False
+    skip_safari_zone: False
+    infinite_safari_steps: False
+    insert_saffron_guard_drinks: False
+    perfect_ivs: False
+  train:
+    device: cpu
+    compile: False
+    compile_mode: default
+    num_envs: 1
+    envs_per_worker: 1
+    num_workers: 1
+    env_batch_size: 128
+    zero_copy: False
+    batch_size: 1024
+    minibatch_size: 128
+    batch_rows: 4
+    bptt_horizon: 2
+    total_timesteps: 1_000_000
+    save_checkpoint: True
+    checkpoint_interval: 4
+    save_overlay: True
+    overlay_interval: 1
+    verbose: True
+    env_pool: False
+    load_optimizer_state: False
+    async_wrapper: False
+    sqlite_wrapper: False
+    archive_states: False

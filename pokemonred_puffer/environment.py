@@ -96,8 +96,6 @@ class RedGymEnv(Env):
 
     def __init__(self, env_config: DictConfig):
         self.video_dir = Path(env_config.video_dir)
-        self.save_final_state = env_config.save_final_state
-        self.print_rewards = env_config.print_rewards
         self.headless = env_config.headless
         self.state_dir = Path(env_config.state_dir)
         self.init_state = env_config.init_state
