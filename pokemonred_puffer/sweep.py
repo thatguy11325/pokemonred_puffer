@@ -98,6 +98,7 @@ def launch_sweep(
 ):
     console = Console()
     params = sweep_config_to_params(base_config, sweep_config)
+    params_keys = {p.name for p in params}
     for param in params:
         print(f"Checking param: {param}")
         if isinstance(param.space, LogitSpace):
@@ -158,13 +159,19 @@ def launch_sweep(
         if saves:
             # sort by the middle int and take the highest value
             # dont need split, could also use a regex group
+            print(f"Found saves {saves}")
             save_filename = sorted(
-                saves, key=lambda x: int(x.replace("carbs_", "").replace("obs.pt", ""))
+                saves,
+                key=lambda x: int(x.replace("carbs_", "").replace("obs.pt", "")),
+                reverse=True,
             )[0]
+            print(f"Warm starting carbs from save {save_filename}")
             carbs.warm_start(
                 filename=os.path.join(experiment_dir, save_filename),
                 is_prior_observation_valid=True,
             )
+        else:
+            print("Found no saves. Carbs will not be warm started.")
 
     if not sweep_id and not dry_run:
         sweep_id = wandb.sweep(
@@ -256,7 +263,7 @@ def launch_sweep(
                                 input={
                                     k: v["value"]
                                     for k, v in json.loads(run["config"]).items()
-                                    if k != "wandb_version"
+                                    if k in params_keys
                                 },
                                 # TODO: try out other stats like required count
                                 output=summary_metrics["environment/stats/required_count"],

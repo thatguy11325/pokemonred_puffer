@@ -1,17 +1,18 @@
-from abc import abstractmethod
 import io
-from multiprocessing import Lock, shared_memory
 import os
 import random
+import uuid
+from abc import abstractmethod
 from collections import deque
+from multiprocessing import Lock, shared_memory
 from pathlib import Path
 from typing import Any, Iterable, Optional
-import uuid
 
 import mediapy as media
 import numpy as np
-from omegaconf import DictConfig, ListConfig
+import numpy.typing as npt
 from gymnasium import Env, spaces
+from omegaconf import DictConfig, ListConfig
 from pyboy import PyBoy
 from pyboy.utils import WindowEvent
 
@@ -24,6 +25,7 @@ from pokemonred_puffer.data.events import (
     EventFlags,
 )
 from pokemonred_puffer.data.field_moves import FieldMoves
+from pokemonred_puffer.data.flags import Flags
 from pokemonred_puffer.data.items import (
     HM_ITEMS,
     KEY_ITEMS,
@@ -46,7 +48,6 @@ from pokemonred_puffer.data.tm_hm import (
     SURF_SPECIES_IDS,
     TmHmMoves,
 )
-from pokemonred_puffer.data.flags import Flags
 from pokemonred_puffer.global_map import GLOBAL_MAP_SHAPE, local_to_global
 
 PIXEL_VALUES = np.array([0, 85, 153, 255], dtype=np.uint8)
@@ -112,6 +113,10 @@ class RedGymEnv(Env):
         self.log_frequency = env_config.log_frequency
         self.two_bit = env_config.two_bit
         self.auto_flash = env_config.auto_flash
+        # A mapping of event to completion rate across
+        # all environments in a run
+        self.required_rate = 1.0
+        self.required_tolerance = env_config.required_tolerance
         if isinstance(env_config.disable_wild_encounters, bool):
             self.disable_wild_encounters = env_config.disable_wild_encounters
             self.setup_disable_wild_encounters_maps = set([])
@@ -135,6 +140,7 @@ class RedGymEnv(Env):
         self.auto_pokeflute = env_config.auto_pokeflute
         self.auto_next_elevator_floor = env_config.auto_next_elevator_floor
         self.skip_safari_zone = env_config.skip_safari_zone
+        self.infinte_safari_steps = env_config.infinite_safari_steps
         self.insert_saffron_guard_drinks = env_config.insert_saffron_guard_drinks
         self.infinite_money = env_config.infinite_money
         self.use_global_map = env_config.use_global_map
@@ -167,7 +173,6 @@ class RedGymEnv(Env):
             self.instance_id = str(uuid.uuid4())[:8]
             self.video_dir.mkdir(exist_ok=True)
             self.full_frame_writer = None
-            self.model_frame_writer = None
             self.map_frame_writer = None
         self.reset_count = 0
         self.all_runs = []
@@ -233,6 +238,7 @@ class RedGymEnv(Env):
             window="null" if self.headless else "SDL2",
             log_level="CRITICAL",
             symbols=os.path.join(os.path.dirname(__file__), "pokered.sym"),
+            sound_emulated=False,
         )
         self.register_hooks()
         if not self.headless:
@@ -269,8 +275,21 @@ class RedGymEnv(Env):
         )
         self.pyboy.hook_register(None, "HandleBlackOut", self.blackout_hook, None)
         self.pyboy.hook_register(None, "SetLastBlackoutMap.done", self.blackout_update_hook, None)
-        # self.pyboy.hook_register(None, "UsedCut.nothingToCut", self.cut_hook, context=True)
-        # self.pyboy.hook_register(None, "UsedCut.canCut", self.cut_hook, context=False)
+        if not self.auto_use_cut:
+            self.pyboy.hook_register(None, "UsedCut.nothingToCut", self.cut_hook, context=False)
+            self.pyboy.hook_register(None, "UsedCut.canCut", self.cut_hook, context=True)
+        # there is already an event for waking up the snorlax. No need to make a hookd for it
+        if not self.auto_pokeflute:
+            self.pyboy.hook_register(
+                None, "ItemUsePokeFlute.noSnorlaxToWakeUp", self.pokeflute_hook, context=False
+            )
+            self.pyboy.hook_register(
+                None, "PlayedFluteHadEffectText.done", self.pokeflute_hook, context=True
+            )
+        if not self.auto_use_surf:
+            self.pyboy.hook_register(None, "SurfingAttemptFailed", self.surf_hook, context=False)
+            self.pyboy.hook_register(None, "ItemUseSurfboard.surf", self.surf_hook, context=True)
+
         if self.disable_wild_encounters:
             self.setup_disable_wild_encounters()
         self.pyboy.hook_register(None, "AnimateHealingMachine", self.pokecenter_heal_hook, None)
@@ -283,6 +302,7 @@ class RedGymEnv(Env):
             self.sign_hook,
             None,
         )
+        self.pyboy.hook_register(None, "ItemUseBall.loop", self.use_ball_hook, None)
         self.reset_count = 0
 
     def setup_disable_wild_encounters(self):
@@ -296,7 +316,7 @@ class RedGymEnv(Env):
 
     def setup_enable_wild_ecounters(self):
         bank, addr = self.pyboy.symbol_lookup("TryDoWildEncounter.gotWildEncounterType")
-        self.pyboy.hook_deregister(bank, addr)
+        self.pyboy.hook_deregister(bank, addr + 8)
 
     def update_state(self, state: bytes):
         self.reset(seed=random.randint(0, 10), options={"state": state})
@@ -352,7 +372,7 @@ class RedGymEnv(Env):
         self.required_items = self.get_required_items()
         self.seen_pokemon = np.zeros(152, dtype=np.uint8)
         self.caught_pokemon = np.zeros(152, dtype=np.uint8)
-        self.moves_obtained = np.zeros(0xA5, dtype=np.uint8)
+        self.obtained_move_ids = np.zeros(0xA5, dtype=np.uint8)
         self.pokecenters = np.zeros(252, dtype=np.uint8)
 
         self.recent_screens = deque()
@@ -364,7 +384,7 @@ class RedGymEnv(Env):
         self.reset_mem()
 
         self.update_pokedex()
-        self.update_tm_hm_moves_obtained()
+        self.update_tm_hm_obtained_move_ids()
         self.party_size = self.read_m("wPartyCount")
         self.taught_cut = self.check_if_party_has_hm(TmHmMoves.CUT.value)
         self.taught_surf = self.check_if_party_has_hm(TmHmMoves.SURF.value)
@@ -404,9 +424,32 @@ class RedGymEnv(Env):
         self.seen_map_ids = np.zeros(256)
         self.seen_npcs = {}
         self.seen_warps = {}
+        self.safari_zone_steps = {
+            k: 0
+            for k in [
+                MapIds.SAFARI_ZONE_CENTER,
+                MapIds.SAFARI_ZONE_CENTER_REST_HOUSE,
+                MapIds.SAFARI_ZONE_EAST,
+                MapIds.SAFARI_ZONE_EAST_REST_HOUSE,
+                MapIds.SAFARI_ZONE_WEST,
+                # MapIds.SAFARI_ZONE_WEST_REST_HOUSE,
+                MapIds.SAFARI_ZONE_NORTH,
+                MapIds.SAFARI_ZONE_NORTH_REST_HOUSE,
+                MapIds.SAFARI_ZONE_SECRET_HOUSE,
+            ]
+        }
 
-        self.cut_coords = {}
+        self.valid_cut_coords = {}
+        self.invalid_cut_coords = {}
         self.cut_tiles = {}
+
+        self.valid_pokeflute_coords = {}
+        self.invalid_pokeflute_coords = {}
+        self.pokeflute_tiles = {}
+
+        self.valid_surf_coords = {}
+        self.invalid_surf_coords = {}
+        self.surf_tiles = {}
 
         self.seen_hidden_objs = {}
         self.seen_signs = {}
@@ -417,6 +460,7 @@ class RedGymEnv(Env):
         self.seen_bag_menu = 0
         self.seen_action_bag_menu = 0
         self.pokecenter_heal = 0
+        self.use_ball_count = 0
 
     def reset_mem(self):
         self.seen_start_menu = 0
@@ -425,8 +469,12 @@ class RedGymEnv(Env):
         self.seen_bag_menu = 0
         self.seen_action_bag_menu = 0
         self.pokecenter_heal = 0
+        self.use_ball_count = 0
 
-    def render(self):
+    def render(self) -> npt.NDArray[np.uint8]:
+        return self.screen.ndarray[:, :, 1]
+
+    def screen_obs(self):
         # (144, 160, 3)
         game_pixels_render = np.expand_dims(self.screen.ndarray[:, :, 1], axis=-1)
 
@@ -596,7 +644,7 @@ class RedGymEnv(Env):
         bag[2 * numBagItems :] = 0
 
         return (
-            self.render()
+            self.screen_obs()
             | {
                 "direction": np.array(
                     self.read_m("wSpritePlayerStateData1FacingDirection") // 4, dtype=np.uint8
@@ -683,6 +731,8 @@ class RedGymEnv(Env):
         ):
             self.pyboy.memory[self.pyboy.symbol_lookup("wRepelRemainingSteps")[1]] = 0xFF
 
+        self.update_safari_zone()
+
         self.check_num_bag_items()
 
         # update the a press before we use it so we dont trigger the font loaded early return
@@ -695,7 +745,7 @@ class RedGymEnv(Env):
         self.party = PartyMons(self.pyboy)
         self.update_health()
         self.update_pokedex()
-        self.update_tm_hm_moves_obtained()
+        self.update_tm_hm_obtained_move_ids()
         self.party_size = self.read_m("wPartyCount")
         self.update_max_op_level()
         new_reward = self.update_reward()
@@ -710,13 +760,6 @@ class RedGymEnv(Env):
         if self.read_m("wWalkBikeSurfState") == 0x2:
             self.use_surf = 1
         info = {}
-
-        # self.memory[0xd16c] = 0xFF
-        self.pyboy.memory[0xD16D] = 0xFF
-        self.pyboy.memory[0xD188] = 0xFF
-        self.pyboy.memory[0xD189] = 0xFF
-        self.pyboy.memory[0xD18A] = 0xFF
-        self.pyboy.memory[0xD18B] = 0xFF
 
         required_events = self.get_required_events()
         required_items = self.get_required_items()
@@ -747,6 +790,17 @@ class RedGymEnv(Env):
             reset = True
             self.first = True
             new_reward = -self.total_reward * 0.5
+
+        # only check periodically since this is expensive
+        # we have a tolerance cause some events may be really hard to get
+        if (new_required_events or new_required_items) and self.required_tolerance is not None:
+            # calculate the current required completion percentage
+            # add 4 for rival3, game corner rocket, saffron guard and lapras
+            required_completion = len(required_events) + len(required_items)
+            reset = (required_completion - self.required_rate) > self.required_tolerance
+
+        if self.save_video:
+            self.add_video_frame()
 
         return obs, new_reward, reset, False, info
 
@@ -1331,7 +1385,7 @@ class RedGymEnv(Env):
         if key[-1] != 0xFF:
             self.seen_warps[key] = 1
 
-    def cut_hook(self, context):
+    def cut_hook(self, context: bool):
         player_direction = self.pyboy.memory[
             self.pyboy.symbol_lookup("wSpritePlayerStateData1FacingDirection")[1]
         ]
@@ -1350,14 +1404,61 @@ class RedGymEnv(Env):
         ]
         if context:
             if wTileInFrontOfPlayer in [0x3D, 0x50]:
-                self.cut_coords[coords] = 10
+                self.valid_cut_coords[coords] = 1
             else:
-                self.cut_coords[coords] = 0.001
+                self.invalid_cut_coords[coords] = 1
         else:
-            self.cut_coords[coords] = 0.001
+            self.invalid_cut_coords[coords] = 1
 
-        self.cut_explore_map[local_to_global(y, x, map_id)] = 1
         self.cut_tiles[wTileInFrontOfPlayer] = 1
+        self.cut_explore_map[local_to_global(y, x, map_id)] = 1
+
+    def pokeflute_hook(self, context: bool):
+        player_direction = self.pyboy.memory[
+            self.pyboy.symbol_lookup("wSpritePlayerStateData1FacingDirection")[1]
+        ]
+        x, y, map_id = self.get_game_coords()  # x, y, map_id
+        if player_direction == 0:  # down
+            coords = (x, y + 1, map_id)
+        if player_direction == 4:
+            coords = (x, y - 1, map_id)
+        if player_direction == 8:
+            coords = (x - 1, y, map_id)
+        if player_direction == 0xC:
+            coords = (x + 1, y, map_id)
+        if context:
+            self.valid_pokeflute_coords[coords] = 1
+        else:
+            self.invalid_pokeflute_coords[coords] = 1
+        wTileInFrontOfPlayer = self.pyboy.memory[
+            self.pyboy.symbol_lookup("wTileInFrontOfPlayer")[1]
+        ]
+        self.pokeflute_tiles[wTileInFrontOfPlayer] = 1
+
+    def surf_hook(self, context: bool, *args, **kwargs):
+        player_direction = self.pyboy.memory[
+            self.pyboy.symbol_lookup("wSpritePlayerStateData1FacingDirection")[1]
+        ]
+        x, y, map_id = self.get_game_coords()  # x, y, map_id
+        if player_direction == 0:  # down
+            coords = (x, y + 1, map_id)
+        if player_direction == 4:
+            coords = (x, y - 1, map_id)
+        if player_direction == 8:
+            coords = (x - 1, y, map_id)
+        if player_direction == 0xC:
+            coords = (x + 1, y, map_id)
+        if context:
+            self.valid_surf_coords[coords] = 1
+        else:
+            self.invalid_surf_coords[coords] = 1
+        wTileInFrontOfPlayer = self.pyboy.memory[
+            self.pyboy.symbol_lookup("wTileInFrontOfPlayer")[1]
+        ]
+        self.surf_tiles[wTileInFrontOfPlayer] = 1
+
+    def use_ball_hook(self, *args, **kwargs):
+        self.use_ball_count += 1
 
     def disable_wild_encounter_hook(self, *args, **kwargs):
         if (
@@ -1406,13 +1507,18 @@ class RedGymEnv(Env):
                 "action_hist": self.action_hist,
                 "caught_pokemon": int(sum(self.caught_pokemon)),
                 "seen_pokemon": int(sum(self.seen_pokemon)),
-                "moves_obtained": int(sum(self.moves_obtained)),
+                "obtained_move_ids": int(sum(self.obtained_move_ids)),
                 "opponent_level": self.max_opponent_level,
                 "taught_cut": int(self.check_if_party_has_hm(TmHmMoves.CUT.value)),
                 "taught_surf": int(self.check_if_party_has_hm(TmHmMoves.SURF.value)),
                 "taught_strength": int(self.check_if_party_has_hm(TmHmMoves.STRENGTH.value)),
-                # "cut_coords": sum(self.cut_coords.values()),
-                # "cut_tiles": len(self.cut_tiles),
+                "cut_tiles": len(self.cut_tiles),
+                "valid_cut_coords": len(self.valid_cut_coords),
+                "invalid_cut_coords": len(self.invalid_cut_coords),
+                "valid_pokeflute_coords": len(self.valid_pokeflute_coords),
+                "invalid_pokeflute_coords": len(self.invalid_pokeflute_coords),
+                "valid_surf_coords": len(self.valid_surf_coords),
+                "invalid_surf_coords": len(self.invalid_surf_coords),
                 "menu": {
                     "start_menu": self.seen_start_menu,
                     "pokemon_menu": self.seen_pokemon_menu,
@@ -1431,6 +1537,8 @@ class RedGymEnv(Env):
                 "max_steps": self.get_max_steps(),
                 # redundant but this is so we don't interfere with the swarm logic
                 "required_count": len(self.required_events) + len(self.required_items),
+                "safari_zone": {k.name: v for k, v in self.safari_zone_steps.items()},
+                "use_ball_count": self.use_ball_count,
             }
             | {
                 "exploration": {
@@ -1462,37 +1570,28 @@ class RedGymEnv(Env):
     def start_video(self):
         if self.full_frame_writer is not None:
             self.full_frame_writer.close()
-        if self.model_frame_writer is not None:
-            self.model_frame_writer.close()
         if self.map_frame_writer is not None:
             self.map_frame_writer.close()
 
-        base_dir = self.s_path / Path("rollouts")
+        base_dir = self.video_dir / Path("rollouts")
         base_dir.mkdir(exist_ok=True)
         full_name = Path(f"full_reset_{self.reset_count}_id{self.instance_id}").with_suffix(".mp4")
-        model_name = Path(f"model_reset_{self.reset_count}_id{self.instance_id}").with_suffix(
-            ".mp4"
-        )
         self.full_frame_writer = media.VideoWriter(
             base_dir / full_name, (144, 160), fps=60, input_format="gray"
         )
         self.full_frame_writer.__enter__()
-        self.model_frame_writer = media.VideoWriter(
-            base_dir / model_name, self.screen_output_shape[:2], fps=60, input_format="gray"
-        )
-        self.model_frame_writer.__enter__()
         map_name = Path(f"map_reset_{self.reset_count}_id{self.instance_id}").with_suffix(".mp4")
         self.map_frame_writer = media.VideoWriter(
             base_dir / map_name,
-            (self.coords_pad * 4, self.coords_pad * 4),
+            self.explore_map.shape,
             fps=60,
             input_format="gray",
         )
         self.map_frame_writer.__enter__()
 
     def add_video_frame(self):
-        self.full_frame_writer.add_image(self.render()[:, :, 0])
-        self.model_frame_writer.add_image(self.render()[:, :, 0])
+        self.full_frame_writer.add_image(self.render()[:, :])
+        self.map_frame_writer.add_image(self.explore_map)
 
     def get_game_coords(self):
         return (self.read_m(0xD362), self.read_m(0xD361), self.read_m(0xD35E))
@@ -1630,14 +1729,14 @@ class RedGymEnv(Env):
         self.caught_pokemon = np.unpackbits(np.array(caught_mem, dtype=np.uint8))
         self.seen_pokemon = np.unpackbits(np.array(seen_mem, dtype=np.uint8))
 
-    def update_tm_hm_moves_obtained(self):
+    def update_tm_hm_obtained_move_ids(self):
         # TODO: Make a hook
         # Scan party
         for i in range(self.read_m("wPartyCount")):
             _, addr = self.pyboy.symbol_lookup(f"wPartyMon{i+1}Moves")
             for move_id in self.pyboy.memory[addr : addr + 4]:
                 # if move_id in TM_HM_MOVES:
-                self.moves_obtained[move_id] = 1
+                self.obtained_move_ids[move_id] = 1
         """
         # Scan current box (since the box doesn't auto increment in pokemon red)
         num_moves = 4
@@ -1648,7 +1747,7 @@ class RedGymEnv(Env):
                 for j in range(4):
                     move_id = self.pyboy.memory[offset + j + 8)
                     if move_id != 0:
-                        self.moves_obtained[move_id] = 1
+                        self.obtained_move_ids[move_id] = 1
         """
 
     def remove_all_nonuseful_items(self):
@@ -1682,6 +1781,35 @@ class RedGymEnv(Env):
             # that have been removed - 1
             self.pyboy.memory[wBagSavedMenuItem] = 0
             self.pyboy.memory[wListScrollOffset] = 0
+
+    def update_safari_zone(self):
+        curMapId = MapIds(self.read_m("wCurMap"))
+        # scale map id performs the same check
+        if curMapId in {
+            MapIds.SAFARI_ZONE_CENTER,
+            MapIds.SAFARI_ZONE_CENTER_REST_HOUSE,
+            MapIds.SAFARI_ZONE_EAST,
+            MapIds.SAFARI_ZONE_EAST_REST_HOUSE,
+            MapIds.SAFARI_ZONE_WEST,
+            # MapIds.SAFARI_ZONE_WEST_REST_HOUSE,
+            MapIds.SAFARI_ZONE_NORTH,
+            MapIds.SAFARI_ZONE_NORTH_REST_HOUSE,
+            MapIds.SAFARI_ZONE_SECRET_HOUSE,
+        }:
+            if (
+                self.infinte_safari_steps
+                and not self.events.get_event("EVENT_GOT_HM03")
+                and not self.missables.get_missable("HS_SAFARI_ZONE_WEST_ITEM_4")
+            ):
+                _, wSafariSteps = self.pyboy.symbol_lookup("wSafariSteps")
+                # lazily set safari steps to 256. I dont want to do the math for 512
+                self.pyboy.memory[wSafariSteps] = 0
+                self.pyboy.memory[wSafariSteps + 1] = 0xFF
+
+            # update safari zone
+            self.safari_zone_steps[curMapId] = max(
+                self.safari_zone_steps[curMapId], self.read_short("wSafariSteps")
+            )
 
     def read_hp_fraction(self):
         party_size = self.read_m("wPartyCount")
@@ -1755,7 +1883,7 @@ class RedGymEnv(Env):
             0,
         )
 
-    def scale_map_id(self, map_n: int) -> float:
+    def scale_map_id(self, map_n: int) -> bool:
         map_id = MapIds(map_n)
         if map_id not in MAP_ID_COMPLETION_EVENTS:
             return False
@@ -1766,7 +1894,7 @@ class RedGymEnv(Env):
             or (item.startswith("HS_") and self.missables.get_missable(item))
             or (item.startswith("BIT_") and self.flags.get_bit(item))
             for item in after
-        ) and all(
+        ) and any(
             (item.startswith("EVENT_") and not self.events.get_event(item))
             or (item.startswith("HS_") and not self.missables.get_missable(item))
             or (item.startswith("BIT_") and not self.flags.get_bit(item))
@@ -1784,3 +1912,8 @@ class RedGymEnv(Env):
             print(
                 f"WARNING: env id {int(self.env_id)} contains a full bag with items: {[Items(item) for item in bag[::2]]}"
             )
+
+    def close(self):
+        if self.save_video:
+            self.full_frame_writer.close()
+            self.map_frame_writer.close()

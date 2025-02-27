@@ -2620,7 +2620,7 @@ EVENTS_IDXS = [
 
 REQUIRED_EVENTS = {
     "EVENT_FOLLOWED_OAK_INTO_LAB",
-    "EVENT_PALLET_AFTER_GETTING_POKEBALLS",
+    # "EVENT_PALLET_AFTER_GETTING_POKEBALLS",
     "EVENT_FOLLOWED_OAK_INTO_LAB_2",
     "EVENT_OAK_ASKED_TO_CHOOSE_MON",
     "EVENT_GOT_STARTER",
@@ -2650,10 +2650,10 @@ REQUIRED_EVENTS = {
     "EVENT_BEAT_BLAINE",
     "EVENT_BEAT_SABRINA",
     # "EVENT_GOT_HM05",
-    "EVENT_FIGHT_ROUTE12_SNORLAX",
-    "EVENT_BEAT_ROUTE12_SNORLAX",
-    "EVENT_FIGHT_ROUTE16_SNORLAX",
-    "EVENT_BEAT_ROUTE16_SNORLAX",
+    # "EVENT_FIGHT_ROUTE12_SNORLAX",
+    # "EVENT_BEAT_ROUTE12_SNORLAX",
+    # "EVENT_FIGHT_ROUTE16_SNORLAX",
+    # "EVENT_BEAT_ROUTE16_SNORLAX",
     # "EVENT_GOT_HM02",
     "EVENT_RESCUED_MR_FUJI",
     "EVENT_2ND_ROUTE22_RIVAL_BATTLE",
@@ -2689,14 +2689,14 @@ REQUIRED_EVENTS = {
     # Random trainers we need to beat
     # lass at the entrance of route 9
     "EVENT_BEAT_ROUTE_9_TRAINER_0",
-    # exploding graveler trainer in rock tunnel
+    # # exploding graveler trainer in rock tunnel
     "EVENT_BEAT_ROCK_TUNNEL_2_TRAINER_1",
-    # lass at the end of rock tunnel
+    # # lass at the end of rock tunnel
     "EVENT_BEAT_ROCK_TUNNEL_1_TRAINER_5",
-    # Rock tunnel super nerd
+    # # Rock tunnel super nerd
     "EVENT_BEAT_ROCK_TUNNEL_1_TRAINER_3",
-    # second rock tunnel super nerd
+    # # second rock tunnel super nerd
     "EVENT_BEAT_ROCK_TUNNEL_2_TRAINER_7",
-    # required rock tunnel trainer
+    # # required rock tunnel trainer
     "EVENT_BEAT_ROCK_TUNNEL_2_TRAINER_5",
 }

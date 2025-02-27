@@ -65,13 +65,21 @@ class DecayWrapper(gym.Wrapper):
         self.env.unwrapped.explore_map[self.env.unwrapped.explore_map > 0] = np.clip(
             self.env.unwrapped.explore_map[self.env.unwrapped.explore_map > 0], 0.15, 1
         )
+        self.env.unwrapped.reward_explore_map *= self.step_forgetting_factor["explore"]
+        self.env.unwrapped.reward_explore_map[self.env.unwrapped.explore_map > 0] = np.clip(
+            self.env.unwrapped.reward_explore_map[self.env.unwrapped.explore_map > 0], 0.15, 1
+        )
         self.env.unwrapped.seen_hidden_objs.update(
             (k, max(0.15, v * (self.step_forgetting_factor["hidden_objs"])))
             for k, v in self.env.unwrapped.seen_coords.items()
         )
         self.env.unwrapped.seen_signs.update(
             (k, max(0.15, v * (self.step_forgetting_factor["signs"])))
-            for k, v in self.env.unwrapped.seen_coords.items()
+            for k, v in self.env.unwrapped.seen_signs.items()
+        )
+        self.env.unwrapped.safari_zone_steps.update(
+            (k, max(0.15, v * (self.step_forgetting_factor["safari_zone_steps"])))
+            for k, v in self.env.unwrapped.safari_zone_steps.items()
         )
 
         if self.env.unwrapped.read_m("wIsInBattle") == 0:
@@ -101,6 +109,7 @@ class MaxLengthWrapper(gym.Wrapper):
             x, y, n = coord
             del self.env.unwrapped.seen_coords[(x, y, n)]
             self.env.unwrapped.explore_map[local_to_global(y, x, n)] = 0
+            self.env.unwrapped.reward_explore_map[local_to_global(y, x, n)] = 0
         return step
 
 
@@ -116,15 +125,26 @@ class OnResetExplorationWrapper(gym.Wrapper):
             if (self.counter + random.randint(0, self.jitter)) >= self.full_reset_frequency:
                 self.counter = 0
                 self.env.unwrapped.explore_map *= 0
+                self.env.unwrapped.reward_explore_map *= 0
                 self.env.unwrapped.cut_explore_map *= 0
+                self.env.unwrapped.cut_tiles.clear()
                 self.env.unwrapped.seen_coords.clear()
                 self.env.unwrapped.seen_map_ids *= 0
                 self.env.unwrapped.seen_npcs.clear()
-                self.env.unwrapped.cut_coords.clear()
-                self.env.unwrapped.cut_tiles.clear()
+                self.env.unwrapped.valid_cut_coords.clear()
+                self.env.unwrapped.invalid_cut_coords.clear()
+                self.env.unwrapped.valid_pokeflute_coords.clear()
+                self.env.unwrapped.invalid_pokeflute_coords.clear()
+                self.env.unwrapped.pokeflute_tiles.clear()
+                self.env.unwrapped.valid_surf_coords.clear()
+                self.env.unwrapped.invalid_surf_coords.clear()
+                self.env.unwrapped.surf_tiles.clear()
                 self.env.unwrapped.seen_warps.clear()
                 self.env.unwrapped.seen_hidden_objs.clear()
                 self.env.unwrapped.seen_signs.clear()
+                self.env.unwrapped.safari_zone_steps.update(
+                    (k, 0) for k in self.env.unwrapped.safari_zone_steps.keys()
+                )
             self.counter += 1
         return self.env.step(action)
 
@@ -149,21 +169,44 @@ class OnResetLowerToFixedValueWrapper(gym.Wrapper):
                 for k, v in self.env.unwrapped.seen_npcs.items()
                 if v > 0
             )
-            self.env.unwrapped.cut_tiles.update(
-                (k, self.fixed_value["cut"])
+            self.env.unwrapped.valid_cut_coords.update(
+                (k, self.fixed_value["valid_cut"])
                 for k, v in self.env.unwrapped.seen_npcs.items()
                 if v > 0
             )
-            self.env.unwrapped.cut_coords.update(
-                (k, self.fixed_value["cut"])
+            self.env.unwrapped.invalid_cut_coords.update(
+                (k, self.fixed_value["invalid_cut"])
+                for k, v in self.env.unwrapped.seen_npcs.items()
+                if v > 0
+            )
+            self.env.unwrapped.valid_pokeflute_coords.update(
+                (k, self.fixed_value["valid_pokeflute"])
+                for k, v in self.env.unwrapped.seen_npcs.items()
+                if v > 0
+            )
+            self.env.unwrapped.invalid_pokeflute_coords.update(
+                (k, self.fixed_value["invalid_pokeflute"])
+                for k, v in self.env.unwrapped.seen_npcs.items()
+                if v > 0
+            )
+            self.env.unwrapped.valid_surf_coords.update(
+                (k, self.fixed_value["valid_surf"])
+                for k, v in self.env.unwrapped.seen_npcs.items()
+                if v > 0
+            )
+            self.env.unwrapped.invalid_surf_coords.update(
+                (k, self.fixed_value["invalid_surf"])
                 for k, v in self.env.unwrapped.seen_npcs.items()
                 if v > 0
             )
             self.env.unwrapped.explore_map[self.env.unwrapped.explore_map > 0] = self.fixed_value[
                 "explore"
             ]
+            self.env.unwrapped.reward_explore_map[self.env.unwrapped.reward_explore_map > 0] = (
+                self.fixed_value["explore"]
+            )
             self.env.unwrapped.cut_explore_map[self.env.unwrapped.cut_explore_map > 0] = (
-                self.fixed_value["cut"]
+                self.fixed_value["invalid_cut"]
             )
             self.env.unwrapped.seen_warps.update(
                 (k, self.fixed_value["coords"])
@@ -178,6 +221,11 @@ class OnResetLowerToFixedValueWrapper(gym.Wrapper):
             self.env.unwrapped.seen_signs.update(
                 (k, self.fixed_value["signs"])
                 for k, v in self.env.unwrapped.seen_npcs.items()
+                if v > 0
+            )
+            self.env.unwrapped.safari_zone_steps.update(
+                (k, self.fixed_value["safari_zone_steps"])
+                for k, v in self.env.unwrapped.safari_zone_steps.items()
                 if v > 0
             )
         return self.env.unwrapped.step(action)
