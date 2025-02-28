@@ -105,6 +105,7 @@ class RedGymEnv(Env):
         self.max_steps = env_config.max_steps
         self.save_video = env_config.save_video
         self.fast_video = env_config.fast_video
+        self.n_record = env_config.n_record
         self.perfect_ivs = env_config.perfect_ivs
         self.reduce_res = env_config.reduce_res
         self.gb_path = env_config.gb_path
@@ -706,7 +707,7 @@ class RedGymEnv(Env):
         if self.step_count >= self.get_max_steps():
             self.step_count = 0
 
-        if self.save_video and self.step_count == 0:
+        if self.save_video and self.step_count == 0 and self.env_id <= self.n_record:
             self.start_video()
 
         _, wMapPalOffset = self.pyboy.symbol_lookup("wMapPalOffset")
