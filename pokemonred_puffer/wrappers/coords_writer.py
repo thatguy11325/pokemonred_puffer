@@ -15,7 +15,7 @@ class CoordinatesWriter(gym.Wrapper):
         self.coord_list = collections.deque()
         self.output_dir: str = config.output_dir
         self.write_frequency: int = config.write_frequency
-        self.folder_name = datetime.today.strftime("%Y%m%d%H%M%S")
+        self.folder_name = datetime.today().strftime("%Y%m%d%H%M%S")
 
     def step(self, action):
         map_n = self.env.unwrapped.read_m("wCurMap")
