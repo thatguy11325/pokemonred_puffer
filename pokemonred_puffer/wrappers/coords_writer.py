@@ -27,7 +27,7 @@ class CoordinatesWriter(gym.Wrapper):
         map_n = self.env.unwrapped.read_m("wCurMap")
         y_pos = self.env.unwrapped.read_m("wYCoord")
         x_pos = self.env.unwrapped.read_m("wXCoord")
-        if self.step_counter >= self.upload_interval:
+        if self.step_counter >= self.record_interval:
             self.coord_list.append([str(map_n), str(y_pos), str(x_pos)])
             self.step_counter = 0
         if len(self.coord_list) >= self.write_frequency:
