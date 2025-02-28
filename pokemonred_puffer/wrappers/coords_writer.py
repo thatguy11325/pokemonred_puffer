@@ -16,8 +16,8 @@ class CoordinatesWriter(gym.Wrapper):
         self.record_interval = 500
         self.step_counter = 0
         self.write_frequency: int = config.write_frequency
-        self.write_path = (
-            os.path.join(self.output_dir, str(cast(RedGymEnv, self.env).env_id) + "-coords.csv"),
+        self.write_path = os.path.join(
+            self.output_dir, str(cast(RedGymEnv, self.env).env_id) + "-coords.csv"
         )
         os.makedirs(self.output_dir, exist_ok=True)
         with open(self.write_path, "w") as f:
