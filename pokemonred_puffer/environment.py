@@ -259,6 +259,9 @@ class RedGymEnv(Env):
             RedGymEnv.env_id.buf[1] = (env_id >> 16) & 0xFF
             RedGymEnv.env_id.buf[2] = (env_id >> 8) & 0xFF
             RedGymEnv.env_id.buf[3] = (env_id) & 0xFF
+
+        if self.save_video and self.n_record:
+            self.save_video = self.env_id < self.n_record
         self.init_mem()
 
     def register_hooks(self):
@@ -707,7 +710,7 @@ class RedGymEnv(Env):
         if self.step_count >= self.get_max_steps():
             self.step_count = 0
 
-        if self.save_video and self.step_count == 0 and self.env_id <= self.n_record:
+        if self.save_video and self.step_count == 0:
             self.start_video()
 
         _, wMapPalOffset = self.pyboy.symbol_lookup("wMapPalOffset")
