@@ -423,7 +423,7 @@ rewards:
       invalid_surf_coords: 0.0010805776119232175
       level: 1.098945999145508
       obtained_move_ids: 4.091134548187256
-      pokecenter_heal: 0.5932707786560059
+      pokecenter_heal: 0.75 # 0.5932707786560059
       pokemon_menu: 0.09460494995117188
       pokeflute_tiles: 0.9939162135124208
       required_event: 7.134671688079834
