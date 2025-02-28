@@ -105,6 +105,10 @@ class RedGymEnv(Env):
         self.max_steps = env_config.max_steps
         self.save_video = env_config.save_video
         self.fast_video = env_config.fast_video
+        if self.fast_video:
+            self.fps = 60
+        else:
+            self.fps = 6
         self.n_record = env_config.n_record
         self.perfect_ivs = env_config.perfect_ivs
         self.reduce_res = env_config.reduce_res
@@ -118,7 +122,7 @@ class RedGymEnv(Env):
         self.required_tolerance = env_config.required_tolerance
         if isinstance(env_config.disable_wild_encounters, bool):
             self.disable_wild_encounters = env_config.disable_wild_encounters
-            self.setup_disable_wild_encounters_maps = set([])
+            self.disable_wild_encounters_maps = set([])
         elif isinstance(env_config.disable_wild_encounters, ListConfig):
             self.disable_wild_encounters = len(env_config.disable_wild_encounters) > 0
             self.disable_wild_encounters_maps = {
@@ -173,6 +177,8 @@ class RedGymEnv(Env):
             self.video_dir.mkdir(exist_ok=True)
             self.full_frame_writer = None
             self.map_frame_writer = None
+            self.screen_obs_frame_writer = None
+            self.visited_mask_frame_writer = None
         self.reset_count = 0
         self.all_runs = []
 
@@ -1576,29 +1582,61 @@ class RedGymEnv(Env):
             self.full_frame_writer.close()
         if self.map_frame_writer is not None:
             self.map_frame_writer.close()
+        if self.screen_obs_frame_writer is not None:
+            self.screen_obs_frame_writer.close()
+        if self.visited_mask_frame_writer is not None:
+            self.visited_mask_frame_writer.close()
 
         base_dir = self.video_dir / Path("rollouts")
         base_dir.mkdir(exist_ok=True)
         full_name = Path(f"full_reset_{self.reset_count}_id{self.instance_id}").with_suffix(".mp4")
         self.full_frame_writer = media.VideoWriter(
-            base_dir / full_name, (144, 160), fps=60, input_format="gray"
+            base_dir / full_name, (144, 160), fps=self.fps, input_format="gray"
         )
         self.full_frame_writer.__enter__()
+
         map_name = Path(f"map_reset_{self.reset_count}_id{self.instance_id}").with_suffix(".mp4")
         self.map_frame_writer = media.VideoWriter(
             base_dir / map_name,
             self.explore_map.shape,
-            fps=60,
+            fps=self.fps,
             input_format="gray",
         )
         self.map_frame_writer.__enter__()
+
+        screen_obs = self.screen_obs()
+        screen_obs_name = Path(
+            f"screen_obs_reset_{self.reset_count}_id{self.instance_id}"
+        ).with_suffix(".mp4")
+        self.screen_obs_frame_writer = media.VideoWriter(
+            base_dir / screen_obs_name,
+            screen_obs["screen"].shape[:2],
+            fps=self.fps,
+            input_format="gray",
+        )
+        self.screen_obs_frame_writer.__enter__()
+
+        visited_mask_name = Path(
+            f"visited_mask_reset_{self.reset_count}_id{self.instance_id}"
+        ).with_suffix(".mp4")
+        self.visited_mask_frame_writer = media.VideoWriter(
+            base_dir / visited_mask_name,
+            screen_obs["visited_mask"].shape[:2],
+            fps=self.fps,
+            input_format="gray",
+        )
+        self.visited_mask_frame_writer.__enter__()
 
     def add_video_frame(self):
         self.full_frame_writer.add_image(self.render()[:, :])
         self.map_frame_writer.add_image(self.explore_map)
 
+        screen_obs = self.screen_obs()
+        self.screen_obs_frame_writer.add_image(screen_obs["screen"].squeeze(-1))
+        self.visited_mask_frame_writer.add_image(screen_obs["visited_mask"].squeeze(-1))
+
     def get_game_coords(self):
-        return (self.read_m(0xD362), self.read_m(0xD361), self.read_m(0xD35E))
+        return (self.read_m("wXCoord"), self.read_m("wYCoord"), self.read_m("wCurMap"))
 
     def get_max_steps(self):
         return max(
@@ -1921,3 +1959,5 @@ class RedGymEnv(Env):
         if self.save_video:
             self.full_frame_writer.close()
             self.map_frame_writer.close()
+            self.screen_obs_frame_writer.close()
+            self.visited_mask_frame_writer.close()

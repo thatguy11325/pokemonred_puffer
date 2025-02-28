@@ -202,6 +202,14 @@ wrappers:
   empty:
     - episode_stats.EpisodeStatsWrapper: {}
 
+  recorder:
+    - coords_writer.ActionsWriter:
+        output_dir: runs
+        write_frequency: 100
+    - coords_writer.CoordinatesWriter:
+        output_dir: runs
+        write_frequency: 100
+
   baseline:
     - stream_wrapper.StreamWrapper:
         user: thatguy
@@ -469,7 +477,7 @@ debug:
   env:
     headless: False
     stream_wrapper: False
-    init_state: "Bulbasaur"
+    init_state: Bulbasaur
     state_dir: pyboy_states
     max_steps: 19000
     log_frequency: 1
@@ -479,8 +487,9 @@ debug:
     animate_scripts: True
     save_state: False
     save_video: True
+    fast_video: False
     auto_flash: True
-    disable_wild_encounters: False
+    disable_wild_encounters: True
     auto_teach_cut: False
     auto_use_cut: False
     auto_use_strength: False
@@ -495,6 +504,7 @@ debug:
     infinite_safari_steps: False
     insert_saffron_guard_drinks: False
     perfect_ivs: False
+    two_bit: False
   train:
     device: cpu
     compile: False
