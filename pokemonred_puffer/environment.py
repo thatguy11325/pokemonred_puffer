@@ -821,10 +821,10 @@ class RedGymEnv(Env):
 
         # DO NOT DELETE. Some animations require dialog navigation
         for _ in range(1000):
-            self.pyboy.button("a", 8)
-            self.pyboy.tick(self.action_freq, render=False)
             if not self.read_m("wJoyIgnore"):
                 break
+            self.pyboy.button("a", 8)
+            self.pyboy.tick(self.action_freq, render=False)
 
         if self.events.get_event("EVENT_GOT_HM01"):
             if self.auto_teach_cut and not self.check_if_party_has_hm(TmHmMoves.CUT.value):
