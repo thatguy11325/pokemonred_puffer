@@ -24,7 +24,9 @@ class CoordinatesWriter(gym.Wrapper):
         self.coord_list.append((map_n, y_pos, x_pos))
         if len(self.coord_list) >= self.write_frequency:
             with open(
-                os.path.join(self.output_dir, self.folder_name, cast(RedGymEnv, self.env).env_id),
+                os.path.join(
+                    self.output_dir, self.folder_name, str(cast(RedGymEnv, self.env).env_id)
+                ),
                 "a",
             ) as f:
                 f.writelines(",".join(coord) + "\n" for coord in self.coord_list)
