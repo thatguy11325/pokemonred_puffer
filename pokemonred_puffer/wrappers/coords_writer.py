@@ -25,7 +25,6 @@ class CoordinatesWriter(gym.Wrapper):
         x_pos = self.env.unwrapped.read_m("wXCoord")
         self.coord_list.append((map_n, y_pos, x_pos))
         if len(self.coord_list) >= self.write_frequency:
-            os.makedirs()
             with open(
                 os.path.join(self.save_dir, str(cast(RedGymEnv, self.env).env_id) + "-coords.csv"),
                 "a",
