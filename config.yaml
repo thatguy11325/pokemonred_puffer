@@ -20,6 +20,8 @@ env:
   save_video: False
   # If true, save sped up videos.
   fast_video: False
+  # Number of environments to save videos for.
+  n_record: 10
   # If true, give all party members max base stats.
   perfect_ivs: False
   # If true, downsample the screen observation by 2.
