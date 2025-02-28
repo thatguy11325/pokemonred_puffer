@@ -29,7 +29,7 @@ class CoordinatesWriter(gym.Wrapper):
                 os.path.join(self.save_dir, str(cast(RedGymEnv, self.env).env_id) + "-coords.csv"),
                 "a",
             ) as f:
-                f.writelines(",".join(coord) + "\n" for coord in self.coord_list)
+                f.writelines(",".join(str(coord)) + "\n" for coord in self.coord_list)
                 self.coord_list.clear()
 
         return self.env.step(action)
@@ -59,7 +59,7 @@ class ActionsWriter(gym.Wrapper):
                 os.path.join(self.save_dir, str(cast(RedGymEnv, self.env).env_id) + "-actions.csv"),
                 "a",
             ) as f:
-                f.writelines(str(action) + "\n" for action in self.action_list)
+                f.writelines(str(str(action)) + "\n" for action in self.action_list)
                 self.action_list.clear()
 
         return self.env.step(action)
