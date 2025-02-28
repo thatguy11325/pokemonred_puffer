@@ -228,6 +228,15 @@ wrappers:
         full_reset_frequency: 1
         jitter: 0
 
+  stream_only_with_coords:
+    - coords_writer.CoordinatesWriter:
+      output_dir: runs
+    - stream_wrapper.StreamWrapper:
+        user: thatguy
+    - exploration.OnResetExplorationWrapper:
+        full_reset_frequency: 1
+        jitter: 1
+
   stream_only:
     - stream_wrapper.StreamWrapper:
         user: thatguy
