@@ -819,10 +819,12 @@ class RedGymEnv(Env):
         # TODO: Split this function up. update_seen_coords should not be here!
         self.update_seen_coords()
 
-        while self.read_m("wJoyIgnore"):
-            # DO NOT DELETE. Some animations require dialog navigation
+        # DO NOT DELETE. Some animations require dialog navigation
+        for _ in range(1000):
             self.pyboy.button("a", 8)
             self.pyboy.tick(self.action_freq, render=False)
+            if not self.read_m("wJoyIgnore"):
+                break
 
         if self.events.get_event("EVENT_GOT_HM01"):
             if self.auto_teach_cut and not self.check_if_party_has_hm(TmHmMoves.CUT.value):
