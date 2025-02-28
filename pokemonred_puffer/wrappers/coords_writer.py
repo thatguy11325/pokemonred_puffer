@@ -15,7 +15,7 @@ class CoordinatesWriter(gym.Wrapper):
         self.coord_list = collections.deque()
         self.output_dir: str = config.output_dir
         self.write_frequency: int = config.write_frequency
-        self.folder_name = datetime.today().strftime("%Y%m%d%H%M%S")
+        self.folder_name = datetime.today().strftime("%Y%m%d-%H%M%S")
         self.save_dir = os.path.join(self.output_dir, self.folder_name)
         os.makedirs(self.save_dir, exist_ok=True)
 
@@ -45,7 +45,7 @@ class ActionsWriter(gym.Wrapper):
         self.action_list = collections.deque()
         self.output_dir: str = config.output_dir
         self.write_frequency: int = config.write_frequency
-        self.folder_name = datetime.today().strftime("%Y%m%d%H%M%S")
+        self.folder_name = datetime.today().strftime("%Y%m%d-%H%M%S")
         self.save_dir = os.path.join(self.output_dir, self.folder_name)
         os.makedirs(self.save_dir, exist_ok=True)
 
