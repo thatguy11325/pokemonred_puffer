@@ -20,8 +20,8 @@ class CoordinatesWriter(gym.Wrapper):
             self.output_dir, str(cast(RedGymEnv, self.env).env_id) + "-coords.csv"
         )
         os.makedirs(self.output_dir, exist_ok=True)
-        with open(self.write_path, "w") as f:
-            f.write("")
+        self.writer = open(self.write_path, "w")
+        self.writer.write("")
 
     def step(self, action):
         map_n = self.env.unwrapped.read_m("wCurMap")
@@ -32,25 +32,23 @@ class CoordinatesWriter(gym.Wrapper):
             self.step_counter = 0
         if len(self.coord_list) >= self.write_frequency:
             self.write()
-            self.coord_list.clear()
 
         self.step_counter += 1
 
         return self.env.step(action)
 
     def reset(self, *args, **kwargs):
+        self.write()
         return self.env.reset(*args, **kwargs)
 
     def close(self):
         self.write()
+        self.writer.close()
         return self.env.close()
 
     def write(self):
-        with open(
-            self.write_path,
-            "a",
-        ) as f:
-            f.writelines(",".join(coord) + "\n" for coord in self.coord_list)
+        self.writer.writelines(",".join(coord) + "\n" for coord in self.coord_list)
+        self.coord_list.clear()
 
 
 class ActionsWriter(gym.Wrapper):
@@ -63,27 +61,25 @@ class ActionsWriter(gym.Wrapper):
             self.output_dir, str(cast(RedGymEnv, self.env).env_id) + "-actions.csv"
         )
         os.makedirs(self.output_dir, exist_ok=True)
-        with open(self.write_path, "w") as f:
-            f.write("")
+        self.writer = open(self.write_path, "w")
+        self.writer.write("")
 
     def step(self, action):
         self.action_list.append(action)
         if len(self.action_list) >= self.write_frequency:
             self.write()
-            self.action_list.clear()
 
         return self.env.step(action)
 
     def reset(self, *args, **kwargs):
+        self.write()
         return self.env.reset(*args, **kwargs)
 
     def close(self):
         self.write()
+        self.writer.close()
         return self.env.close()
 
     def write(self):
-        with open(
-            self.write_path,
-            "a",
-        ) as f:
-            f.writelines(str(action) + "\n" for action in self.action_list)
+        self.writer.writelines(str(action) + "\n" for action in self.action_list)
+        self.action_list.clear()

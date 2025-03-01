@@ -241,10 +241,10 @@ wrappers:
   stream_only_with_coords:
     - coords_writer.ActionsWriter:
         output_dir: runs
-        write_frequency: 10000
+        write_frequency: 100
     - coords_writer.CoordinatesWriter:
         output_dir: runs
-        write_frequency: 10000
+        write_frequency: 100
     - stream_wrapper.StreamWrapper:
         user: thatguy
     - exploration.OnResetExplorationWrapper:
