@@ -205,10 +205,10 @@ wrappers:
   recorder:
     - coords_writer.ActionsWriter:
         output_dir: runs
-        write_frequency: 100
+        write_frequency: 1000
     - coords_writer.CoordinatesWriter:
         output_dir: runs
-        write_frequency: 100
+        write_frequency: 1000
 
   baseline:
     - stream_wrapper.StreamWrapper:
