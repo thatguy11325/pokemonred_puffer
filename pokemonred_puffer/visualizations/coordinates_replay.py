@@ -91,7 +91,6 @@ def main():
         with open(os.path.join(args.coords_dir, path)) as f:
             for i, line in enumerate(f):
                 timestamp, map_n, y_pos, x_pos = line.strip(" \n").split(",")
-                timestamp = int(datetime.strptime(timestamp, "%Y%m%d%H%M%S").timestamp())
                 if args.sync_method == steps:
                     if i < left_crop:
                         continue
@@ -103,6 +102,7 @@ def main():
                         steps.append(set([]))
                     steps[i].add((int(map_n), int(y_pos), int(x_pos)))
                 else:
+                    timestamp = int(datetime.strptime(timestamp, "%Y%m%d%H%M%S").timestamp())
                     if timestamp < left_crop:
                         continue
                     if timestamp % args.stride != 0:
