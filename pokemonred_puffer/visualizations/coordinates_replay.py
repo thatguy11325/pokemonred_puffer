@@ -1,5 +1,5 @@
 import argparse
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 
 import cv2
@@ -62,20 +62,28 @@ def main():
     earliest_time: None | datetime = None
     if args.sync_method == "steps":
         left_crop = args.left_crop
-    if args.sync_method == "time":
-        for path in os.listdir(str(args.coords_dir)):
-            if args.coords_file and path != args.coords_file:
-                continue
-            if not path.endswith("coords.csv"):
-                continue
-            ts = min(earliest_time, datetime.strptime(path.split("-")[1]), "%Y%m%d%H%M%S")
-            if not earliest_time:
-                earliest_time = ts
-            else:
-                earliest_time = min(earliest_time, ts)
-        assert earliest_time
+        length = args.length
 
+    files = []
     for path in os.listdir(str(args.coords_dir)):
+        if args.coords_file and path != args.coords_file:
+            continue
+        if not path.endswith("coords.csv"):
+            continue
+        if not len(path.split("-")) == 3:
+            continue
+        files.append(path)
+
+        if args.sync_method == "time":
+            for path in files:
+                date_string = path.split("-")[1]
+                ts = datetime.strptime(date_string, "%Y%m%d%H%M%S")
+                earliest_time = min(earliest_time or ts, ts)
+            assert earliest_time
+            left_crop = int((earliest_time + timedelta(seconds=args.left_crop)).timestamp())
+            length = args.length
+
+    for path in tqdm(files):
         if args.coords_file and path != args.coords_file:
             continue
         if not path.endswith("coords.csv"):
@@ -83,13 +91,13 @@ def main():
         with open(os.path.join(args.coords_dir, path)) as f:
             for i, line in enumerate(f):
                 timestamp, map_n, y_pos, x_pos = line.strip(" \n").split(",")
-                timestamp = datetime.strptime(timestamp, "%Y%m%d%H%M%s")
+                timestamp = int(datetime.strptime(timestamp, "%Y%m%d%H%M%S").timestamp())
                 if args.sync_method == steps:
                     if i < left_crop:
                         continue
                     if (i - left_crop) % args.stride != 0:
                         continue
-                    if i > (left_crop + args.length):
+                    if i > (left_crop + length):
                         break
                     if i >= len(steps):
                         steps.append(set([]))
@@ -97,12 +105,17 @@ def main():
                 else:
                     if timestamp < left_crop:
                         continue
-                    if timestamp.timestamp() % args.stride != 0:
+                    if timestamp % args.stride != 0:
                         continue
-                    if (timestamp + left_crop).total_seconds() > args.length:
+                    if (timestamp - left_crop) > args.length:
                         break
 
-                    steps[int(timestamp.timestamp()) // args.stride]
+                    key = int(timestamp) // args.stride
+                    if key not in steps:
+                        steps[key] = set([])
+                    steps[key].add((int(map_n), int(y_pos), int(x_pos)))
+
+    sorted_steps = sorted(steps.items(), key=lambda k: k[0])
 
     top, vlength, left, hlength = args.image_crop
     if not vlength:
@@ -118,7 +131,7 @@ def main():
         background.shape[:2],
         fps=24,
     ) as writer:
-        for step in tqdm(steps):
+        for _, step in tqdm(sorted_steps):
             # This is slow. See if we can make all the frames in a threadpool
             frame = background.copy()
             for map_n, y_pos, x_pos in step:
