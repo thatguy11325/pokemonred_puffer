@@ -22,7 +22,9 @@ def main():
     # steps is a list of lists where the index maps to the step count
     steps = []
     # load data
-    for path in os.listdir(args.coords_folder):
+    for path in os.listdir(str(args.coords_folder)):
+        if not path.endswith("coords.csv"):
+            continue
         with open(os.path.join(args.coords_folder, path)) as f:
             for i, line in enumerate(f):
                 map_n, y_pos, x_pos = line.strip(" \n").split(",")
