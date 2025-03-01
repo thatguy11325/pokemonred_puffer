@@ -1,4 +1,5 @@
 import collections
+from datetime import datetime
 import os
 from typing import cast
 
@@ -16,7 +17,11 @@ class CoordinatesWriter(gym.Wrapper):
         self.step_counter = 0
         self.write_frequency: int = config.write_frequency
         self.write_path = os.path.join(
-            self.output_dir, str(cast(RedGymEnv, self.env).env_id) + "-coords.csv"
+            self.output_dir,
+            str(cast(RedGymEnv, self.env).env_id)
+            + "-"
+            + datetime.now().strftime("%Y%m%d%H%M%S")
+            + "-coords.csv",
         )
         os.makedirs(self.output_dir, exist_ok=True)
         self.writer = open(self.write_path, "w")
@@ -29,7 +34,9 @@ class CoordinatesWriter(gym.Wrapper):
         map_n = self.env.unwrapped.read_m("wCurMap")
         y_pos = self.env.unwrapped.read_m("wYCoord")
         x_pos = self.env.unwrapped.read_m("wXCoord")
-        self.coord_list.append([str(map_n), str(y_pos), str(x_pos)])
+        self.coord_list.append(
+            [datetime.now().strftime("%Y%m%d%H%M%S"), str(map_n), str(y_pos), str(x_pos)]
+        )
         if len(self.coord_list) >= self.write_frequency:
             self.write()
             self.step_counter = 0
