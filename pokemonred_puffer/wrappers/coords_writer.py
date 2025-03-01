@@ -13,7 +13,6 @@ class CoordinatesWriter(gym.Wrapper):
         super().__init__(env)
         self.coord_list = collections.deque()
         self.output_dir: str = config.output_dir
-        self.record_interval = 500
         self.step_counter = 0
         self.write_frequency: int = config.write_frequency
         self.write_path = os.path.join(
@@ -24,18 +23,20 @@ class CoordinatesWriter(gym.Wrapper):
         self.writer.write("")
 
     def step(self, action):
+        # we run the step first so we can evaluate the result
+        res = self.env.step(action)
+
         map_n = self.env.unwrapped.read_m("wCurMap")
         y_pos = self.env.unwrapped.read_m("wYCoord")
         x_pos = self.env.unwrapped.read_m("wXCoord")
-        if self.step_counter >= self.record_interval:
-            self.coord_list.append([str(map_n), str(y_pos), str(x_pos)])
-            self.step_counter = 0
+        self.coord_list.append([str(map_n), str(y_pos), str(x_pos)])
         if len(self.coord_list) >= self.write_frequency:
             self.write()
+            self.step_counter = 0
 
         self.step_counter += 1
 
-        return self.env.step(action)
+        return res
 
     def reset(self, *args, **kwargs):
         self.write()
