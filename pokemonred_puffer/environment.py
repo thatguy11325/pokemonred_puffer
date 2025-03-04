@@ -146,6 +146,7 @@ class RedGymEnv(Env):
         self.infinte_safari_steps = env_config.infinite_safari_steps
         self.insert_saffron_guard_drinks = env_config.insert_saffron_guard_drinks
         self.infinite_money = env_config.infinite_money
+        self.infinite_health = env_config.infinite_health
         self.use_global_map = env_config.use_global_map
         self.save_state = env_config.save_state
         self.animate_scripts = env_config.animate_scripts
@@ -767,6 +768,9 @@ class RedGymEnv(Env):
         self.pokecenters[self.read_m("wLastBlackoutMap")] = 1
         if self.read_m("wWalkBikeSurfState") == 0x2:
             self.use_surf = 1
+        if self.infinite_health:
+            self.reverse_damage()
+
         info = {}
 
         required_events = self.get_required_events()
@@ -1856,6 +1860,15 @@ class RedGymEnv(Env):
             self.safari_zone_steps[curMapId] = max(
                 self.safari_zone_steps[curMapId], self.read_short("wSafariSteps")
             )
+
+    def reverse_damage(self):
+        for i in range(self.read_m("wPartyCount")):
+            _, wPartyMonHP = self.pyboy.symbol_lookup(f"wPartyMon{i+1}HP")
+            _, wPartymonMaxHP = self.pyboy.symbol_lookup(f"wPartyMon{i+1}MaxHP")
+            self.pyboy.memory[wPartyMonHP] = 0
+            self.pyboy.memory[wPartyMonHP + 1] = 128
+            self.pyboy.memory[wPartymonMaxHP] = 0
+            self.pyboy.memory[wPartymonMaxHP + 1] = 128
 
     def read_hp_fraction(self):
         party_size = self.read_m("wPartyCount")
