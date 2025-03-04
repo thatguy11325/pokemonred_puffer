@@ -67,6 +67,8 @@ env:
   insert_saffron_guard_drinks: False
   # If true, give the player infinite money.
   infinite_money: True
+  # If true, all Party Pokemon will have a fixed HP of 128.
+  infinite_health: False
   # If true, use the global map observation.
   use_global_map: False
   # If true, provide the PyBoy save state as a part of infos.
@@ -496,6 +498,7 @@ debug:
     auto_next_elevator_floor: False
     skip_safari_zone: False
     infinite_safari_steps: False
+    infinite_health: True
     insert_saffron_guard_drinks: False
     perfect_ivs: False
     two_bit: False
