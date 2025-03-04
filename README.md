@@ -112,3 +112,5 @@ pre-commit install
 ```
 
 For any changes, please submit a PR.
+
+[![](assets/puffer.png)](https://puffer.ai)
