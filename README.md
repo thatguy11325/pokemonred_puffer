@@ -113,4 +113,12 @@ pre-commit install
 
 For any changes, please submit a PR.
 
+<a href="https://star-history.com/#drubinstein/pokemonred_puffer&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=drubinstein/pokemonred_puffer&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=drubinstein/pokemonred_puffer&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=drubinstein/pokemonred_puffer&type=Date" />
+ </picture>
+</a>
+
 [![](assets/puffer.png)](https://puffer.ai)
