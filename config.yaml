@@ -43,9 +43,9 @@ env:
   # If true, use strength when walking into a cave if possible.
   auto_use_strength: True
   # If true, use surf when attempting to walk on water.
-  auto_use_surf: False
+  auto_use_surf: True
   # If true, teach surf if possible.
-  auto_teach_surf: False
+  auto_teach_surf: True
   # If true, teach strength if possible.
   auto_teach_strength: True
   # If true, solve a strength puzzle if next to a moveable boulder.
@@ -53,7 +53,7 @@ env:
   # If true, toss all unneeded items when the bag is full.
   auto_remove_all_nonuseful_items: True
   # If true, use Pokeflute when next to a Snorlax if possible.
-  auto_pokeflute: False
+  auto_pokeflute: True
   # If true, go to the next floor module num floors when entering an elevator.
   auto_next_elevator_floor: False
   # If true, automatically give the player the GOLD TEETH and HM03.
