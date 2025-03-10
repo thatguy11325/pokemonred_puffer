@@ -1,6 +1,8 @@
+import base64
 import collections
-from datetime import datetime
+import io
 import os
+from datetime import datetime
 from typing import cast
 
 import gymnasium as gym
@@ -60,17 +62,25 @@ class CoordinatesWriter(gym.Wrapper):
 
 
 class ActionsWriter(gym.Wrapper):
+    """
+    Writes actions and b64 encoded save states. Actions and save states are
+    | delimited since | is not a part of b64. Some b64 encoders, e.g., mime/b64
+    will include a newline every 76 characters.
+
+    I dub this psv - pipe separated values
+    """
+
     def __init__(self, env: RedGymEnv, config: DictConfig):
         super().__init__(env)
         self.action_list = collections.deque()
         self.output_dir: str = config.output_dir
         self.write_frequency: int = config.write_frequency
         self.write_path = os.path.join(
-            self.output_dir, str(cast(RedGymEnv, self.env).env_id) + "-actions.csv"
+            self.output_dir, str(cast(RedGymEnv, self.env).env_id) + "-actions.psv"
         )
         os.makedirs(self.output_dir, exist_ok=True)
-        self.writer = open(self.write_path, "w")
-        self.writer.write("")
+        self.writer = open(self.write_path, "wb")
+        self.writer.write(b"")
 
     def step(self, action):
         self.action_list.append(action)
@@ -81,7 +91,16 @@ class ActionsWriter(gym.Wrapper):
 
     def reset(self, *args, **kwargs):
         self.write()
-        return self.env.reset(*args, **kwargs)
+        # Now write the save state update
+        env = cast(RedGymEnv, self.env)
+        res = env.reset(self, *args, **kwargs)
+        options = kwargs.get("options", {})
+        if env.first or options.get("state", None) is not None:
+            state = io.BytesIO()
+            env.pyboy.save_state(state)
+            state.seek(0)
+            self.writer.write(base64.b64encode(state.read()) + b"|")
+        return res
 
     def close(self):
         self.write()
@@ -89,5 +108,6 @@ class ActionsWriter(gym.Wrapper):
         return self.env.close()
 
     def write(self):
-        self.writer.writelines(str(action) + "\n" for action in self.action_list)
+        for action in self.action_list:
+            self.writer.write(str(action).encode() + b"|")
         self.action_list.clear()

@@ -1,6 +1,5 @@
 import io
 import os
-import random
 import uuid
 from abc import abstractmethod
 from collections import deque
@@ -328,7 +327,7 @@ class RedGymEnv(Env):
         self.pyboy.hook_deregister(bank, addr + 8)
 
     def update_state(self, state: bytes):
-        self.reset(seed=random.randint(0, 10), options={"state": state})
+        self.reset(seed=None, options={"state": state})
 
     def reset(self, seed: Optional[int] = None, options: Optional[dict[str, Any]] = None):
         # restart game, skipping credits
