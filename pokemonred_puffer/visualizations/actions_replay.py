@@ -1,10 +1,8 @@
 import argparse
 import base64
-import binascii
 import os
 
 import mediapy
-import pyboy.utils
 from omegaconf import OmegaConf
 
 from pokemonred_puffer.environment import RedGymEnv
@@ -27,7 +25,7 @@ def main():
     for path in os.listdir(str(args.actions_dir)):
         if args.actions_file and args.actions_file != path:
             continue
-        if not path.endswith("actions.psv"):
+        if not path.endswith("actions.nsv"):
             continue
         env_id, _ = path.split("-")
         # The config must match what was used for training
@@ -47,25 +45,13 @@ def main():
             env.reset()
             writer.add_image(env.render()[:, :])
             # Read lines so we can get an estimate of the line count
-            buffer = ""
-            while True:
-                chunk = f.read(CHUNK_SIZE)
-                if not chunk:
-                    break
-                buffer = buffer + chunk
-
-                split = chunk.split("|")
-                for i, line in enumerate(split):
-                    try:
-                        if len(line) == 1:
-                            process_action(env, int(line.strip()))
-                        else:
-                            process_state(env, base64.b64decode(line))
-                        writer.add_image(env.render()[:, :])
-                    except (pyboy.utils.PyBoyAssertException, binascii.Error):
-                        # should only happen if we split mid state
-                        buffer = "|".join(split[i:])
-                        break
+            for line in f:
+                line = line.strip()
+                if len(line) == 1:
+                    process_action(env, int(line))
+                else:
+                    process_state(env, base64.b64decode(line))
+                writer.add_image(env.render()[:, :])
 
     os.sync()
 

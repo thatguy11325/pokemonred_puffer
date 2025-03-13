@@ -63,11 +63,7 @@ class CoordinatesWriter(gym.Wrapper):
 
 class ActionsWriter(gym.Wrapper):
     """
-    Writes actions and b64 encoded save states. Actions and save states are
-    | delimited since | is not a part of b64. Some b64 encoders, e.g., mime/b64
-    will include a newline every 76 characters.
-
-    I dub this psv - pipe separated values
+    newline separated values -> .nsv
     """
 
     def __init__(self, env: RedGymEnv, config: DictConfig):
@@ -76,7 +72,7 @@ class ActionsWriter(gym.Wrapper):
         self.output_dir: str = config.output_dir
         self.write_frequency: int = config.write_frequency
         self.write_path = os.path.join(
-            self.output_dir, str(cast(RedGymEnv, self.env).env_id) + "-actions.psv"
+            self.output_dir, str(cast(RedGymEnv, self.env).env_id) + "-actions.nsv"
         )
         os.makedirs(self.output_dir, exist_ok=True)
         self.writer = open(self.write_path, "wb")
@@ -93,13 +89,12 @@ class ActionsWriter(gym.Wrapper):
         self.write()
         # Now write the save state update
         env = cast(RedGymEnv, self.env)
+        # this will not work well with random seeding
         res = env.reset(self, *args, **kwargs)
-        options = kwargs.get("options", {})
-        if env.first or options.get("state", None) is not None:
-            state = io.BytesIO()
-            env.pyboy.save_state(state)
-            state.seek(0)
-            self.writer.write(base64.b64encode(state.read()) + b"|")
+        state = io.BytesIO()
+        env.pyboy.save_state(state)
+        state.seek(0)
+        self.writer.write(base64.b64encode(state.read()) + b"\n")
         return res
 
     def close(self):
@@ -109,5 +104,5 @@ class ActionsWriter(gym.Wrapper):
 
     def write(self):
         for action in self.action_list:
-            self.writer.write(str(action).encode() + b"|")
+            self.writer.write(str(action).encode() + b"\n")
         self.action_list.clear()
