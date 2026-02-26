@@ -1,3 +1,35 @@
+
+<div align="right">
+  <details>
+    <summary >🌐 Language</summary>
+    <div>
+      <div align="center">
+        <a href="https://openaitx.github.io/view.html?user=drubinstein&project=pokemonred_puffer&lang=en">English</a>
+        | <a href="https://openaitx.github.io/view.html?user=drubinstein&project=pokemonred_puffer&lang=zh-CN">简体中文</a>
+        | <a href="https://openaitx.github.io/view.html?user=drubinstein&project=pokemonred_puffer&lang=zh-TW">繁體中文</a>
+        | <a href="https://openaitx.github.io/view.html?user=drubinstein&project=pokemonred_puffer&lang=ja">日本語</a>
+        | <a href="https://openaitx.github.io/view.html?user=drubinstein&project=pokemonred_puffer&lang=ko">한국어</a>
+        | <a href="https://openaitx.github.io/view.html?user=drubinstein&project=pokemonred_puffer&lang=hi">हिन्दी</a>
+        | <a href="https://openaitx.github.io/view.html?user=drubinstein&project=pokemonred_puffer&lang=th">ไทย</a>
+        | <a href="https://openaitx.github.io/view.html?user=drubinstein&project=pokemonred_puffer&lang=fr">Français</a>
+        | <a href="https://openaitx.github.io/view.html?user=drubinstein&project=pokemonred_puffer&lang=de">Deutsch</a>
+        | <a href="https://openaitx.github.io/view.html?user=drubinstein&project=pokemonred_puffer&lang=es">Español</a>
+        | <a href="https://openaitx.github.io/view.html?user=drubinstein&project=pokemonred_puffer&lang=it">Italiano</a>
+        | <a href="https://openaitx.github.io/view.html?user=drubinstein&project=pokemonred_puffer&lang=ru">Русский</a>
+        | <a href="https://openaitx.github.io/view.html?user=drubinstein&project=pokemonred_puffer&lang=pt">Português</a>
+        | <a href="https://openaitx.github.io/view.html?user=drubinstein&project=pokemonred_puffer&lang=nl">Nederlands</a>
+        | <a href="https://openaitx.github.io/view.html?user=drubinstein&project=pokemonred_puffer&lang=pl">Polski</a>
+        | <a href="https://openaitx.github.io/view.html?user=drubinstein&project=pokemonred_puffer&lang=ar">العربية</a>
+        | <a href="https://openaitx.github.io/view.html?user=drubinstein&project=pokemonred_puffer&lang=fa">فارسی</a>
+        | <a href="https://openaitx.github.io/view.html?user=drubinstein&project=pokemonred_puffer&lang=tr">Türkçe</a>
+        | <a href="https://openaitx.github.io/view.html?user=drubinstein&project=pokemonred_puffer&lang=vi">Tiếng Việt</a>
+        | <a href="https://openaitx.github.io/view.html?user=drubinstein&project=pokemonred_puffer&lang=id">Bahasa Indonesia</a>
+        | <a href="https://openaitx.github.io/view.html?user=drubinstein&project=pokemonred_puffer&lang=as">অসমীয়া</
+      </div>
+    </div>
+  </details>
+</div>
+
 # Pokemon Red (RL Edition)
 
 ![Tests](https://github.com/thatguy11325/pokemonred_puffer/actions/workflows/workflow.yml/badge.svg)
